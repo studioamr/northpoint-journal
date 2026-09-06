@@ -251,7 +251,12 @@
     const barridos = niveles.filter(nv => nv.t <= t0cur + 5 && (arriba ? (nv.lado === 'low' && cur.low < nv.v && nv.v <= cur.open) : (nv.lado === 'high' && cur.high > nv.v && nv.v >= cur.open)));
     const manipula = barridos.length ? barridos.sort((a, b) => arriba ? a.v - b.v : b.v - a.v)[0] : null;
     if(manipula) lectura = lectura.replace('(manipulación)', '(manipuló ' + manipula.n + ' ' + manipula.v.toFixed(2) + ')');
-    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, D, rel, velasTodas: velas};
+    /* objetivo: la liquidez viva más cercana hacia donde va la distribución (si aún es manipulación, hacia el lado contrario) */
+    const dirObj = fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba);
+    const vivos = niveles.filter(nv => !nv.tomado && (dirObj ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio)));
+    const objetivo = vivos.length ? vivos.sort((a, b) => dirObj ? a.v - b.v : b.v - a.v)[0] : null;
+    if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velas};
   }
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
@@ -294,13 +299,20 @@
       if(idx >= 0) marca = `<circle cx="${X(idx)}" cy="${Y(d.arriba ? vs[idx].lo : vs[idx].hi)}" r="5" fill="var(--oro)" stroke="#000"/><text class="lbl" x="${X(idx)}" y="${Y(d.arriba ? vs[idx].lo : vs[idx].hi) + (d.arriba ? 16 : -9)}" text-anchor="middle" fill="var(--oro)">MANIPULA ${nivel.n.toUpperCase()}</text>`; }
     else if(d.manipAbajo || d.manipArriba){ const mv = d.arriba ? c.low : c.high; const idx = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo === mv : v.hi === mv)); if(idx >= 0) marca = `<circle cx="${X(idx)}" cy="${Y(mv)}" r="4" fill="var(--oro)"/><text class="lbl" x="${X(idx)}" y="${Y(mv) + (d.arriba ? 15 : -8)}" text-anchor="middle" fill="var(--oro)">MANIPULACIÓN</text>`; }
     const fvg = d.fvg ? `<rect x="${X(iCur + d.fvg.i - 1)}" y="${Y(d.fvg.b)}" width="${plotR - 2 - X(iCur + d.fvg.i - 1)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".16" stroke="var(--azul)" stroke-opacity=".6"/>` : '';
-    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}</svg>`;
+    // el objetivo: círculo fosforescente sobre la liquidez a la que va la distribución
+    let obj = '';
+    if(d.objetivo){ const yo = Y(d.objetivo.v), xo = plotR - 14; const col = d.dirObj ? '#39FF14' : '#FF2E63';
+      obj = `<line x1="${X(n-1)}" x2="${xo}" y1="${Y(d.precio)}" y2="${yo}" stroke="${col}" stroke-opacity=".45" stroke-dasharray="3 3"/>
+        <circle cx="${xo}" cy="${yo}" r="9" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-opacity=".9"><animate attributeName="r" values="7;12;7" dur="1.8s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".3;.05;.3" dur="1.8s" repeatCount="indefinite"/></circle>
+        <circle cx="${xo}" cy="${yo}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 6px ${col})"/>
+        <text class="lbl" x="${xo - 14}" y="${yo + (d.dirObj ? -10 : 16)}" text-anchor="end" fill="${col}" font-weight="700" style="filter:drop-shadow(0 0 4px ${col})">OBJETIVO ${d.objetivo.n.toUpperCase()} ${num(d.objetivo.v)}</text>`; }
+    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}</svg>`;
   }
   function po3Html(){
     const datos = ['NQ=F','ES=F'].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
-        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${d.sym.replace('=F','')}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${d.sym.replace('=F','')}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
         ${graficaPo3(d)}
         <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('');
   }
