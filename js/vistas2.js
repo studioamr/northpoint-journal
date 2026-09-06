@@ -291,7 +291,7 @@
         </div>
         <div class="grid g4" style="margin-top:11px;gap:8px">
           ${kpi('Balance', fmt(e.balance), masMenos(e.ganancia), 'mini')}
-          ${kpi('Colchón', `<span class="${e.colchon < c.reglas.maxDD*.35 ? 'down' : ''}">${fmt(e.colchon)}</span>`, 'piso ' + fmt(e.piso), 'mini')}
+          ${kpi('Drawdown', `<span class="down">${fmt(Math.max(0, (c.reglas.maxDD||0) - e.colchon))}</span>`, 'usado · quedan ' + fmt(e.colchon) + ' · piso ' + fmt(e.piso), 'mini')}
           ${kpi(c.reglas.target ? 'Falta objetivo' : 'Retirable', c.reglas.target ? fmt(e.faltaTarget) : fmt(e.retirable), c.reglas.target ? 'de ' + fmt(c.reglas.target) : 'sobre buffer', 'mini')}
           ${kpi('Días válidos', e.diasValidos + (c.reglas.minDias ? ' / ' + c.reglas.minDias : ''), e.umbral ? '≥ ' + fmt(e.umbral) : 'sin umbral', 'mini')}
         </div>
@@ -327,7 +327,7 @@
       <div class="grid g4" style="margin-top:12px">
         ${kpi('Balance', fmt(e.balance), 'inicial ' + fmt(c.inicial))}
         ${kpi('Objetivo', e.objetivo ? fmt(e.objetivo) : '—', e.pasado ? 'cumplido' : 'faltan ' + fmt(e.faltaTarget))}
-        ${kpi('Colchón', fmt(e.colchon), 'piso ' + fmt(e.piso))}
+        ${kpi('Drawdown', `<span class="down">${fmt(Math.max(0, (c.reglas.maxDD||0) - e.colchon))}</span>`, 'usado de ' + fmt(c.reglas.maxDD||0) + ' · quedan ' + fmt(e.colchon) + ' · piso ' + fmt(e.piso))}
         ${kpi('Días operados', e.dias.length, e.diasGanadores + ' ganadores')}
       </div>
       <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3>
