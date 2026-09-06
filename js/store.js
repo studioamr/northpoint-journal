@@ -17,8 +17,11 @@
       metaMaxDia: 500,        // techo: llegando aquí se cierra la plataforma
       perdidaMaxDia: 500,     // un día de -$1,000 es el que te quita la cuenta al siguiente
       evalFullPort: true,     // en evaluación: contratos máximos, pasar lo más rápido posible
-      maxTradesDia: 3,
+      maxTradesDia: 2,        // risk management: 1–2 trades por día
       pararTrasPerdidas: 2,   // dos perdidas seguidas y se acabó el día
+      pararTrasGanada: true,  // if W → get off the charts
+      riesgoPctCuenta: 0.01,  // nunca más del 1% de la cuenta por trade
+      maxContratos: 1,        // máximo 1 mini
       riesgoEvalPct: 0.5,     // fracción del colchón que arriesgas por día en evaluación
       riesgoFondPct: 0.25,    // fracción del colchón por día ya fondeado
       reduceTrasPerdida: 0.5, // tamaño del siguiente trade después de perder

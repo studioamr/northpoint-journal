@@ -530,6 +530,8 @@
           <p>${h(r.texto)}</p>
           <div class="falla">Si la rompes: ${h(r.falla)}</div></div>`).join('')}
       </div>
+      <div class="card" style="margin-bottom:14px"><h3>Risk management</h3><div class="sub">Las reglas de tamaño</div>
+        <ul class="dim" style="font-size:13.5px;margin:8px 0 0;padding-left:18px;line-height:1.7">${ESTRATEGIA.riesgo.map(x => `<li>${h(x)}</li>`).join('')}</ul></div>
       <div class="card" style="margin-bottom:14px"><h3>Mentalidad</h3>
         <p class="dim" style="margin:8px 0 0;font-size:13px">${h(ESTRATEGIA.mentalidad)}</p></div>
       <div class="grid g2">
@@ -588,6 +590,14 @@
           <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar trade</button>` : ''}</td></tr>`).join('')}</tbody></table>` : ''}
       </div>
 
+      <div class="card" style="margin-bottom:12px"><h3>Risk management</h3><div class="sub">Las cuatro reglas de tamaño · mandan sobre todo lo demás</div>
+        <div class="grid g4" style="gap:8px;margin-top:10px">
+          <label class="campo"><span>Trades por día (máx)</span><input type="number" step="1" min="1" data-ajuste="maxTradesDia" value="${A.maxTradesDia}"></label>
+          <label class="campo"><span>If W → get off the charts</span><select data-ajuste="pararTrasGanada">${opciones([{v:'1',t:'Sí · un ganador y cierro'},{v:'0',t:'No'}], A.pararTrasGanada === false ? '0' : '1')}</select></label>
+          <label class="campo"><span>Riesgo máx por trade (% de la cuenta)</span><input type="number" step="0.25" min="0.25" max="5" data-ajuste="riesgoPctCuentaPct" value="${((A.riesgoPctCuenta ?? 0.01)*100).toFixed(2)}"></label>
+          <label class="campo"><span>Contratos máx (1 mini)</span><input type="number" step="1" min="1" data-ajuste="maxContratos" value="${A.maxContratos ?? 1}"></label>
+        </div>
+        <div class="mini tenue" style="margin-top:8px">1–2 trades por día · si ganas, te sales · nunca más del 1% por trade ($500 en 50k) · máximo 1 mini. El semáforo, el cargador y el tamaño sugerido obedecen esto.</div></div>
       <div class="card" style="margin-bottom:12px"><h3>Target y daily loss por fase</h3><div class="sub">Cada cuenta va en su fase · esto pinta el calendario y el plan del día</div>
         <div class="grid g3" style="gap:8px;margin-top:10px">
           <label class="campo"><span>EVAL · target/día ($)</span><input type="number" step="50" data-fase="eval.target" value="${Store.fases().eval.target}"></label>

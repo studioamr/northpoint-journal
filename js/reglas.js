@@ -178,6 +178,12 @@ window.ESTRATEGIA = {
       falla:"Ir por liquidez externa convierte trades ganadores en perdedores y rompe la racha de días ganadores que la firma sí premia." }
   ],
 
+  riesgo: [
+    "1–2 trades por día. No más.",
+    "If W, get off the charts: un trade ganador y cierras la plataforma.",
+    "Nunca más del 1% de la cuenta por trade ($500 en una 50k).",
+    "Máximo 1 mini. El tamaño no se sube por convicción."
+  ],
   mentalidad: "Mentalidad de longevidad: si tu meta es un payout en dos semanas, piénsalo en dos meses. Hay decenas de miles de días de trading por delante. Si hoy no hay condición, no operas: mañana existe.",
 
   pdas: ["FVG 1H","FVG 15m","FVG 5m","FVG 2m","iFVG (invertido)","Rejection block","Order block","Equilibrio 0.5","Volume imbalance"],

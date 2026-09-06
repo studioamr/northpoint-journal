@@ -192,6 +192,8 @@
     if(t.dataset.ajuste){
       let v = t.type === 'number' ? +t.value : t.value;
       if(t.dataset.ajuste === 'evalFullPort') v = t.value === '1';
+      if(t.dataset.ajuste === 'pararTrasGanada'){ Store.ajustes.pararTrasGanada = t.value === '1'; Store.guardar(); toast('Guardado'); return; }
+      if(t.dataset.ajuste === 'riesgoPctCuentaPct'){ Store.ajustes.riesgoPctCuenta = (+t.value || 1) / 100; Store.guardar(); toast('Guardado'); return; }
       if(t.dataset.ajuste === 'estrategiasTxt'){ Store.ajustes.estrategias = t.value.split('\n').map(x => x.trim()).filter(Boolean); Store.guardar(); toast('Guardado'); return; }
       Store.ajustes[t.dataset.ajuste] = v; Store.guardar(); if(t.dataset.ajuste !== 'btEstrategia') toast('Guardado'); return;
     }
@@ -233,6 +235,8 @@
         <div class="wr-min"><span class="eti">mínimo</span> <b>${pct(minimo,0)}</b> <span class="tenue mini">para no perder a 1.5R · ${g}G · ${p}P</span></div>
         <div class="balas">${Array.from({length:10}, (_, i) => bala(i < usadas ? t[t.length - usadas + i] : null, i, i < usadas)).join('')}</div>
         <div class="mini dim" style="text-align:center;margin-top:14px">${usadas ? `Cargador ${Math.floor(t.length/10)+1}: ${usadas} de 10 gastadas · quedan ${10 - usadas}.` : 'Cargador nuevo: 10 balas.'} Toca la siguiente bala para registrar el trade.${bajo ? ' <b class="down">Estás debajo del 40%: antes de disparar, revisa qué regla estás rompiendo.</b>' : ''}</div>
+        ${(() => { const A = Store.ajustes, hoyT = t.filter(x => x.fecha === Store.hoyISO()); const gano = A.pararTrasGanada && hoyT.some(x => Motor.neto(x) > 0); const tope = hoyT.length >= A.maxTradesDia;
+          return `<div class="rm ${gano || tope ? 'down' : ''}"><span class="eti">risk management</span> ${A.maxTradesDia} trade${A.maxTradesDia > 1 ? 's' : ''}/día máx · if W get off the charts · ≤ ${((A.riesgoPctCuenta||0.01)*100).toFixed(0)}% por trade · máx ${A.maxContratos || 1} mini${gano ? ' — <b>hoy ya ganaste: fuera de las gráficas</b>' : tope ? ' — <b>hoy ya tomaste ' + hoyT.length + ': se acabó</b>' : ' — hoy llevas ' + hoyT.length}</div>`; })()}
       </div>`;
     modal('Registrar trade', cuerpo, `<div class="crece"></div><button class="btn" data-cerrar>Cancelar</button><button class="btn acc" data-acc="dispara">Disparar la bala ${usadas+1}</button>`, {ancho:720, sinFoco:true});
   }

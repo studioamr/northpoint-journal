@@ -360,3 +360,6 @@ svg.radar{width:100%;max-width:250px;height:auto;margin:0 auto;display:block}
 .fichaPreview{border:1px solid var(--linea);background:#000;display:flex;justify-content:center;padding:10px}
 .fichaPreview img{max-width:100%;max-height:560px;display:block;box-shadow:0 20px 60px -20px #000}
 .cal .d.futuro{min-height:112px}
+.cargador .rm{margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--dim);border-top:1px solid var(--linea);padding-top:10px}
+.cargador .rm.down{color:var(--down)}
+.cargador .rm .eti{margin-right:6px}

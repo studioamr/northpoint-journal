@@ -163,6 +163,11 @@
       meta = A.metaDiaria; metaMax = A.metaMaxDia || null;
       metaTxt = 'Tu pedazo del pastel: ' + fmt(A.metaDiaria) + (metaMax ? ' · techo ' + fmt(metaMax) + ' y cierras' : '');
     }
+    // RISK MANAGEMENT: nunca más del 1% de la cuenta por trade, máximo 1 mini
+    const topePct = (A.riesgoPctCuenta || 0) * est.balance;
+    if(topePct > 0 && riesgoTrade > topePct){ riesgoTrade = topePct; riesgoDia = Math.min(riesgoDia, riesgoTrade * Math.max(1, A.pararTrasPerdidas)); }
+    if(A.maxContratos) contratos = Math.min(contratos, A.maxContratos);
+    contratos = Math.min(contratos, Math.max(0, Math.floor(riesgoTrade / stopUSD)));
     if(est.consist && est.consist.maxHoy > 0 && meta > est.consist.maxHoy){
       meta = est.consist.maxHoy;
       metaTxt = 'La consistencia manda: hoy no puedes ganar más de ' + fmt(est.consist.maxHoy) + ' sin romper el ' + (est.consist.limite*100) + '%.';
@@ -183,6 +188,7 @@
     else if(est.cuenta.estado !== 'viva') alto('CUENTA ' + est.cuenta.estado.toUpperCase(), 'La marcaste así en Cuentas.');
     else if(est.pasado && fase === 'eval') alto('OBJETIVO CUMPLIDO', 'Ya pasaste la evaluación. Un trade más solo puede quitarte la cuenta.');
     else if(hoy.length >= A.maxTradesDia) alto('SE ACABÓ EL DÍA', 'Ya tomaste ' + hoy.length + ' trades (tope ' + A.maxTradesDia + ').');
+    else if(A.pararTrasGanada && hoy.some(t => (t.pnl - (t.comision||0)) > 0)){ luz = 'meta'; titulo = 'GANASTE · FUERA DE LAS GRÁFICAS'; razones.push('If W, get off the charts. Ya hay un trade ganador hoy: cierra la plataforma.'); }
     else if(seguidas >= A.pararTrasPerdidas) alto('SE ACABÓ EL DÍA', seguidas + ' pérdidas seguidas. El día siguiente existe.');
     else if(est.pnlHoy <= -riesgoDia && riesgoDia > 0) alto('SE ACABÓ EL DÍA', 'Perdiste ' + fmt(-est.pnlHoy) + ', tu tope de hoy era ' + fmt(riesgoDia) + '.');
     else if(metaMax && est.pnlHoy >= metaMax){ luz = 'meta'; titulo = 'TECHO DEL DÍA · CIERRA'; razones.push('Llevas ' + fmt(est.pnlHoy) + ', el techo es ' + fmt(metaMax) + '. Cierra la plataforma: lo que sigue es propina para el mercado.'); }
