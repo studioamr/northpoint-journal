@@ -320,14 +320,16 @@
     const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hora = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
     const cada = n > 200 ? 120 : 60;
-    let ejeT = ''; vs.forEach((v, i) => { if(v.min % cada === 0) ejeT += `<text x="${X(i)}" y="${Hg - 9}" text-anchor="middle">${hora(v.min)}</text>`; if((v.min - 18*60 + 1440) % 240 === 0) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="var(--linea2)" stroke-dasharray="2 4"/>`; });
+    const APERTURAS = {1080:['ASIA','#FF4D5A'], 120:['LNDN','#4F8CFF'], 570:['NY','#39FF14']};   // 18:00 · 02:00 · 09:30
+    let ejeT = ''; vs.forEach((v, i) => { if(v.min % cada === 0) ejeT += `<text x="${X(i)}" y="${Hg - 9}" text-anchor="middle">${hora(v.min)}</text>`;
+      const ap = APERTURAS[v.min]; if(ap) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="${ap[1]}" stroke-opacity=".55" stroke-dasharray="3 3"/><text class="ses" x="${X(i) + 3}" y="${T + 9}" fill="${ap[1]}">${ap[0]}</text>`; });
     const xDe = t => { const idx = vs.findIndex(v => d.rel(v) >= t); return idx < 0 ? plotR - 4 : X(idx); };
     // etiquetas a la derecha sin encimarse (niveles vivos + open + ahora + objetivo)
     const etiq = [];
     nivelesVis.forEach(nv => { if(!nv.tomado) etiq.push({y: Y(nv.v), txt: nv.n.toUpperCase() + ' ' + num(nv.v), col: nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)', peso: 400}); });
     etiq.push({y: Y(d.precio), txt: 'AHORA ' + num(d.precio), col: d.arriba ? 'var(--up)' : 'var(--down)', peso: 700});
     const FIB = [[0, '0'], [0.5, 'EQ 0.5'], [0.705, '0.705'], [0.79, '0.79'], [1, '1']];
-    if(d.fibo) FIB.forEach(([k, t]) => etiq.push({y: Y(d.fibo.nivel(k)), txt: (k === 0.705 ? 'ENTRADA ' : '') + t + ' ' + num(d.fibo.nivel(k)), col: k === 0.705 ? '#39FF14' : 'var(--acc)', peso: k === 0.5 || k === 0.705 || k === 0.79 ? 700 : 400}));
+    if(d.fibo) FIB.forEach(([k]) => etiq.push({y: Y(d.fibo.nivel(k)), txt: num(d.fibo.nivel(k)), col: k === 0.705 ? '#39FF14' : 'var(--acc)', peso: 400, chico: true}));
     etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 12 ? last + 12 : e.y; last = e.ty; });
     const etiquetas = etiq.map(e => `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
     // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
@@ -357,7 +359,7 @@
     if(d.objetivo){ const yo = Y(d.objetivo.v), xo = xLbl - 6; const col = d.dirObj ? '#39FF14' : '#FF2E63';
       obj = `<circle cx="${xo}" cy="${yo}" r="9" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-opacity=".9"><animate attributeName="r" values="7;12;7" dur="1.8s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".3;.05;.3" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="${xo}" cy="${yo}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 6px ${col})"/>`;
       const e = etiq.find(x => Math.abs(x.y - yo) < 0.5); if(e) e.obj = true; }
-    const etiquetas2 = etiq.map(e => e.obj ? `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${d.dirObj ? '#39FF14' : '#FF2E63'}" font-weight="700" style="filter:drop-shadow(0 0 4px ${d.dirObj ? '#39FF14' : '#FF2E63'})">OBJETIVO · ${e.txt}</text>` : `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
+    const etiquetas2 = etiq.map(e => e.obj ? `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${d.dirObj ? '#39FF14' : '#FF2E63'}" font-weight="700" style="filter:drop-shadow(0 0 4px ${d.dirObj ? '#39FF14' : '#FF2E63'})">OBJETIVO · ${e.txt}</text>` : `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}" ${e.chico ? 'font-size="8"' : ''}>${e.txt}</text>`).join('');
     return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}${etiquetas2}</svg>`;
   }
   function po3Html(){
@@ -366,7 +368,7 @@
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
         <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div></div>
         ${graficaPo3(d)}
-        <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fibo ? ' <b>Mejor entrada al objetivo:</b> retroceso del impulso ' + num(d.fibo.A) + ' → ' + num(d.fibo.B) + ' · EQ ' + num(d.fibo.nivel(0.5)) + ' · <b>0.705 ' + num(d.fibo.entrada) + '</b> · 0.79 ' + num(d.fibo.nivel(0.79)) + ' · stop ' + num(d.fibo.stop) + (d.fibo.rr != null ? ' · R:R ' + d.fibo.rr.toFixed(1) : '') + '.' : ''}</div></div>`; }).join('');
+        <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}</div></div>`; }).join('');
   }
   function pintaPo3(P){
     const html = po3Html(); if(!html){ P.style.display = 'none'; return; }
