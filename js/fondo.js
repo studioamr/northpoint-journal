@@ -28,7 +28,7 @@
       p.x = nx; p.y = ny; p.vida--;
       if(p.vida <= 0 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) Object.assign(p, nace());
     }
-    if(!document.hidden) requestAnimationFrame(paso);
+    if(!document.hidden && getComputedStyle(cv).display !== 'none') requestAnimationFrame(paso); else setTimeout(() => requestAnimationFrame(paso), 1500);
   }
   tam(); for(let i = 0; i < N; i++) P.push(nace());
   ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H);

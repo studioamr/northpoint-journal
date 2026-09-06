@@ -163,9 +163,9 @@
 
     <div class="grid g5" style="margin-bottom:12px">
       ${kpi('Balance', fmt(balanceTotal), `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
-      ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`)}
-      ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), `${fmt(m.bruto)} / ${fmt(m.perd)}`)}
-      ${kpi('Días ganadores', pct(m.diaWinRate,0), `${m.diasG} de ${m.dias} días`)}
+      ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
+      ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
+      ${kpi('Días ganadores', pct(m.diaWinRate,0), `${m.diasG} de ${m.dias} días`, '', null, m.diaWinRate, 'var(--oro)')}
       ${kpi('Prom. gana / pierde', `${fmt(m.avgWin)} <span class="tenue">/</span> ${fmt(m.avgLoss)}`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
     </div>
 

@@ -23,9 +23,14 @@
     return String(d).padStart(2,'0') + '/' + String(m).padStart(2,'0');
   }
 
-  function kpi(k, v, nota, clase, ayuda){
+  function anillo(p, color, s){
+    s = s || 46; const r = (s - 6) / 2, c = 2 * Math.PI * r, v = Math.max(0, Math.min(1, +p || 0));
+    return `<svg class="anillo" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/>
+      <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${color || 'var(--acc)'}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(c*v).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${s/2} ${s/2})" style="filter:drop-shadow(0 0 6px ${color || 'var(--acc)'})"/></svg>`;
+  }
+  function kpi(k, v, nota, clase, ayuda, anilloPct, anilloColor){
     return `<div class="kpi ${clase||''}"><div class="k">${h(k)}${ayuda?`<span class="ayuda" title="${h(ayuda)}">?</span>`:''}</div>
-      <div class="v">${v}</div>${nota ? `<div class="n">${nota}</div>` : ''}</div>`;
+      <div class="v">${v}</div>${nota ? `<div class="n">${nota}</div>` : ''}${anilloPct != null ? anillo(anilloPct, anilloColor) : ''}</div>`;
   }
 
   function opciones(lista, sel){
@@ -68,5 +73,5 @@
     setTimeout(() => t.remove(), 2400);
   }
 
-  window.UI = { h, fmt, pct, signo, masMenos, MESES, DOW, fechaLarga, fechaCorta, kpi, opciones, modal, cerrar, aviso, vacio, toast };
+  window.UI = { h, fmt, pct, signo, masMenos, MESES, DOW, fechaLarga, fechaCorta, kpi, anillo, opciones, modal, cerrar, aviso, vacio, toast };
 })();
