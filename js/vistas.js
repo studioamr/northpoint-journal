@@ -170,7 +170,6 @@
       ${kpi('Prom. gana / pierde', `${fmt(m.avgWin)} <span class="tenue">/</span> ${fmt(m.avgLoss)}`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
     </div>`)}
 
-    ${sec('Vela de 4H', 'open → manipulación → distribución', `<div class="card" id="dbPo3">${vacio('Leyendo la vela…')}</div>`)}
     ${sec('Cuenta', varias ? sel.length + ' cuentas' : '', `<div class="grid" style="grid-template-columns:1fr 320px">
       <div class="card">
         <div class="fila"><h3>Curva de balance</h3><div class="crece"></div>
@@ -435,10 +434,7 @@
     <div class="cal">${celdas.join('')}</div>`;
   };
   Vistas._cal = cal;
-  /* Dashboard: la vela de 4H se llena después de pintar */
-  document.addEventListener('mesa:pintado', async () => { const el = document.getElementById('dbPo3'); if(!el || !window.Mercado) return;
-    const html = await Mercado.po3Dashboard(); const el2 = document.getElementById('dbPo3'); if(!el2) return;
-    el2.innerHTML = html ? `<div style="display:grid;gap:18px">${html}</div>` : vacio('Sin precios: en la app de escritorio se leen directo.'); });
+
   /* después de pintar: llenar los escenarios de los días futuros con Forex Factory */
   document.addEventListener('mesa:pintado', async () => {
     const celdas = [...document.querySelectorAll('.cal .esc')]; if(!celdas.length || !window.Mercado) return;

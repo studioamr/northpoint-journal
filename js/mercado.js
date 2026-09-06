@@ -139,7 +139,8 @@
      Asia (18:00–02:00 NY), Londres (02:00–08:30 NY) y pre-apertura (08:30–09:30 NY):
      high y low de cada sesión, si ya se tomaron, y dónde está el precio antes
      de que abra Nueva York a las 9:30. Sale de las velas de 5 min de Yahoo. */
-  const SESIONES = [{k:'asia', n:'Asia', d:-1, ini:18*60, fin:24*60+2*60}, {k:'lon', n:'Londres', d:0, ini:2*60, fin:8*60+30}, {k:'pre', n:'Pre-NY', d:0, ini:8*60+30, fin:9*60+30}];
+  /* killzones como él las opera: Asia 18:00–02:00 · Londres 02:00–08:30 · NY 09:30–16:00 (hora de NY) */
+  const SESIONES = [{k:'asia', n:'Asia', d:-1, ini:18*60, fin:24*60+2*60}, {k:'lon', n:'Londres', d:0, ini:2*60, fin:8*60+30}, {k:'ny', n:'NY', d:0, ini:9*60+30, fin:16*60}];
   const fmtNY = new Intl.DateTimeFormat('en-CA', {timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
   function ny(ts){ const p = {}; fmtNY.formatToParts(new Date(ts)).forEach(x => p[x.type] = x.value); return {ymd: p.year + '-' + p.month + '-' + p.day, min: (+p.hour)*60 + (+p.minute)}; }
   const diaMas = (ymd, d) => { const x = new Date(ymd + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + d); return x.toISOString().slice(0,10); };
@@ -174,7 +175,7 @@
     const X = t => L + (t - tMin) / (tMax - tMin) * (Wg - L - R), Y = p => T + (1 - (p - (pMin - pad)) / ((pMax + pad) - (pMin - pad))) * (Hg - T - B);
     const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hora = t => { const mm = ((t % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
-    const tono = {asia:'#FF4D5A', lon:'#4F8CFF', pre:'#39FF14'};   // Asia rojo · Londres azul · NY verde (como él lo pinta en el chart)
+    const tono = {asia:'#FF4D5A', lon:'#4F8CFF', ny:'#39FF14'};   // Asia rojo · Londres azul · NY verde (como él lo pinta en el chart)
     const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".14" stroke="${tono[s.k]}" stroke-opacity=".7"/>
       <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}" fill="${tono[s.k]}">${s.n.toUpperCase()}</text>
       <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${s.highTomado ? 'var(--tenue)' : 'var(--up)'}" stroke-dasharray="${s.highTomado ? '2 4' : '5 4'}" stroke-opacity=".8"/>
@@ -237,8 +238,7 @@
     /* killzones del día (Asia · Londres · Pre-NY · NY AM): sus highs y lows son lo que la vela de 4H manipula */
     const N = noche(sym); const niveles = [];
     const D = N ? N.D : null; const rel = v => v.ymd === D ? v.min : v.min - 1440;
-    const sesiones = (N ? N.sesiones.filter(s => !s.vacia).map(s => ({k:s.k, n:{asia:'ASIA', lon:'LNDN', pre:'PRE-NY'}[s.k], high:s.high, low:s.low, t0:s.t0, t1:s.t1})) : []);
-    const am = velas.filter(v => v.ymd === D && v.min >= 9*60+30 && v.min < 11*60); if(am.length) sesiones.push({k:'nyam', n:'NYAM', high: Math.max(...am.map(v => v.hi)), low: Math.min(...am.map(v => v.lo)), t0: rel(am[0]), t1: rel(am[am.length-1]) + 5});
+    const sesiones = (N ? N.sesiones.filter(s => !s.vacia).map(s => ({k:s.k, n:{asia:'ASIA', lon:'LNDN', ny:'NY'}[s.k], high:s.high, low:s.low, t0:s.t0, t1:s.t1})) : []);
     sesiones.forEach(s => { const vsFin = velas.filter(v => rel(v) >= s.t1);
       niveles.push({n: s.n + ' High', v: s.high, lado:'high', t: s.t1, tomado: vsFin.some(v => v.hi > s.high)});
       niveles.push({n: s.n + ' Low', v: s.low, lado:'low', t: s.t1, tomado: vsFin.some(v => v.lo < s.low)}); });
@@ -269,7 +269,7 @@
     // killzones: línea desde donde se formó hasta la derecha, etiqueta al final; tachada si ya se tomó
     const xDe = t => { const idx = vs.findIndex(v => d.rel(v) >= t); return idx < 0 ? plotR - 4 : X(idx); };
     const etiq = []; nivelesVis.forEach(nv => etiq.push({y: Y(nv.v), nv})); etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 10 ? last + 10 : e.y; last = e.ty; });
-    const kz = etiq.map(e => { const nv = e.nv; const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NYAM') ? '#39FF14' : nv.n.startsWith('PRE') ? '#FFD54A' : 'var(--dim)';
+    const kz = etiq.map(e => { const nv = e.nv; const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)';
       return `<line x1="${xDe(nv.t)}" x2="${plotR - 2}" y1="${e.y}" y2="${e.y}" stroke="${col}" stroke-opacity="${nv.tomado ? .35 : .85}" stroke-dasharray="${nv.tomado ? '2 3' : ''}"/><text class="ses" x="${plotR + VW + 10}" y="${e.ty + 3}" fill="${col}" fill-opacity="${nv.tomado ? .5 : 1}" ${nv.tomado ? 'text-decoration="line-through"' : ''}>${nv.n.toUpperCase()} ${num(nv.v)}</text>`; }).join('');
     // rango de la 4H actual punteado + open
     const x0 = X(iCur) - paso/2;
@@ -306,6 +306,74 @@
   }
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
+  /* ---------------------------------------------------- STRAT · recap del opening de NY
+     Desde las 9:30 NY: los FVG de 5 min que deja la apertura, si el precio los
+     respeta o los rompe, y a qué nivel va después (LNDN · ASIA · PRE-NY). */
+  function strat(sym){
+    const N = noche(sym); const j = cache['velas_' + sym]; const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!N || !r) return null;
+    const ts = r.timestamp || [], q = ((r.indicators||{}).quote||[{}])[0], hi = q.high || [], lo = q.low || [], op = q.open || [], cl = q.close || [];
+    const D = N.D; const rel = v => v.ymd === D ? v.min : v.min - 1440;
+    const velas = ts.map((t, i) => ({t: t*1000, hi: hi[i], lo: lo[i], op: op[i], cl: cl[i]})).filter(v => v.hi != null && v.lo != null).map(v => Object.assign(v, ny(v.t))).map(v => Object.assign(v, {m: rel(v)}));
+    const vent = velas.filter(v => v.m >= 9*60 && v.m < 12*60+30); if(vent.length < 8) return null;
+    const hora = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
+    // niveles a los que puede ir
+    const niveles = [];
+    N.sesiones.filter(s => !s.vacia && s.k !== 'ny').forEach(s => { const nm = {asia:'ASIA', lon:'LNDN'}[s.k]; niveles.push({n: nm + ' High', v: s.high, lado:'high', k:s.k}); niveles.push({n: nm + ' Low', v: s.low, lado:'low', k:s.k}); });
+    // FVGs de 5 min desde las 9:30 (los primeros 3)
+    const fvgs = [];
+    for(let i = 2; i < vent.length && fvgs.length < 3; i++){
+      if(vent[i].m < 9*60+30) continue;
+      const alc = vent[i].lo > vent[i-2].hi, baj = vent[i].hi < vent[i-2].lo; if(!alc && !baj) continue;
+      const f = {i, m: vent[i].m, alc, a: alc ? vent[i-2].hi : vent[i].hi, b: alc ? vent[i].lo : vent[i-2].lo};   // a = piso, b = techo
+      const desp = vent.slice(i + 1);
+      const iProb = desp.findIndex(v => alc ? v.lo <= f.b : v.hi >= f.a);
+      const iRoto = desp.findIndex(v => alc ? v.cl < f.a : v.cl > f.b);
+      f.estado = iRoto >= 0 && (iProb < 0 || iRoto <= iProb + 1) ? 'roto' : iProb >= 0 ? 'respetado' : 'sin probar';
+      if(iProb >= 0) f.mProb = desp[iProb].m; if(iRoto >= 0) f.mRoto = desp[iRoto].m;
+      // a qué nivel fue después: el primero que rompe a favor del FVG (si lo respetó) o en contra (si lo rompió)
+      const dir = f.estado === 'roto' ? !alc : alc;
+      const desde = f.estado === 'roto' ? desp.slice(iRoto) : desp;
+      const cand = niveles.filter(nv => dir ? (nv.lado === 'high' && nv.v > f.b) : (nv.lado === 'low' && nv.v < f.a)).sort((x, y) => dir ? x.v - y.v : y.v - x.v);
+      for(const nv of cand){ const k = desde.findIndex(v => dir ? v.hi > nv.v : v.lo < nv.v); if(k >= 0){ f.va = {n: nv.n, v: nv.v, m: desde[k].m, dir}; break; } }
+      if(!f.va && cand.length) f.pendiente = cand[0];
+      fvgs.push(f);
+    }
+    const num = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const frase = f => `${hora(f.m)} FVG ${f.alc ? 'alcista' : 'bajista'} ${num(f.a)}–${num(f.b)} · ${f.estado === 'respetado' ? 'respetado a las ' + hora(f.mProb) : f.estado === 'roto' ? 'roto a las ' + hora(f.mRoto) : 'sin probar'}` + (f.va ? ` → ${f.estado === 'roto' ? 'se fue' : 'fue'} a romper ${f.va.n} ${num(f.va.v)} a las ${hora(f.va.m)}` : f.pendiente ? ` → siguiente nivel ${f.pendiente.n} ${num(f.pendiente.v)} (no llegó)` : '');
+    const primero = fvgs[0];
+    const veredicto = !primero ? 'La apertura no dejó FVG de 5 min en la primera hora.' : primero.estado === 'respetado' ? `Setup de libro: ${primero.alc ? 'continuación alcista' : 'continuación bajista'} respetando el FVG del opening` + (primero.va ? ` y tomando ${primero.va.n}.` : ', sin llegar al nivel.') : primero.estado === 'roto' ? `El FVG del opening se rompió: la apertura fue manipulación` + (primero.va ? ` y el precio se fue por ${primero.va.n}.` : '.') : 'El FVG del opening sigue sin probarse.';
+    return {sym, D, vent, fvgs, niveles, veredicto, frases: fvgs.map(frase), hora};
+  }
+  function graficaStrat(d){
+    const Wg = 1000, Hg = 300, L = 8, R = 130, T = 18, B = 26;
+    const vs = d.vent; const nivVis = d.niveles;
+    const pMin = Math.min(...vs.map(v => v.lo)), pMax = Math.max(...vs.map(v => v.hi)); const pad = (pMax - pMin) * 0.08 || 1;
+    const lo0 = Math.min(pMin - pad, ...nivVis.filter(n => n.v > pMin - (pMax-pMin)).map(n => n.v)), hi0 = Math.max(pMax + pad, ...nivVis.filter(n => n.v < pMax + (pMax-pMin)).map(n => n.v));
+    const n = vs.length, plotR = Wg - R, paso = (plotR - L) / n, cw = Math.max(2, paso * 0.6);
+    const X = i => L + i * paso + paso / 2, Y = v => T + (1 - (v - lo0) / (hi0 - lo0)) * (Hg - T - B);
+    const num = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const iAb = vs.findIndex(v => v.m >= 9*60+30);
+    let ejeT = ''; vs.forEach((v, i) => { if(v.min % 30 === 0) ejeT += `<text x="${X(i)}" y="${Hg - 8}" text-anchor="middle">${d.hora(v.m)}</text>`; });
+    const apertura = iAb >= 0 ? `<line x1="${X(iAb) - paso/2}" x2="${X(iAb) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="#39FF14" stroke-opacity=".7" stroke-dasharray="3 3"/><text class="ses" x="${X(iAb) + 2}" y="${T + 10}" fill="#39FF14">NY 9:30</text>` : '';
+    const et = nivVis.filter(nv => nv.v > lo0 && nv.v < hi0).map(nv => ({nv, y: Y(nv.v)})).sort((a, b) => a.y - b.y); let last = -99; et.forEach(e => { e.ty = e.y - last < 10 ? last + 10 : e.y; last = e.ty; });
+    const kz = et.map(e => { const nv = e.nv; const col = nv.k === 'asia' ? '#FF4D5A' : '#4F8CFF';
+      return `<line x1="${L}" x2="${plotR - 2}" y1="${e.y}" y2="${e.y}" stroke="${col}" stroke-opacity=".8"/><text class="ses" x="${plotR + 6}" y="${e.ty + 3}" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)}</text>`; }).join('');
+    const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
+      return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - v.cl < 0 ? 0 : Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
+    const bandas = d.fvgs.map((f, k) => { const col = f.alc ? 'var(--up)' : 'var(--down)'; const x1 = X(f.i) - paso/2; const x2 = f.mRoto ? X(vs.findIndex(v => v.m === f.mRoto)) : plotR - 2;
+      const marcas = (f.mProb && f.estado === 'respetado' ? `<text class="lbl" x="${X(vs.findIndex(v => v.m === f.mProb))}" y="${Y(f.alc ? f.a : f.b) + (f.alc ? 14 : -6)}" text-anchor="middle" fill="${col}">RESPETA</text>` : '') + (f.mRoto ? `<text class="lbl" x="${x2}" y="${Y(f.alc ? f.a : f.b) + (f.alc ? 14 : -6)}" text-anchor="middle" fill="var(--oro)">ROMPE</text>` : '') + (f.va ? `<circle cx="${X(vs.findIndex(v => v.m === f.va.m))}" cy="${Y(f.va.v)}" r="4.5" fill="var(--oro)" stroke="#000"/><text class="lbl" x="${X(vs.findIndex(v => v.m === f.va.m))}" y="${Y(f.va.v) + (f.va.dir ? -8 : 15)}" text-anchor="middle" fill="var(--oro)">ROMPE ${f.va.n.toUpperCase()}</text>` : '');
+      return `<rect x="${x1}" y="${Y(f.b)}" width="${Math.max(2, x2 - x1)}" height="${Math.max(2, Y(f.a) - Y(f.b))}" fill="${col}" fill-opacity=".16" stroke="${col}" stroke-opacity=".7"/><text class="ses" x="${x1 + 3}" y="${Y(f.b) - 4}" fill="${col}">FVG ${k+1} · ${d.hora(f.m)} · ${f.estado.toUpperCase()}</text>${marcas}`; }).join('');
+    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${apertura}${bandas}${velas}</svg>`;
+  }
+  function pintaStrat(S){
+    const datos = ['NQ=F','ES=F'].map(strat).filter(Boolean); if(!datos.length){ S.style.display = 'none'; return; }
+    const fechaD = new Date(datos[0].D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
+    S.style.display = ''; S.innerHTML = `<div class="fila"><h3>Strat · recap del opening NY · FVG 5m</h3><span class="mono dim">${fechaD}</span><div class="crece"></div></div>
+      <div style="display:grid;gap:18px;margin-top:10px">${datos.map(d => `<div class="po3">
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${d.sym.replace('=F','')}</b><span class="dim" style="font-size:13px">${d.veredicto}</span></div>
+        ${graficaStrat(d)}
+        ${d.frases.length ? `<div class="mini dim" style="margin-top:6px;line-height:1.7">${d.frases.map(f => '· ' + f).join('<br>')}</div>` : ''}</div>`).join('')}</div>`;
+  }
   function pintaNoche(A){
     const datos = ['NQ=F','ES=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -333,6 +401,7 @@
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
+    <div class="card" id="mkStrat" style="margin-bottom:12px;display:none"></div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
       
@@ -355,6 +424,7 @@
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
       if(A) pintaNoche(A);
       const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
+      const ST = document.getElementById('mkStrat'); if(ST) pintaStrat(ST);
     }catch(e){}
     try{
       const lista = await noticias();
@@ -394,5 +464,5 @@
     const corto = /CORTOS/.test(I.mejor) && /LARGOS/.test(I.peor) ? 'alto → cortos · bajo → largos' : /LARGOS/.test(I.mejor) && /CORTOS/.test(I.peor) ? 'fuerte → largos · débil → cortos' : 'ver ficha';
     return {nombre: I.n, corto, I};
   }
-  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal, noche, po3, po3Html, po3Dashboard };
+  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal, noche, po3, po3Html, po3Dashboard, strat };
 })();
