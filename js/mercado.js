@@ -323,21 +323,17 @@
     const kz = nivelesVis.map(nv => { const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)'; const y = Y(nv.v);
       const esManip = d.manipula && d.manipula.n === nv.n;
       const xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;   // la línea acaba en su PRIMERA barrida
-      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2.2 : 1.4}" stroke-opacity="1"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="${esManip ? 4 : 2.5}" fill="${col}"/>` : ''}${esManip ? `<text class="ses" x="${xFin - 8}" y="${clampY(y + (d.arriba ? 14 : -8))}" text-anchor="end" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)} · MANIPULADO</text>` : ''}`; }).join('');
+      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2.2 : 1.4}" stroke-opacity="1"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="2.5" fill="${col}"/>` : ''}`; }).join('');
     // rango de la 4H actual (caja punteada) + open hasta la vela grande
     const x0 = X(iCur) - paso/2;
-    const caja = `<rect x="${x0}" y="${Y(c.high)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(c.low) - Y(c.high))}" fill="none" stroke="var(--txt)" stroke-opacity=".4" stroke-dasharray="3 3"/>
-      <line x1="${x0}" x2="${xLbl - 6}" y1="${Y(c.open)}" y2="${Y(c.open)}" stroke="var(--txt)" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
+    const caja = `<line x1="${x0}" x2="${xLbl - 6}" y1="${Y(c.open)}" y2="${Y(c.open)}" stroke="var(--txt)" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
     const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
       return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
     // la vela de 4H en grande (sin texto encima: el precio va en la columna)
     const up4 = d.precio >= c.open, col4 = up4 ? 'var(--up)' : 'var(--down)';
     const vela4 = `<line x1="${xv}" x2="${xv}" y1="${Y(c.high)}" y2="${Y(c.low)}" stroke="${col4}" stroke-width="2"/><rect x="${xv - VW/2}" y="${Y(Math.max(c.open, d.precio))}" width="${VW}" height="${Math.max(2, Math.abs(Y(c.open) - Y(d.precio)))}" fill="${col4}" fill-opacity=".9" stroke="${col4}"/>
       <text class="ses" x="${xv}" y="${Hg - 9}" text-anchor="middle" fill="var(--txt)">4H ${hora(c.ini)}</text>`;
-    // manipulación: puntito dorado + nombre corto debajo
-    let marca = '';
-    const mv = d.arriba ? c.low : c.high; const idxM = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo === mv : v.hi === mv));
-    if(idxM >= 0 && (d.manipAbajo || d.manipArriba)) marca = `<circle cx="${X(idxM)}" cy="${Y(mv)}" r="4.5" fill="var(--oro)" stroke="#000"/><text class="ses" x="${X(idxM)}" y="${clampY(Y(mv) + (d.arriba ? 15 : -8))}" text-anchor="middle" fill="var(--oro)">${d.manipula ? 'MANIPULA ' + d.manipula.n.toUpperCase() : 'MANIPULACIÓN'}</text>`;
+    const marca = '';
     const fvg = d.fvg ? `<rect x="${X(iCur + d.fvg.i - 1)}" y="${Y(d.fvg.b)}" width="${plotR - 2 - X(iCur + d.fvg.i - 1)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".16" stroke="var(--azul)" stroke-opacity=".6"/>` : '';
     // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
     let obj = '';
@@ -351,7 +347,7 @@
     const datos = [SYM_NQ()].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
-        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">${d.enCurso ? 'quedan ' + Math.floor(d.restan/60) + 'h ' + (d.restan%60) + 'm' : 'cerrada'} · O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)}</span></div>
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div></div>
         ${graficaPo3(d)}
         <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('');
   }
