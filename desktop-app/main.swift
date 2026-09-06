@@ -9,6 +9,8 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
     var window: NSWindow!
     var webView: WKWebView!
     var timer: Timer?
+    var tvWindow: NSWindow?
+    var tvWeb: WKWebView?
     var carpeta: URL?
     let defaults = UserDefaults.standard
 
@@ -53,6 +55,7 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "Elegir carpeta de Descargas…", action: #selector(elegirCarpeta), keyEquivalent: "o")
         appMenu.addItem(withTitle: "Recargar", action: #selector(recargar), keyEquivalent: "r")
+        appMenu.addItem(withTitle: "TradingView · operar", action: #selector(abrirTrading), keyEquivalent: "t")
         appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(withTitle: "Salir de NORTHPOINT", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         app.submenu = appMenu
@@ -86,6 +89,7 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             let p = NSSavePanel(); p.nameFieldStringValue = d["nombre"] as? String ?? "northpoint.png"; p.allowedFileTypes = ["png"]
             p.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
             p.begin { r in if r == .OK, let u = p.url { try? data.write(to: u) } }
+        case "trading": abrirTrading()
         case "fetch":
             // la web pide un recurso sin CORS (Forex Factory); lo baja Swift y se lo devuelve en base64
             guard let s = d["url"] as? String, let u = URL(string: s), let id = d["id"] as? String else { return }
@@ -97,6 +101,27 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             }.resume()
         default: break
         }
+    }
+
+    // ---------------------------------------------------------------- TradingView completo, en su ventana
+    @objc func abrirTrading() {
+        if tvWindow == nil {
+            let rect = NSRect(x: 0, y: 0, width: 1400, height: 900)
+            let w = NSWindow(contentRect: rect, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            w.title = "TradingView · NORTHPOINT"; w.center(); w.setFrameAutosaveName("NPTradingView"); w.isReleasedWhenClosed = false
+            w.appearance = NSAppearance(named: .darkAqua)
+            let cfg = WKWebViewConfiguration(); cfg.websiteDataStore = WKWebsiteDataStore.default()   // conserva tu login
+            cfg.applicationNameForUserAgent = "Version/17.4 Safari/605.1.15"
+            let web = WKWebView(frame: rect, configuration: cfg); web.autoresizingMask = [.width, .height]; web.uiDelegate = self
+            web.load(URLRequest(url: URL(string: "https://www.tradingview.com/chart/")!))
+            w.contentView = web; tvWindow = w; tvWeb = web
+        }
+        tvWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+    }
+    // ventanas emergentes (login con Google/Apple, etc.) se abren en la misma vista
+    func webView(_ w: WKWebView, createWebViewWith c: WKWebViewConfiguration, for a: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if let u = a.request.url { w.load(URLRequest(url: u)) }
+        return nil
     }
 
     // ---------------------------------------------------------------- carpeta vigilada nativa
@@ -175,7 +200,7 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
         let o = NSOpenPanel(); o.allowsMultipleSelection = p.allowsMultipleSelection; o.canChooseDirectories = false
         o.begin { r in completionHandler(r == .OK ? o.urls : nil) }
     }
-    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
+    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { false }
 }
 
 let app = NSApplication.shared

@@ -13,7 +13,8 @@
     {id:'cuentas',    t:'Cuentas',      i:'▣'},
     {id:'payouts',    t:'Payouts',      i:'$'},
     {id:'progreso',   t:'Progreso',     i:'▲'},
-    {id:'mercado',    t:'Mercado',      i:'◉'}
+    {id:'mercado',    t:'Mercado',      i:'◉'},
+    {id:'trading',    t:'Trading',      i:'◫'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial'};
   let vista = location.hash.replace('#','') || 'panel';
@@ -96,6 +97,8 @@
       else if(cual === 'labFuente'){ Vistas._lab.fuente = v; pinta(); }
       else if(cual === 'labEscala'){ Vistas._lab.escala = +v; pinta(); }
       else if(cual === 'mkFiltro'){ Store.ajustes.mkFiltro = v; Store.guardar(); }
+      else if(cual === 'tvSym'){ Store.ajustes.tvSymbol = v; Store.guardar(); }
+      else if(cual === 'tvIv'){ Store.ajustes.tvIntervalo = v; Store.guardar(); }
       return;
     }
 
@@ -165,6 +168,7 @@
       fichaComparte: () => Ficha.comparte(id).then(ok => { if(!ok){ Ficha.descarga(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       abreDia: () => { cerrar(); modalDia(id); },
       salir: () => Acceso.salir(),
+      tvOperar: () => { if(window.__npNativo){ try{ window.webkit.messageHandlers.np.postMessage({cmd:'trading'}); }catch(e){} } else window.open('https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(Store.ajustes.tvSymbol || 'CME_MINI:MNQ1!'), '_blank'); },
       exportarCompleto: () => Store.exportaCompleto().then(n => toast('Respaldo con ' + n + ' screenshots')),
       reporteDia: () => reporteDia(),
       mercadoRecarga: () => { Mercado.cache.ffT = 0; Mercado.cache.pxT = 0; Mercado.cargar(); },

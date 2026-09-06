@@ -513,6 +513,29 @@
     }).join('');
   }
 
+  /* ======================================================== TRADING ==== */
+  /* TradingView aquí mismo: el chart avanzado embebido (widget oficial) y, en la
+     app de escritorio, una ventana con TradingView completo para OPERAR con tu
+     bróker conectado (Tradovate). En navegador, el botón abre tradingview.com. */
+  Vistas.trading = function(){
+    const sym = Store.ajustes.tvSymbol || 'CME_MINI:MNQ1!';
+    const iv = Store.ajustes.tvIntervalo || '5';
+    const tema = document.documentElement.dataset.theme || 'acido';
+    const dark = tema !== 'papel';
+    const url = 'https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=' + encodeURIComponent(sym) + '&interval=' + iv + '&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=' + (dark ? '0a0a0a' : 'f3f2ed') + '&studies=%5B%5D&theme=' + (dark ? 'dark' : 'light') + '&style=1&timezone=America%2FMexico_City&withdateranges=1&locale=es&hideideas=1';
+    const simbolos = [['CME_MINI:MNQ1!','MNQ'],['CME_MINI:NQ1!','NQ'],['CME_MINI:MES1!','MES'],['CME_MINI:ES1!','ES'],['CME:BTC1!','BTC fut'],['BINANCE:BTCUSDT','BTC spot']];
+    return `
+    <div class="fila" style="margin-bottom:12px">
+      <div><div class="eti">Trading · TradingView</div><h2>Opera aquí mismo</h2></div>
+      <div class="crece"></div>
+      <div class="seg" data-seg="tvSym">${simbolos.map(([v,t]) => `<button data-v="${v}" class="${sym===v?'on':''}">${t}</button>`).join('')}</div>
+      <div class="seg" data-seg="tvIv">${[['1','1m'],['2','2m'],['5','5m'],['15','15m'],['60','1h']].map(([v,t]) => `<button data-v="${v}" class="${iv===v?'on':''}">${t}</button>`).join('')}</div>
+      <button class="btn acc" data-acc="tvOperar">${window.__npNativo ? '⌘T · Abrir TradingView para operar' : 'Abrir TradingView para operar'}</button>
+    </div>
+    <div class="tv-wrap"><iframe id="tv" src="${url}" allowfullscreen allow="clipboard-write"></iframe></div>
+    <div class="mini tenue" style="margin-top:8px">El chart es el widget oficial de TradingView (gratis, sin login). Para ejecutar órdenes hace falta TradingView completo con tu bróker conectado (Tradovate): en la app de escritorio se abre en su propia ventana y conserva tu sesión; en navegador se abre en una pestaña. Los indicadores NP (np-journal.pine) se cargan en tu cuenta de TradingView, no en el widget.</div>`;
+  };
+
   /* ======================================================= PLAYBOOK ==== */
   Vistas.playbook = function(){
     return `
@@ -562,9 +585,9 @@
             <label class="campo"><span>Ciudad</span><input data-perfil="ciudad" value="${h(P.ciudad)}"></label>
             <label class="campo"><span>Frase</span><input data-perfil="frase" value="${h(P.frase)}"></label>
           </div></div>
-        <div class="card"><h3>Tema</h3><div class="sub">Cinco pieles, mismos datos</div>
+        <div class="card"><h3>Tema</h3><div class="sub">Nueve pieles, mismos datos · las Tron traen rejilla viva y neón</div>
           <div class="temas" style="margin-top:12px">${Tema.TEMAS.map(t => `<div class="tema ${(A.tema||'acido')===t.id?'on':''}" data-acc="tema" data-id="${t.id}" data-theme-preview="${t.id}">
-            <div class="sw">${t.id==='acido'?'<i style="background:#050506"></i><i style="background:#C6FF3D"></i>':t.id==='blanco'?'<i style="background:#050506"></i><i style="background:#F4F4F4"></i>':t.id==='oro'?'<i style="background:#050506"></i><i style="background:#C9A24A"></i>':t.id==='papel'?'<i style="background:#F3F2ED;border:1px solid #ccc"></i><i style="background:#15161A"></i>':'<i style="background:#050914"></i><i style="background:#9FD3FF"></i>'}</div>
+            <div class="sw">${t.sw ? `<i style="background:${t.sw[0]}"></i><i style="background:${t.sw[1]};box-shadow:0 0 10px ${t.sw[1]}"></i>` : t.id==='acido'?'<i style="background:#050506"></i><i style="background:#C6FF3D"></i>':t.id==='blanco'?'<i style="background:#050506"></i><i style="background:#F4F4F4"></i>':t.id==='oro'?'<i style="background:#050506"></i><i style="background:#C9A24A"></i>':t.id==='papel'?'<i style="background:#F3F2ED;border:1px solid #ccc"></i><i style="background:#15161A"></i>':'<i style="background:#050914"></i><i style="background:#9FD3FF"></i>'}</div>
             <b>${h(t.n)}</b><small>${h(t.d)}</small></div>`).join('')}</div></div>
       </div>
 
