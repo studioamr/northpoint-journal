@@ -108,7 +108,12 @@ muestra un chip por cuenta; Trades, Calendario, Reportes y Lab filtran igual).
   rachas perdedoras esperadas, distribución de P&L, edge móvil, mapa de calor hora×día y contrafactuales («si hubieras quitado las
   reversiones…»). Hallazgos ("con las 4 reglas ganas 93%, rompiendo alguna 50%") y
   desgloses por TP, tipo de trade, confluencia, PDA, hora, día de la semana, dirección y error cometido.
-- **Backtesting** — selector de **estrategia** arriba (todas o una), KPIs, curva en **R** (no en dólares) y la tabla de trades.
+- **Backtesting** — arriba, el **backtest automático de la estrategia** (`js/backtest.js`): con las velas de 5 min de NQ de los
+  últimos 60 días (`data/nq5m.json`, la baja el workflow cada hora; en la app nativa, de Yahoo directo) recorre día por día la
+  condición del FVG de apertura (9:35–9:45) → dirección → continuación en el 0.705 → stop tras el origen → TP interno, con 1 % de
+  riesgo, máx 2 trades, «if W → fuera» y 2 pérdidas → fuera; da total, trades, win rate, R promedio, profit factor, mejor/peor día,
+  máximo drawdown de la curva, la curva y el día por día; variantes: sin «if W fuera», TP a 2R, TP a 1R. Debajo, el backtesting
+  manual de siempre. Backtesting manual — selector de **estrategia** arriba (todas o una), KPIs, curva en **R** (no en dólares) y la tabla de trades.
   Cada trade de backtest lleva su estrategia desde el formulario.
 - **Cuentas** — la flota. Balance, colchón contra el piso, días válidos, consistencia, y el botón
   **Pasar a fondeada** cuando pasas la evaluación (crea la cuenta nueva con las reglas del plan fondeado y archiva la eval).

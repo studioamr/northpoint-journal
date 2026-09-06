@@ -14,9 +14,13 @@ jobs:
         run: |
           curl -sSL --retry 3 -A "Mozilla/5.0" -o data/ff_calendar_thisweek.json https://nfs.faireconomy.media/ff_calendar_thisweek.json
           python3 -c "import json;json.load(open('data/ff_calendar_thisweek.json'))"
+      - name: Bajar velas de 5 min de NQ (60 días) para el backtest
+        run: |
+          curl -sSL --retry 3 -A "Mozilla/5.0" -o data/nq5m.json "https://query1.finance.yahoo.com/v8/finance/chart/NQ%3DF?interval=5m&range=60d"
+          python3 -c "import json;d=json.load(open('data/nq5m.json'));assert d['chart']['result'][0]['timestamp']"
       - name: Publicar si cambió
         run: |
           git config user.name "northpoint-bot"
           git config user.email "bot@northpoint"
-          git add data/ff_calendar_thisweek.json
+          git add data/ff_calendar_thisweek.json data/nq5m.json
           git diff --cached --quiet || (git commit -m "data: noticias Forex Factory $(date -u +%Y-%m-%dT%H:%MZ)" && git push)

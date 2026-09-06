@@ -149,6 +149,7 @@
     const comparar = '';
 
     return `
+    ${window.Backtest ? Backtest.html() : ''}
     <div class="fila" style="margin-bottom:12px">
       <div>
       <h2>${bt.length} trades probados <span class="dim mono" style="font-size:13px">${m.rTotal ? m.rTotal.toFixed(1)+'R · ' : ''}win ${pct(m.winRate,0)}</span></h2></div>
