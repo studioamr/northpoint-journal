@@ -72,7 +72,7 @@
     return fresco && me.regularMarketPrice != null ? me.regularMarketPrice : (cl.length ? cl[cl.length-1] : me.regularMarketPrice);
   }
   async function yahoo(sym){
-    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=5d');   // 5 días: para que Asia de la noche anterior siempre esté
+    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=5d&_=' + Date.now());   // 5 días: para que Asia siempre esté · &_= rompe cualquier caché
     cache['velas_' + sym] = j;
     const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) throw new Error('sin datos');
     limpiaSettlement(r);

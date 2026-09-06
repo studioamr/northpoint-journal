@@ -41,7 +41,7 @@ ipcMain.on('np', async (e, d) => {
   if(!d || !d.cmd) return;
   switch(d.cmd){
     case 'fetch': {
-      try{ const r = await net.fetch(d.url, { headers: { 'User-Agent': 'Mozilla/5.0' } }); const buf = Buffer.from(await r.arrayBuffer());
+      try{ const r = await net.fetch(d.url, { cache: 'no-store', headers: { 'User-Agent': 'Mozilla/5.0', 'Cache-Control': 'no-cache' } }); const buf = Buffer.from(await r.arrayBuffer());
         js(`window.__npFetch && window.__npFetch("${esc(d.id)}", "${buf.toString('base64')}", "")`); }
       catch(err){ js(`window.__npFetch && window.__npFetch("${esc(d.id)}", "", "${esc(err.message)}")`); }
       break; }

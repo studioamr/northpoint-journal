@@ -106,7 +106,9 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
         case "fetch":
             // la web pide un recurso sin CORS (Forex Factory); lo baja Swift y se lo devuelve en base64
             guard let s = d["url"] as? String, let u = URL(string: s), let id = d["id"] as? String else { return }
-            URLSession.shared.dataTask(with: u) { data, _, err in
+            var req = URLRequest(url: u); req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData; req.timeoutInterval = 20
+            req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+            URLSession.shared.dataTask(with: req) { data, _, err in
                 let b64 = data?.base64EncodedString() ?? ""
                 let e = (err?.localizedDescription ?? "").replacingOccurrences(of: "\"", with: "'")
                 let js = "window.__npFetch && window.__npFetch(\"\(id)\", \"\(b64)\", \"\(e)\")"
