@@ -309,7 +309,7 @@
     return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}</svg>`;
   }
   function po3Html(){
-    const datos = ['NQ=F','ES=F'].map(po3).filter(Boolean); if(!datos.length) return '';
+    const datos = ['NQ=F'].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
         <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${d.sym.replace('=F','')}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
@@ -323,13 +323,13 @@
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
   function pintaNoche(A){
-    const datos = ['NQ=F','ES=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
+    const datos = ['NQ=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const d0 = datos[0];
     const fechaD = new Date(d0.D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
     const estadoNY = d0.pasada ? 'Mercado cerrado · última noche: ' + fechaD : d0.abrioNY ? 'NY ya abrió · los niveles vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm' : 'Noche en curso';
     A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>La noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div></div>
-      <div class="grid g2" style="margin-top:10px;gap:12px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
+      <div style="margin-top:10px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
   }
 
   /* Próxima noticia USD de alto impacto: para el semáforo y el Panel */
