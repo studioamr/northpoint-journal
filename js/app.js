@@ -168,7 +168,7 @@
       fichaComparte: () => Ficha.comparte(id).then(ok => { if(!ok){ Ficha.descarga(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       abreDia: () => { cerrar(); modalDia(id); },
       salir: () => Acceso.salir(),
-      tvOperar: () => { if(window.__npNativo){ try{ window.webkit.messageHandlers.np.postMessage({cmd:'trading'}); }catch(e){} } else window.open('https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(Store.ajustes.tvSymbol || 'CME_MINI:MNQ1!'), '_blank'); },
+      tvOperar: () => { if(window.__npNativo){ try{ window.webkit.messageHandlers.np.postMessage({cmd:'trading'}); }catch(e){} } else window.open('https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('CME_MINI:MNQ1!'), '_blank'); },
       exportarCompleto: () => Store.exportaCompleto().then(n => toast('Respaldo con ' + n + ' screenshots')),
       reporteDia: () => reporteDia(),
       mercadoRecarga: () => { Mercado.cache.ffT = 0; Mercado.cache.pxT = 0; Mercado.cargar(); },

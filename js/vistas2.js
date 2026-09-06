@@ -518,12 +518,13 @@
      app de escritorio, una ventana con TradingView completo para OPERAR con tu
      bróker conectado (Tradovate). En navegador, el botón abre tradingview.com. */
   Vistas.trading = function(){
-    const sym = Store.ajustes.tvSymbol || 'CME_MINI:MNQ1!';
+    const sym = Store.ajustes.tvSymbol || 'CAPITALCOM:US100';
     const iv = Store.ajustes.tvIntervalo || '5';
     const tema = document.documentElement.dataset.theme || 'acido';
     const dark = tema !== 'papel';
     const url = 'https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=' + encodeURIComponent(sym) + '&interval=' + iv + '&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=' + (dark ? '0a0a0a' : 'f3f2ed') + '&studies=%5B%5D&theme=' + (dark ? 'dark' : 'light') + '&style=1&timezone=America%2FMexico_City&withdateranges=1&locale=es&hideideas=1';
-    const simbolos = [['CME_MINI:MNQ1!','MNQ'],['CME_MINI:NQ1!','NQ'],['CME_MINI:MES1!','MES'],['CME_MINI:ES1!','ES'],['CME:BTC1!','BTC fut'],['BINANCE:BTCUSDT','BTC spot']];
+    // el widget gratis no trae datos del CME: se usan los índices espejo (US100 = Nasdaq, US500 = S&P) que se mueven igual que NQ/ES
+    const simbolos = [['CAPITALCOM:US100','NQ · US100'],['CAPITALCOM:US500','ES · US500'],['BINANCE:BTCUSDT','BTC'],['NASDAQ:QQQ','QQQ'],['AMEX:SPY','SPY'],['CME_MINI:MNQ1!','MNQ (tu cuenta TV)']];
     return `
     <div class="fila" style="margin-bottom:12px">
       <div><div class="eti">Trading · TradingView</div><h2>Opera aquí mismo</h2></div>
@@ -533,7 +534,7 @@
       <button class="btn acc" data-acc="tvOperar">${window.__npNativo ? '⌘T · Abrir TradingView para operar' : 'Abrir TradingView para operar'}</button>
     </div>
     <div class="tv-wrap"><iframe id="tv" src="${url}" allowfullscreen allow="clipboard-write"></iframe></div>
-    <div class="mini tenue" style="margin-top:8px">El chart es el widget oficial de TradingView (gratis, sin login). Para ejecutar órdenes hace falta TradingView completo con tu bróker conectado (Tradovate): en la app de escritorio se abre en su propia ventana y conserva tu sesión; en navegador se abre en una pestaña. Los indicadores NP (np-journal.pine) se cargan en tu cuenta de TradingView, no en el widget.</div>`;
+    <div class="mini tenue" style="margin-top:8px">El chart es el widget oficial de TradingView (gratis, sin login; los futuros del CME solo se ven en tu TradingView completo, por eso aquí van US100/US500, que se mueven igual que NQ/ES). Para ejecutar órdenes hace falta TradingView completo con tu bróker conectado (Tradovate): en la app de escritorio se abre en su propia ventana y conserva tu sesión; en navegador se abre en una pestaña. Los indicadores NP (np-journal.pine) se cargan en tu cuenta de TradingView, no en el widget.</div>`;
   };
 
   /* ======================================================= PLAYBOOK ==== */
