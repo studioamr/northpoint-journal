@@ -94,27 +94,21 @@
     return {dias: dias.length, conTrade: det.filter(x => x.trades.length).length, n, winRate: n ? wins / n : 0, rProm: rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : 0, total: tot, mejor: pnl.length ? Math.max(...pnl) : 0, peor: pnl.length ? Math.min(...pnl) : 0, verdes: g.length, rojos: p.length, mdd, pf: g.reduce((a, b) => a + b, 0) / Math.max(1, -p.reduce((a, b) => a + b, 0)), curva, det, P, desde: dias[0], hasta: dias[dias.length-1]};
   }
   const hM = mm => String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0');
-  function html(){ return `<div class="card" style="margin-bottom:12px" id="btAuto"><div class="fila"><h3>Backtest automático de la estrategia</h3><span class="mono dim">NQ · velas de 5 min · últimos 60 días</span><div class="crece"></div>
-      <select data-ajuste="btVariante" style="width:auto">${Object.keys(VARIANTES).map(k => `<option value="${k}" ${(Store.ajustes.btVariante||'protocolo') === k ? 'selected' : ''}>${h(VARIANTES[k].n)}</option>`).join('')}</select></div>
-    <div id="btAutoCuerpo" style="margin-top:10px">${vacio('Cargando las velas…')}</div></div>`; }
   async function pinta(){
-    const el = document.getElementById('btAutoCuerpo'); if(!el) return;
-    let velas; try{ velas = await cargar(); }catch(e){ el.innerHTML = vacio('Sin velas: en la app de escritorio se bajan de Yahoo; en la web las trae la API propia cada hora.'); return; }
+    const K = document.getElementById('btKpis'), C = document.getElementById('btCurva'); if(!K || !C) return;
+    let velas; try{ velas = await cargar(); }catch(e){ C.innerHTML = '<h3>Curva</h3>' + vacio('Sin velas: en la app de escritorio se bajan de Yahoo; en la web las trae la API propia cada hora.'); return; }
     const V = VARIANTES[Store.ajustes.btVariante || 'protocolo'] || VARIANTES.protocolo; const R = correr(velas, V);
-    const el2 = document.getElementById('btAutoCuerpo'); if(!el2) return;
-    el2.innerHTML = `<div class="mini dim" style="margin-bottom:10px">${R.desde} → ${R.hasta} · ${R.dias} días operables · riesgo ${fmt(R.P.riesgoUSD)} por trade (${Store.ajustes.instrumento}) · condición FVG 9:35–9:45 → continuación en el 0.705 → stop tras el origen</div>
-      <div class="grid g5" style="margin-bottom:10px">
-        ${kpi('Total', `<span class="${R.total >= 0 ? 'up' : 'down'}">${(R.total >= 0 ? '+' : '-') + fmt(Math.abs(R.total))}</span>`, R.conTrade + ' días con trade · ' + R.verdes + ' verdes / ' + R.rojos + ' rojos')}
-        ${kpi('Trades', R.n, 'win rate ' + Math.round(R.winRate*100) + '% · R prom ' + (R.rProm >= 0 ? '+' : '') + R.rProm.toFixed(2))}
-        ${kpi('Profit factor', R.pf.toFixed(2), R.pf >= 1.3 ? 'hay edge en la muestra' : R.pf >= 1 ? 'apenas positivo' : 'negativo')}
-        ${kpi('Mejor / peor día', `<span class="up">+${fmt(Math.round(R.mejor))}</span> / <span class="down">-${fmt(Math.round(Math.abs(R.peor)))}</span>`, '')}
-        ${kpi('Máx drawdown', `<span class="down">-${fmt(Math.abs(R.mdd))}</span>`, Math.abs(R.mdd) >= 2000 ? 'con 2k de drawdown esa racha quema la cuenta' : 'cabe en 2k de drawdown')}
-      </div>
-      <div class="card" style="margin-bottom:10px"><h3>Curva</h3>${Stats.linea(R.curva.map(c => ({bal: c.bal})), {w:900, h:170, color: R.total >= 0 ? 'var(--up)' : 'var(--down)', base: 0})}</div>
-      <details class="mas"><summary>Día por día</summary><table class="ff" style="margin-top:8px"><thead><tr><th>Día</th><th>Condición</th><th class="num">P&L</th><th>Trades</th></tr></thead><tbody>
-        ${R.det.map(x => `<tr><td class="mono">${x.d}</td><td>${h(x.cond)}</td><td class="num mono ${x.day > 0 ? 'up' : x.day < 0 ? 'down' : 'tenue'}">${x.day ? (x.day > 0 ? '+' : '-') + fmt(Math.abs(x.day)) : '—'}</td><td class="mono mini">${x.trades.map(t => hM(t.m) + ' ' + (t.dir ? 'L' : 'S') + ' ' + t.res + ' ' + (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R').join(' · ')}</td></tr>`).join('')}</tbody></table></details>
-      <div class="mini dim" style="margin-top:8px">Muestra corta: ${R.n} trades no separan el edge del ruido. Lo que sí se ve: «if W → fuera» sostiene el resultado, el TP interno sale ≈2R y a 1R pierde. Yahoo solo da 60 días en 5 min.</div>`;
+    const K2 = document.getElementById('btKpis'), C2 = document.getElementById('btCurva'); if(!K2 || !C2) return;
+    K2.innerHTML = `${kpi('Total', `<span class="${R.total >= 0 ? 'up' : 'down'}">${(R.total >= 0 ? '+' : '-') + fmt(Math.abs(Math.round(R.total)))}</span>`, R.conTrade + ' días con trade · ' + R.verdes + ' verdes / ' + R.rojos + ' rojos')}
+      ${kpi('Trades', R.n, 'win rate ' + Math.round(R.winRate*100) + '% · R prom ' + (R.rProm >= 0 ? '+' : '') + R.rProm.toFixed(2))}
+      ${kpi('Profit factor', R.pf.toFixed(2), R.pf >= 1.3 ? 'hay edge en la muestra' : R.pf >= 1 ? 'apenas positivo' : 'negativo')}
+      ${kpi('Mejor / peor día', `<span class="up">+${fmt(Math.round(R.mejor))}</span> / <span class="down">-${fmt(Math.round(Math.abs(R.peor)))}</span>`, '')}
+      ${kpi('Máx drawdown', `<span class="down">-${fmt(Math.round(Math.abs(R.mdd)))}</span>`, Math.abs(R.mdd) >= 2000 ? 'con 2k de drawdown esa racha quema la cuenta' : 'cabe en 2k de drawdown')}`;
+    C2.innerHTML = `<div class="fila"><h3>Curva</h3><span class="mono dim">${R.desde} → ${R.hasta} · ${R.dias} días operables · riesgo ${fmt(R.P.riesgoUSD)} por trade</span></div>
+      <div style="margin-top:10px">${Stats.linea(R.curva.map(c => ({bal: c.bal})), {w:900, h:170, color: R.total >= 0 ? 'var(--up)' : 'var(--down)', base: 0})}</div>
+      <details class="mas" style="margin-top:8px"><summary>Día por día</summary><table class="ff" style="margin-top:8px"><thead><tr><th>Día</th><th>Condición</th><th class="num">P&L</th><th>Trades</th></tr></thead><tbody>
+        ${R.det.map(x => `<tr><td class="mono">${x.d}</td><td>${h(x.cond)}</td><td class="num mono ${x.day > 0 ? 'up' : x.day < 0 ? 'down' : 'tenue'}">${x.day ? (x.day > 0 ? '+' : '-') + fmt(Math.round(Math.abs(x.day))) : '—'}</td><td class="mono mini">${x.trades.map(t => hM(t.m) + ' ' + (t.dir ? 'L' : 'S') + ' ' + t.res + ' ' + (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R').join(' · ')}</td></tr>`).join('')}</tbody></table></details>`;
   }
-  document.addEventListener('mesa:pintado', () => { if(document.getElementById('btAutoCuerpo')) pinta(); });
-  window.Backtest = { cargar, correr, VARIANTES, html, pinta, simulaDia, condicion };
+  document.addEventListener('mesa:pintado', () => { if(document.getElementById('btKpis')) pinta(); });
+  window.Backtest = { cargar, correr, VARIANTES, pinta, simulaDia, condicion };
 })();

@@ -149,26 +149,21 @@
     const comparar = '';
 
     return `
-    ${window.Backtest ? Backtest.html() : ''}
     <div class="fila" style="margin-bottom:12px">
       <div>
       <h2>${bt.length} trades probados <span class="dim mono" style="font-size:13px">${m.rTotal ? m.rTotal.toFixed(1)+'R · ' : ''}win ${pct(m.winRate,0)}</span></h2></div>
       <div class="crece"></div>
+      ${window.Backtest ? `<label class="campo" style="min-width:230px"><span>Backtest automático · NQ 5m · 60 días</span><select data-ajuste="btVariante">${Object.keys(Backtest.VARIANTES).map(k => `<option value="${k}" ${(Store.ajustes.btVariante||'protocolo') === k ? 'selected' : ''}>${h(Backtest.VARIANTES[k].n)}</option>`).join('')}</select></label>` : ''}
       <label class="campo" style="min-width:230px"><span>Estrategia</span><select data-ajuste="btEstrategia">${opciones([{v:'', t:'Todas las estrategias'}].concat(estrategias.map(e => ({v:e, t:e}))), estrSel)}</select></label>
       <button class="btn acc" data-acc="tradeBacktest">+ Trade de backtest</button>
     </div>
     ${bt.length < 30 ? aviso('Antes de arriesgar una cuenta: <b>mínimo 50 trades</b> de backtest de esta estrategia. Con menos, cualquier win rate es ruido.') : ''}
-    <div class="grid g5" style="margin:12px 0">
-      ${kpi('Trades', bt.length, estrSel ? 'de ' + todosBt.length + ' en total' : estrategias.length + ' estrategias')}
-      ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P`)}
-      ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), 'bruto ganado / perdido')}
-      ${kpi('R acumulados', m.rTotal ? m.rTotal.toFixed(1) + 'R' : '—', m.rProm != null ? m.rProm.toFixed(2) + 'R por trade' : '')}
-      ${kpi('Disciplina', m.adherencia.toFixed(0) + '/100', 'adherencia a las 4 reglas')}
+    <div class="grid g5" style="margin:12px 0" id="btKpis">
+      ${kpi('Total', '…', 'backtest automático')}${kpi('Trades', '…', '')}${kpi('Profit factor', '…', '')}${kpi('Mejor / peor día', '…', '')}${kpi('Máx drawdown', '…', '')}
     </div>
     ${comparar}
-    <div class="card" style="margin-bottom:12px"><h3>Curva de R</h3>
-      
-      <div style="margin-top:10px">${curvaR(bt)}</div></div>
+    <div class="card" style="margin-bottom:12px" id="btCurva"><h3>Curva</h3>
+      <div style="margin-top:10px">${vacio('Cargando las velas…')}</div></div>
     <div class="card" style="padding:0"><div class="tabla-scroll">${Vistas._tablaTrades(bt.slice().reverse().slice(0,40), true)}</div></div>`;
   };
 
