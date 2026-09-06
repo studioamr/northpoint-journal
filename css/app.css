@@ -465,12 +465,11 @@ svg.radar{width:100%;max-width:250px;height:auto;margin:0 auto;display:block}
 .cal .py{margin-top:5px;font-family:var(--mono);font-size:9.5px;line-height:1.3}
 .hito-cal{margin-top:3px;font-family:var(--disp);font-size:8.5px;letter-spacing:.06em;padding:2px 5px;border:1px solid var(--linea2);display:block}
 /* día con hito: se resalta la celda entera y el hito va como título adentro */
-.cal .d .hito-t{margin-top:8px;font-family:var(--disp);font-size:11.5px;font-weight:700;letter-spacing:.02em;line-height:1.15}
-.cal .d .hito-t.up{color:var(--up)} .cal .d .hito-t.acc{color:var(--acc)} .cal .d .hito-t.azul{color:var(--azul)} .cal .d .hito-t.down{color:var(--down)}
-html .cal .d.hito-up{background:linear-gradient(180deg,color-mix(in srgb,var(--up) 26%,transparent),color-mix(in srgb,var(--up) 6%,transparent));border-color:var(--up);box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 45%,transparent),0 0 28px -8px var(--up)}
-html .cal .d.hito-acc{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 26%,transparent),color-mix(in srgb,var(--acc) 6%,transparent));border-color:var(--acc);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent),0 0 28px -8px var(--acc)}
-html .cal .d.hito-azul{background:linear-gradient(180deg,color-mix(in srgb,var(--azul) 26%,transparent),color-mix(in srgb,var(--azul) 6%,transparent));border-color:var(--azul);box-shadow:0 0 0 1px color-mix(in srgb,var(--azul) 45%,transparent),0 0 28px -8px var(--azul)}
-html .cal .d.hito-down{background:linear-gradient(180deg,color-mix(in srgb,var(--down) 26%,transparent),color-mix(in srgb,var(--down) 6%,transparent));border-color:var(--down);box-shadow:0 0 0 1px color-mix(in srgb,var(--down) 45%,transparent),0 0 28px -8px var(--down)}
+.cal .d .hito-t{margin-top:8px;font-family:var(--disp);font-size:11.5px;font-weight:800;letter-spacing:.02em;line-height:1.15;color:#fff}
+
+html .cal .d.hito-eval{background:linear-gradient(180deg,rgba(79,140,255,.5),rgba(79,140,255,.14));border-color:var(--etEval);box-shadow:0 0 0 1.5px var(--etEval),0 0 30px -6px var(--etEval)}
+html .cal .d.hito-buffer{background:linear-gradient(180deg,rgba(255,77,90,.5),rgba(255,77,90,.14));border-color:var(--etBuffer);box-shadow:0 0 0 1.5px var(--etBuffer),0 0 30px -6px var(--etBuffer)}
+html .cal .d.hito-payouts{background:linear-gradient(180deg,rgba(255,213,74,.5),rgba(255,213,74,.14));border-color:var(--etPay);box-shadow:0 0 0 1.5px var(--etPay),0 0 30px -6px var(--etPay)}
 .hito-cal i{display:block;font-style:normal;font-family:var(--mono);font-size:8px;color:var(--tenue);letter-spacing:0;text-transform:none}
 .hito-cal.up{border-color:var(--up);color:var(--up)} .hito-cal.acc{border-color:var(--acc);color:var(--acc);background:var(--accSuave)} .hito-cal.azul{border-color:var(--azul);color:var(--azul)} .hito-cal.down{border-color:var(--down);color:var(--down)}
 

@@ -383,6 +383,8 @@
     const F = Store.fases();
     const estCta = cta ? Motor.estadoCuenta(cta) : null;
     const faseCta = cta ? (cta.fase === 'eval' && estCta.pasado ? 'pasada' : Motor.faseReal(estCta)) : 'eval';
+    /* cada hito toma el color de su etapa: eval azul · buffer rojo · payouts amarillo */
+    const etapaHito = x => /PASAS|EVAL PASADA/.test(x.t) ? 'eval' : /BUFFER/.test(x.t) ? 'buffer' : 'payouts';
     /* días pasados que fueron de evaluación: desde el primer trade hasta el día en que el balance tocó el objetivo */
     const evalDias = new Set();
     if(cta && cta.fase === 'eval'){
@@ -402,8 +404,8 @@
       const pr = futuro ? (proy[iso] || null) : null;
       const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
-      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + pr.hitos[0].tono : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
-        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-t ${x.tono}">${h(x.t)}</div>`).join('')}</div>` : ''}
+      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + etapaHito(pr.hitos[0]) : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
+        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
         ${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
