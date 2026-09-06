@@ -8,7 +8,7 @@
      o, si ya no hay más, fuera (y en eval, lo que pasa si se repite). Números: TP = target del día, riesgo = TP/2 (2:1). */
   function arbolSVG(e){
     const W = 620, H = 380; const num = v => '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
-    const caja = (x, y, w, lineas, col, fill) => `<rect x="${x - w/2}" y="${y - 22}" width="${w}" height="${lineas.length * 15 + 16}" rx="10" fill="${fill || 'rgba(255,255,255,.05)'}" stroke="${col}" stroke-opacity=".9"/>` +
+    const caja = (x, y, w, lineas, col, fill) => `<rect x="${x - w/2}" y="${y - 20}" width="${w}" height="${lineas.length * 15 + 14}" rx="10" fill="${fill || 'rgba(255,255,255,.05)'}" stroke="${col}" stroke-opacity=".9"/>` +
       lineas.map((t, i) => `<text x="${x}" y="${y + i * 15}" text-anchor="middle" font-size="${i ? 10 : 11}" font-weight="${i ? 400 : 700}" fill="${i ? 'var(--dim)' : col}" font-family="${i ? 'Inter, sans-serif' : 'JetBrains Mono, monospace'}">${t}</text>`).join('');
     const rama = (x1, y1, x2, y2, col, txt) => `<path d="M${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="2.5" stroke-opacity=".8"/><text x="${(x1+x2)/2 + (x2 < x1 ? -14 : 14)}" y="${(y1+y2)/2 - 4}" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".12em" fill="${col}" font-family="JetBrains Mono, monospace">${txt}</text>`;
     const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
@@ -18,23 +18,23 @@
       const n = Math.max(1, Math.min(4, Math.ceil(e.objetivo / tp))); const dy = 92; const Wc = 700; const Hc = 60 + n * dy + 40;
       for(let k = 0; k < n; k++){ const x = 450 - k * 105, y = 40 + k * dy; const xNext = x - 105, yNext = y + dy; const xLoss = x + 125, yLoss = y + dy;
         out += rama(x, y + 22, xNext, yNext - 22, UP, 'WIN ' + num(tp)) + rama(x, y + 22, xLoss, yLoss - 22, DOWN, 'LOSS ' + num(rk));
-        out += caja(x, y, 236, ['TRADE ' + (k+1) + ' · riesgo ' + num(rk) + ' · TP ' + num(tp), k ? 'vas +' + num(k*tp) + ' · sigue, sin cambiar nada' : e.entrada + ' · full port'], TXT);
-        out += caja(xLoss, yLoss, 176, ['MAX LOSS · -' + num(rk), k ? 'quedas en ' + (k*tp - rk >= 0 ? '+' : '-') + num(Math.abs(k*tp - rk)) + ' · mañana sigues' : 'no hay trade 2 · mañana existe'], DOWN, 'var(--downSuave)'); }
+        out += caja(x, y, 236, ['TRADE ' + (k+1) + ' · riesgo ' + num(rk) + ' · TP ' + num(tp)], k ? UP : TXT, k ? 'var(--upSuave)' : null);
+        out += caja(xLoss, yLoss, 170, ['MAX LOSS · -' + num(rk)], DOWN, 'var(--downSuave)'); }
       const xF = 450 - n * 105, yF = 40 + n * dy;
-      out += caja(xF, yF, 236, ['OBJETIVO ' + num(e.objetivo) + ' · PIDE LA FONDEADA', 'eval pasada en ' + n + ' trades ganados'], UP, 'var(--upSuave)');
+      out += caja(xF, yF, 236, ['OBJETIVO ' + num(e.objetivo)], UP, 'var(--upSuave)');
       return `<svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;height:auto;display:block">${out}</svg>`;
     }
     // raíz: trade 1
     out += rama(310, 62, 150, 150, UP, 'WIN ' + num(tp)) + rama(310, 62, 470, 150, DOWN, 'LOSS ' + num(rk));
-    out += caja(310, 40, 250, ['TRADE 1 · riesgo ' + num(rk) + ' · TP ' + num(tp) + ' · 2:1', e.entrada], TXT);
+    out += caja(310, 40, 250, ['TRADE 1 · riesgo ' + num(rk) + ' · TP ' + num(tp)], TXT);
     // izquierda: paras
-    out += caja(150, 172, 210, [e.winTitulo, '+' + num(tp) + ' · ' + e.winNota], UP, 'var(--upSuave)');
+    out += caja(150, 172, 210, [e.winTitulo + ' · +' + num(tp)], UP, 'var(--upSuave)');
     // derecha: trade 2
     out += rama(470, 190, 330, 290, UP, 'WIN ' + num(tp)) + rama(470, 190, 510, 290, DOWN, 'LOSS ' + num(rk));
-    out += caja(470, 172, 220, ['TRADE 2 · riesgo ' + num(rk) + ' · TP ' + num(tp), 'misma condición, nada de revancha'], TXT);
+    out += caja(470, 172, 220, ['TRADE 2 · riesgo ' + num(rk) + ' · TP ' + num(tp)], TXT);
     // hojas del trade 2
-    out += caja(330, 312, 200, ['PARAS · +' + num(tp - rk), 'día verde chico · if W → fuera'], UP, 'var(--upSuave)');
-    out += caja(510, 312, 210, [e.lossTitulo + ' · -' + num(2*rk), e.lossNota], e.lossCol || DOWN, e.lossCol === ORO ? 'var(--oroSuave)' : 'var(--downSuave)');
+    out += caja(330, 312, 200, ['PARAS · +' + num(tp - rk)], UP, 'var(--upSuave)');
+    out += caja(510, 312, 190, [e.lossTitulo + ' · -' + num(2*rk)], DOWN, 'var(--downSuave)');
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${out}</svg>`;
   }
   Vistas.riesgo = function(){
@@ -46,8 +46,8 @@
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
     const E = {
       eval:  {cadena: true, objetivo: (cta && est && est.objetivo && cta.fase === 'eval') ? Math.max(F.eval.target, est.objetivo - cta.inicial) : 3000, tp: F.eval.target, riesgo: F.eval.loss, entrada: 'condición · continuación · EQ+FVG · TP interno'},
-      buffer:{tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'sumas al buffer', lossTitulo:'FUERA', lossNota:'mañana existe · daily loss -' + fmt(F.fond.loss)},
-      pay:   {tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE?', winNota:'si tocaste ' + cap + ' → COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
+      buffer:{tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS', lossTitulo:'FUERA', lossNota:'mañana existe · daily loss -' + fmt(F.fond.loss)},
+      pay:   {tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE? COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
     };
     const tarjeta = (t, sub, col, e) => `<div class="card etapa ${col}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${arbolSVG(e)}</div></div>`;
     return `
