@@ -113,19 +113,26 @@
   };
 
   function primeraVez(){
-    return `<div style="max-width:720px;margin:40px auto">
+    const A = Store.ajustes, S = Store.estado;
+    const pasos = [
+      {ok: S.cuentas.length > 0, t:'Registra tu cuenta de fondeo', s:'Firma, plan y tamaño: las reglas vienen del catálogo verificado y son editables.', acc:'nuevaCuenta', b:'+ Nueva cuenta'},
+      {ok: !!(A._rm1 && A.maxContratos), t:'Revisa tu risk management', s:'1–2 trades por día · if W get off the charts · 1% por trade · máx 1 mini.', ir:'ajustes', b:'Ajustes'},
+      {ok: !!(A.alertas && A.alertas.tema), t:'Conecta las alertas de TradingView', s:'Tema de ntfy + indicador NP JOURNAL: la alerta llega aquí y a tu teléfono.', ir:'ajustes', b:'Alertas'},
+      {ok: !!(Sync.estado && Sync.estado.carpeta), t:'Elige tu carpeta de Descargas', s:'Cada CSV de Tradovate entra solo. También puedes pegar o arrastrar.', ir:'sync', b:'Importar'},
+      {ok: S.trades.length > 0, t:'Registra o importa tu primer trade', s:'Dirección, P&L, las 4 reglas y el screenshot. O el CSV de Tradovate.', acc:'nuevoTrade', b:'+ Registrar trade'},
+      {ok: false, t:'Explora con datos de ejemplo', s:'Una cuenta con cuatro semanas de trades y un backtest, para ver todo funcionando.', acc:'demo', b:'Cargar ejemplo'}
+    ];
+    return `<div style="max-width:760px;margin:30px auto">
       <div class="eti">NORTHPOINT</div>
-      <h2 style="margin:6px 0 8px;font-size:26px;font-weight:600">Del examen al payout, en una sola mesa.</h2>
-      <p class="dim" style="margin:0 0 20px">Registra tu primera cuenta de fondeo y la plataforma calcula sola tu colchón real,
-      el riesgo del día, los contratos que te tocan y cuándo puedes cobrar. Los números de las firmas ya vienen cargados
-      del catálogo verificado en centros de ayuda oficiales — y todo es editable, porque manda tu contrato.</p>
-      <button class="btn acc" data-acc="nuevaCuenta">Crear mi primera cuenta</button>
-      <button class="btn" data-acc="demo">Cargar datos de ejemplo</button>
-      <div class="card" style="margin-top:24px">
-        <h3>${h(ESTRATEGIA.nombre)}</h3>
-        <div class="sub">La estrategia que la app vigila</div>
-        <p class="dim" style="margin:9px 0 0;font-size:12.5px">${h(ESTRATEGIA.premisa)}</p>
-      </div></div>`;
+      <h2 style="font-size:34px;line-height:.95;margin:6px 0 10px">NORTHPOINT Journal</h2>
+      <p class="dim" style="margin:0 0 20px;font-size:14px">Tu mesa de fondeo: del examen al payout. Esto es lo que hay que hacer para arrancar.</p>
+      <div class="pasos">${pasos.map((p, i) => `<div class="pasoB ${p.ok ? 'ok' : ''} ${!p.ok && !pasos.slice(0,i).some(x => !x.ok) ? 'activo' : ''}">
+        <div class="pb-n mono">${String(i+1).padStart(2,'0')}</div>
+        <div class="pb-c"><div class="fila"><b class="pb-t">${h(p.t)}</b>${p.ok ? '<span class="pill ok">LISTO</span>' : ''}<div class="crece"></div>
+          <button class="btn chico ${p.ok ? 'fantasma' : 'acc'}" ${p.acc ? `data-acc="${p.acc}"` : `data-ir="${p.ir}"`}>${h(p.b)}</button></div>
+          <div class="mini dim" style="margin-top:4px">${h(p.s)}</div></div></div>`).join('')}</div>
+      <div class="card" style="margin-top:14px"><h3>${h(ESTRATEGIA.nombre)}</h3><div class="sub">La estrategia que la app vigila</div>
+        <p class="dim" style="margin:9px 0 0;font-size:12.5px">${h(ESTRATEGIA.premisa)}</p></div></div>`;
   }
 
   /* ============================================================ PANEL ==== */

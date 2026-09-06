@@ -330,7 +330,6 @@
         ${kpi('Colchón', fmt(e.colchon), 'piso ' + fmt(e.piso))}
         ${kpi('Días operados', e.dias.length, e.diasGanadores + ' ganadores')}
       </div>
-      ${estrategiaRetiros()}
       <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3><div class="sub">De la evaluación al payout · todas tus cuentas</div>
         <div style="margin-top:6px">${progresoCuentas()}</div></div>`;
     const r = c.reglas;
@@ -359,8 +358,6 @@
          <div class="sub">Cumples días válidos, consistencia y mínimo</div></div>`}
 
     ${muerte ? aviso(muerte + ' Con topes de ' + (r.capPayout ? fmt(r.capPayout) : '—') + ' por retiro, la extracción máxima de por vida de esta cuenta es ' + (r.capPayout ? fmt(r.capPayout * r.maxPayouts) : '—') + '. Es una cuenta desechable: planea la siguiente antes del último retiro.') : ''}
-
-    ${estrategiaRetiros()}
 
     <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3><div class="sub">De la evaluación al payout · todas tus cuentas</div>
       <div style="margin-top:6px">${progresoCuentas()}</div></div>
