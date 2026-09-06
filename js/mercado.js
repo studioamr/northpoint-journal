@@ -312,12 +312,12 @@
       if(c0.estado === 'respetado') dirCond = c0.alc; else if(c0.estado === 'invertido') dirCond = !c0.alc; }
     /* objetivo: si la condición ya se resolvió, ella manda la dirección; si no, la fase PO3 */
     const dirPo3 = fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba);
-    const dirObj = dirCond != null ? dirCond : dirPo3;
+    const dirObj = dirPo3;   // el objetivo de la vela de 4H es el de la vela; la condición dice lo suyo en su texto
     const objetivo = cerca(dirObj);
     const numC = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hC = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
     if(condicion){ const c0 = condicion;
-      if(dirCond != null){ lectura = lectura.replace(/ · busca (largos|cortos) en el retroceso al equilibrio\./, '.'); if(dirCond !== arriba && fase.startsWith('DISTRIBUCIÓN')) lectura += ' La 4H va en contra de la condición: espera el retroceso a la zona 0.705–0.79 antes de entrar.'; }
+      if(dirCond != null){ lectura = lectura.replace(/ · busca (largos|cortos) en el retroceso al equilibrio\./, '.'); }
       lectura = `<b>Condición:</b> FVG 5m ${c0.alc ? 'alcista' : 'bajista'} ${numC(c0.a)}–${numC(c0.b)} (${hC(c0.t)}). Si lo <b>respeta</b> → ${c0.alc ? 'sube' : 'baja'} por ${c0.siRespeta ? c0.siRespeta.n + ' ' + numC(c0.siRespeta.v) : 'la liquidez ' + (c0.alc ? 'de arriba' : 'de abajo')}. Si lo <b>invierte</b> → ${c0.alc ? 'baja' : 'sube'} por ${c0.siInvierte ? c0.siInvierte.n + ' ' + numC(c0.siInvierte.v) : 'la liquidez ' + (c0.alc ? 'de abajo' : 'de arriba')}. `
         + (c0.estado === 'respetado' ? `<b class="up">Respetado a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'alcista' : 'bajista'}: solo ${c0.alc ? 'largos' : 'cortos'}, continuación.` : c0.estado === 'invertido' ? `<b class="down">Invertido a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'bajista' : 'alcista'}: solo ${c0.alc ? 'cortos' : 'largos'}, continuación.` : c0.estado === 'probando' ? 'Lo está probando ahora: espera el cierre.' : 'Todavía no lo prueba.') + ' ' + lectura; }
     if(!condicion && ventana.some(v => v.min >= 9*60+45)) lectura = '<b>Condición:</b> la apertura de 9:30–9:45 no dejó FVG de 5m. ' + lectura;
@@ -384,7 +384,7 @@
       <text class="ses" x="${xv}" y="${Hg - 9}" text-anchor="middle" fill="var(--txt)">4H ${hora(c.ini)}</text>`;
     const marca = '';
     let condG = '';
-    if(d.condicion){ const c0 = d.condicion; const col = c0.alc ? '#39FF14' : '#FF2E63'; const xC = xDe(c0.t);
+    if(d.condicion){ const c0 = d.condicion; const col = (c0.estado === 'invertido' ? !c0.alc : c0.alc) ? '#39FF14' : '#FF2E63'; const xC = xDe(c0.t);   // invertido → cambia de color
       condG = `<rect x="${xC}" y="${Y(c0.b)}" width="${Math.max(2, xLbl - 6 - xC)}" height="${Math.max(2, Y(c0.a) - Y(c0.b))}" fill="${col}" fill-opacity=".14" stroke="${col}" stroke-opacity=".8" stroke-dasharray="${c0.estado === 'invertido' ? '3 3' : ''}"/><text class="ses" x="${xC + 4}" y="${clampY(Y(c0.b) - 4)}" fill="${col}">CONDICIÓN · ${c0.estado.toUpperCase()}</text>`; }
     const fvg = fibG + condG;
     // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
