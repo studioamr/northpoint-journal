@@ -14,6 +14,16 @@
     const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
     const tp = e.tp, rk = e.riesgo;
     let out = '';
+    if(e.cadena){   // EVAL: si ganas, la rama sigue hasta el objetivo; si pierdes, no hay trade 2
+      const n = Math.max(1, Math.min(4, Math.ceil(e.objetivo / tp))); const dy = 92; const Wc = 700; const Hc = 60 + n * dy + 40;
+      for(let k = 0; k < n; k++){ const x = 450 - k * 105, y = 40 + k * dy; const xNext = x - 105, yNext = y + dy; const xLoss = x + 125, yLoss = y + dy;
+        out += rama(x, y + 22, xNext, yNext - 22, UP, 'WIN ' + num(tp)) + rama(x, y + 22, xLoss, yLoss - 22, DOWN, 'LOSS ' + num(rk));
+        out += caja(x, y, 236, ['TRADE ' + (k+1) + ' · riesgo ' + num(rk) + ' · TP ' + num(tp), k ? 'vas +' + num(k*tp) + ' · sigue, sin cambiar nada' : e.entrada + ' · full port'], TXT);
+        out += caja(xLoss, yLoss, 176, ['MAX LOSS · -' + num(rk), k ? 'quedas en ' + (k*tp - rk >= 0 ? '+' : '-') + num(Math.abs(k*tp - rk)) + ' · mañana sigues' : 'no hay trade 2 · mañana existe'], DOWN, 'var(--downSuave)'); }
+      const xF = 450 - n * 105, yF = 40 + n * dy;
+      out += caja(xF, yF, 236, ['OBJETIVO ' + num(e.objetivo) + ' · PIDE LA FONDEADA', 'eval pasada en ' + n + ' trades ganados'], UP, 'var(--upSuave)');
+      return `<svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;height:auto;display:block">${out}</svg>`;
+    }
     // raíz: trade 1
     out += rama(310, 62, 150, 150, UP, 'WIN ' + num(tp)) + rama(310, 62, 470, 150, DOWN, 'LOSS ' + num(rk));
     out += caja(310, 40, 250, ['TRADE 1 · riesgo ' + num(rk) + ' · TP ' + num(tp) + ' · 2:1', e.entrada], TXT);
@@ -35,7 +45,7 @@
     const r = cta ? cta.reglas : {}; const cap = r.capPayout ? fmt(r.capPayout) : 'el tope de tu plan'; const maxP = r.maxPayouts || null;
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
     const E = {
-      eval:  {tp: F.eval.target, riesgo: F.eval.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'día hecho · faltan ' + (cta && est && est.faltaTarget != null ? fmt(est.faltaTarget) : 'lo que resta') + ' para pasar', lossTitulo:'FUERA', lossNota:'2 días así = cuenta quemada', lossCol: ORO_},
+      eval:  {cadena: true, objetivo: (cta && est && est.objetivo && cta.fase === 'eval') ? Math.max(F.eval.target, est.objetivo - cta.inicial) : 3000, tp: F.eval.target, riesgo: F.eval.loss, entrada: 'condición · continuación · EQ+FVG · TP interno'},
       buffer:{tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'sumas al buffer', lossTitulo:'FUERA', lossNota:'mañana existe · daily loss -' + fmt(F.fond.loss)},
       pay:   {tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE?', winNota:'si tocaste ' + cap + ' → COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
     };
@@ -59,7 +69,7 @@
         <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo el drawdown para pasar rápido; ya fondeado, +${fmt(F.fond.target)} al día y nunca más de -${fmt(F.fond.loss)}; en payouts, cobro en cuanto toco el tope.</div>
       </div></div>
     <div class="grid g3 arboles">
-      ${tarjeta('EVAL', 'target +' + fmt(F.eval.target) + ' · daily loss -' + fmt(F.eval.loss), 'et-eval', E.eval)}
+      ${tarjeta('EVAL', 'riesgo ' + fmt(F.eval.loss) + ' para ' + fmt(F.eval.target) + ' de TP · si ganas sigues hasta el objetivo · si pierdes no hay trade 2', 'et-eval', E.eval)}
       ${tarjeta('BUFFER', 'target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss) + ' · dos trades', 'et-buffer', E.buffer)}
       ${tarjeta('PAYOUTS', 'cobra al tope · el balance vuelve al buffer', 'et-payouts', E.pay)}
     </div>`;

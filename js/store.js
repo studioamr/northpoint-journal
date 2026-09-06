@@ -93,7 +93,7 @@
     },
     cuentaCal(){ return API.cuentaActiva(); },   // el calendario sigue a la cuenta de la cabecera (el selector propio se quitó)
     tradesCal(){ const c = API.cuentaCal(); return c ? API.tradesReales(c.id) : []; },
-    fases(){ const base = {eval:{target:1000, loss:2000, consistencia:0.40}, fond:{target:200, loss:500, consistencia:0.40}}; const a = API.ajustes.fases || {};
+    fases(){ const base = {eval:{target:1100, loss:2000, consistencia:0.40}, fond:{target:200, loss:500, consistencia:0.40}}; const a = API.ajustes.fases || {};
       const f = {eval: Object.assign({}, base.eval, a.eval || {}), fond: Object.assign({}, base.fond, a.fond || {})}; if(f.eval.target === 1100) f.eval.target = 1000; return f; },
     /* consistencia efectiva de una cuenta: la de su contrato si la tiene; si no, la de la fase en Ajustes */
     consistenciaDe(c){ const r = c.reglas || {}; if(r.consistencia > 0) return r.consistencia; const f = API.fases(); return (c.fase === 'eval' ? f.eval.consistencia : f.fond.consistencia) || 0; },
