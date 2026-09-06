@@ -14,31 +14,21 @@
     const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
     const tp = e.tp, rk = e.riesgo;
     let out = '';
-    if(e.lattice){   // TODOS los caminos, de arriba hacia abajo: cada día una fila; WIN va a la izquierda (sube el balance), LOSS a la derecha. Flujo de energía animado por las ramas.
+    if(e.lattice){   // TODOS los caminos, día por día, para irle bajando: cada fila es un día con los balances posibles (izquierda = más alto) y cuántos caminos llegan a cada uno
       const bufBal = e.balance + e.hasta, quemaBal = e.balance - e.quema; const D = 24;
-      const nodos = new Map(), aristas = []; const key = (d, b) => d + '|' + b;
-      let frente = [e.balance]; nodos.set(key(0, e.balance), {d:0, b:e.balance});
-      for(let d = 0; d < D; d++){ const sig = new Set();
-        for(const b of frente){ if(b >= bufBal || b <= quemaBal) continue;
-          for(const [nb, win] of [[b + e.tp, true], [b - e.dl, false]]){ const k = key(d+1, nb); if(!nodos.has(k)) nodos.set(k, {d:d+1, b:nb}); aristas.push({d, b, nb, win}); sig.add(nb); } }
-        frente = [...sig]; if(!frente.length) break; }
-      const lista = [...nodos.values()]; const maxB = Math.max(...lista.map(n => n.b)), minB = Math.min(...lista.map(n => n.b)); const maxD = Math.max(...lista.map(n => n.d));
-      const colPx = Math.max(18, Math.min(30, 1000 / Math.max(1, (maxB - minB) / 100))), rowPx = 40;
-      const Wc = 120 + (maxB - minB) / 100 * colPx + 120, Hc = 70 + maxD * rowPx + 50;
-      const X = b => Wc - 60 - (b - minB) / 100 * colPx, Y = d => 50 + d * rowPx;      // más balance = más a la izquierda
-      const uid = 'g' + Math.random().toString(36).slice(2, 7);
-      let g = `<defs><filter id="${uid}glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
-      // ramas con flujo: línea base tenue + segmento de energía que corre hacia abajo
-      aristas.forEach((a, i) => { const x1 = X(a.b), y1 = Y(a.d) + 9, x2 = X(a.nb), y2 = Y(a.d+1) - 9; const col = a.win ? UP : DOWN;
-        g += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-opacity=".22" stroke-width="1.5"/>`;
-        g += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 26" stroke-opacity=".95" filter="url(#${uid}glow)"><animate attributeName="stroke-dashoffset" from="32" to="0" dur="${(1.1 + (i % 7) * 0.13).toFixed(2)}s" repeatCount="indefinite"/></line>`; });
-      nodos.forEach(n => { const term = n.b >= bufBal ? 'buf' : n.b <= quemaBal ? 'quema' : null; const col = term === 'buf' ? UP : term === 'quema' ? DOWN : n.d === 0 ? TXT : 'var(--dim)';
-        const txt = (term === 'buf' ? (e.finTxt || 'BUFFER') + ' ' : term === 'quema' ? 'QUEMADA ' : '') + num(n.b); const w = Math.max(40, txt.length * 5.6 + 12);
-        g += `<rect x="${X(n.b) - w/2}" y="${Y(n.d) - 9}" width="${w}" height="18" rx="9" fill="${term === 'buf' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : n.d === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.05)'}" stroke="${col}" stroke-opacity="${term || n.d === 0 ? .95 : .35}" ${term ? `filter="url(#${uid}glow)"` : ''}/>`;
-        g += `<text x="${X(n.b)}" y="${Y(n.d) + 3.5}" text-anchor="middle" font-size="8.5" font-weight="${term || n.d === 0 ? 700 : 400}" fill="${col}" font-family="JetBrains Mono, monospace">${txt}</text>`; });
-      for(let d = 0; d <= maxD; d++) g += `<text x="14" y="${Y(d) + 3}" font-size="8.5" fill="var(--tenue)" font-family="JetBrains Mono, monospace">${d === 0 ? 'HOY' : 'D' + d}</text>`;
-      g += `<text x="${Wc - 60}" y="22" text-anchor="end" font-size="9" fill="${DOWN}" font-family="JetBrains Mono, monospace">MAX LOSS -${num(e.dl)} →</text><text x="60" y="22" font-size="9" fill="${UP}" font-family="JetBrains Mono, monospace">← WIN +${num(e.tp)}</text>`;
-      return `<div style="overflow-x:auto"><svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;min-width:${Math.min(Wc, 900)}px;height:auto;display:block">${g}</svg></div>`;
+      let vivos = new Map([[e.balance, 1]]); const filas = []; let totBuf = 0, totQuema = 0;
+      for(let d = 1; d <= D && vivos.size; d++){ const sig = new Map(); let buf = 0, quema = 0;
+        vivos.forEach((c, b) => { const up = b + e.tp, dn = b - e.dl;
+          if(up >= bufBal) buf += c; else sig.set(up, (sig.get(up) || 0) + c);
+          if(dn <= quemaBal) quema += c; else sig.set(dn, (sig.get(dn) || 0) + c); });
+        totBuf += buf; totQuema += quema; vivos = sig;
+        filas.push({d, buf, quema, estados: [...sig.entries()].sort((a, b) => b[0] - a[0]), vivos: [...sig.values()].reduce((a, b) => a + b, 0)}); }
+      const pill = (txt, cls) => `<span class="cam ${cls}">${txt}</span>`;
+      return `<div class="caminos">
+        <div class="cam-fila cab"><span class="cam-dia">HOY</span><div class="cam-est">${pill(num(e.balance), 'raiz')}</div></div>
+        ${filas.map(f => `<div class="cam-fila"><span class="cam-dia">D${f.d}</span><div class="cam-est">${f.buf ? pill((e.finTxt || 'BUFFER') + ' ×' + f.buf, 'fin') : ''}${f.estados.map(([b, c]) => pill(num(b) + (c > 1 ? ' ×' + c : ''), b > e.balance ? 'arriba' : b < e.balance ? 'abajo' : '')).join('')}${f.quema ? pill('QUEMADA ×' + f.quema, 'quema') : ''}</div></div>`).join('')}
+        <div class="cam-fila tot"><span class="cam-dia">Σ</span><div class="cam-est">${pill((e.finTxt || 'BUFFER') + ' · ' + totBuf.toLocaleString('en-US') + ' caminos', 'fin')}${vivos.size ? pill('siguen ' + [...vivos.values()].reduce((a, b) => a + b, 0).toLocaleString('en-US') + ' después del día ' + D, '') : ''}${pill('QUEMADA · ' + totQuema.toLocaleString('en-US') + ' caminos', 'quema')}</div></div>
+      </div>`;
     }
     if(e.escalera){   // BUFFER: cada día ganado sube +target por la rama verde hasta el buffer; cada día perdido baja -daily loss por la roja hasta quemar la cuenta
       const nW = Math.max(1, Math.ceil(e.hasta / e.tp)), nL = Math.max(1, Math.ceil(e.quema / e.dl)); const dy = 46; const Hc = 60 + Math.max(nW, nL) * dy + 30; const Wc = 700;

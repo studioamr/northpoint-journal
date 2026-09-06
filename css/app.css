@@ -659,3 +659,10 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 .arbol .hoja.ok{border-color:color-mix(in srgb,var(--up) 45%,transparent);background:var(--upSuave)} .arbol .hoja.ok b{color:var(--up)}
 .arbol .hoja.mal{border-color:color-mix(in srgb,var(--down) 45%,transparent);background:var(--downSuave)} .arbol .hoja.mal b{color:var(--down)}
 .arboles{grid-template-columns:1fr} .arboles .arbol{max-width:760px;margin:12px auto 0} .arboles .etapa .arbol{max-width:none}
+
+/* caminos por día (Riesgo) */
+.caminos{display:grid;gap:6px;margin-top:12px} .cam-fila{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;padding:6px 0;border-top:1px solid var(--linea)} .cam-fila.cab{border-top:none} .cam-fila.tot{border-top:1px solid var(--linea2);padding-top:10px}
+.cam-dia{font-family:var(--mono);font-size:10px;color:var(--tenue);letter-spacing:.1em;padding-top:5px} .cam-est{display:flex;flex-wrap:wrap;gap:6px}
+.cam{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--linea);background:rgba(255,255,255,.04);color:var(--dim)}
+.cam.arriba{color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,transparent)} .cam.abajo{color:var(--down);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
+.cam.raiz{color:var(--txt);border-color:var(--linea2);font-weight:700} .cam.fin{color:var(--up);background:var(--upSuave);border-color:var(--up);font-weight:700} .cam.quema{color:var(--down);background:var(--downSuave);border-color:var(--down);font-weight:700}
