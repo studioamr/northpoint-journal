@@ -155,10 +155,11 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
 - **Copiador (Tradesyncer / group trading)**: Ajustes → Copiador: un CSV entra en todas las cuentas seleccionadas.
 - **Respaldo completo con screenshots** (JSON con las imágenes de IndexedDB) y **reporte del día en Markdown** por sesión.
 - **Perfil y temas**: Ajustes → nombre, iniciales/foto, ciudad, frase (el perfil va hasta abajo del menú) y nueve temas: Ácido, Blanco (marca
-  original), Oro, Papel, Cobalto y los **Tron** — Azul, Naranja, Morado, Verde — con rejilla en perspectiva que corre, neón que respira y
-  brillo en números, botones y curvas.
-- **Trading**: TradingView aquí mismo — el chart avanzado embebido (MNQ/NQ/MES/ES/BTC, 1m–1h) y, en la app de escritorio, **⌘T abre
-  TradingView completo en su propia ventana** (conserva tu login) para operar con tu bróker conectado (Tradovate). En navegador abre pestaña.
+  original), Oro, Papel, Cobalto y los **Aurora** — Azul, Naranja, Morado, Verde — vidrio esmerilado real, aurora de tres colores que se mueve
+  lento detrás, bordes con gradiente al pasar el mouse, botones con degradado. Tendencia 2026: glassmorphism + aurora, sin rejillas.
+- **Trading**: en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
+  vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la
+  vista). En navegador ninguno se deja embeber: botón para abrirlos en pestaña, o el «chart rápido» (widget gratis de TradingView).
 
 ## App de escritorio (Mac)
 
