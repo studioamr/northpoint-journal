@@ -56,7 +56,7 @@
       const xl = 20 + (2*i + 0.5) * (W - 40) / Math.pow(2, d+1), xr = 20 + (2*i + 1.5) * (W - 40) / Math.pow(2, d+1), y2 = y + dy;
       g += `<line x1="${x}" y1="${y + 10}" x2="${xl}" y2="${y2 - 10}" stroke="${UP}" stroke-opacity=".6" stroke-width="1.2"/><line x1="${x}" y1="${y + 10}" x2="${xr}" y2="${y2 - 10}" stroke="${DOWN}" stroke-opacity=".6" stroke-width="1.2"/>`;
       if(d === 0) g += `<text x="${(x + xl)/2 - 12}" y="${(y + y2)/2}" text-anchor="end" font-size="9" fill="${UP}" font-family="JetBrains Mono, monospace">WIN +${num(cfg.tp)}</text><text x="${(x + xr)/2 + 12}" y="${(y + y2)/2}" font-size="9" fill="${DOWN}" font-family="JetBrains Mono, monospace">LOSS -${num(cfg.dl)}</text>`;
-      nodo(d+1, 2*i, bal + cfg.tp); nodo(d+1, 2*i + 1, bal - cfg.dl);
+      nodo(d+1, 2*i, bal + cfg.tp); nodo(d+1, 2*i + 1, Math.max(piso, bal - cfg.dl));   // nadie baja de inicial − 2k: ahí se quema
     };
     nodo(0, 0, cfg.bal0);
     return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W}px;max-width:none;height:auto;display:block"></svg></div>`.replace('></svg>', '>' + g + '</svg>');
