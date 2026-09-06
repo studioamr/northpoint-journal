@@ -122,17 +122,12 @@
       {ok: S.trades.length > 0, t:'Registra o importa tu primer trade', s:'Dirección, P&L, las 4 reglas y el screenshot. O el CSV de Tradovate.', acc:'nuevoTrade', b:'+ Registrar trade'},
       {ok: false, t:'Explora con datos de ejemplo', s:'Una cuenta con cuatro semanas de trades y un backtest, para ver todo funcionando.', acc:'demo', b:'Cargar ejemplo'}
     ];
-    return `<div style="max-width:760px;margin:30px auto">
-      <div class="eti">NORTHPOINT</div>
-      <h2 style="font-size:34px;line-height:.95;margin:6px 0 10px">NORTHPOINT Journal</h2>
-      <p class="dim" style="margin:0 0 20px;font-size:14px">Tu mesa de fondeo: del examen al payout. Esto es lo que hay que hacer para arrancar.</p>
-      <div class="pasos">${pasos.map((p, i) => `<div class="pasoB ${p.ok ? 'ok' : ''} ${!p.ok && !pasos.slice(0,i).some(x => !x.ok) ? 'activo' : ''}">
-        <div class="pb-n mono">${String(i+1).padStart(2,'0')}</div>
-        <div class="pb-c"><div class="fila"><b class="pb-t">${h(p.t)}</b>${p.ok ? '<span class="pill ok">LISTO</span>' : ''}<div class="crece"></div>
-          <button class="btn chico ${p.ok ? 'fantasma' : 'acc'}" ${p.acc ? `data-acc="${p.acc}"` : `data-ir="${p.ir}"`}>${h(p.b)}</button></div>
-          <div class="mini dim" style="margin-top:4px">${h(p.s)}</div></div></div>`).join('')}</div>
-      <div class="card" style="margin-top:14px"><h3>${h(ESTRATEGIA.nombre)}</h3>
-        <p class="dim" style="margin:9px 0 0;font-size:12.5px">${h(ESTRATEGIA.premisa)}</p></div></div>`;
+    return `<div style="max-width:520px;margin:120px auto;text-align:center">
+      <h2 style="font-size:30px;margin:0 0 22px;letter-spacing:-.02em">NORTHPOINT</h2>
+      <div class="fila" style="justify-content:center;gap:10px">
+        <button class="btn acc" data-acc="nuevaCuenta">+ Nueva cuenta</button>
+        <button class="btn" data-acc="nuevoTrade">+ Registrar trade</button>
+        <button class="btn fantasma" data-acc="importar">Importar CSV</button></div></div>`;
   }
 
   /* ============================================================ PANEL ==== */

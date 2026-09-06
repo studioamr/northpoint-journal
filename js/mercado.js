@@ -188,10 +188,10 @@
     const tono = {asia:'#FF4D5A', lon:'#4F8CFF', ny:'#39FF14'};   // Asia rojo · Londres azul · NY verde (como él lo pinta en el chart)
     const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".14" stroke="${tono[s.k]}" stroke-opacity=".7"/>
       <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}" fill="${tono[s.k]}">${s.n.toUpperCase()}</text>
-      <line x1="${X(s.t1)}" x2="${s.highTomado ? X(s.highEn) : Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="var(--up)" stroke-dasharray="5 4" stroke-opacity="${s.highTomado ? .6 : .9}"/>
-      <line x1="${X(s.t1)}" x2="${s.lowTomado ? X(s.lowEn) : Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="var(--down)" stroke-dasharray="5 4" stroke-opacity="${s.lowTomado ? .6 : .9}"/>`).join('');
+      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${tono[s.k]}" stroke-dasharray="${s.highTomado ? '2 4' : ''}" stroke-opacity="${s.highTomado ? .7 : .95}"/>
+      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="${tono[s.k]}" stroke-dasharray="${s.lowTomado ? '2 4' : ''}" stroke-opacity="${s.lowTomado ? .7 : .95}"/>`).join('');
     // etiquetas de niveles a la derecha, sin encimarse
-    const niveles = []; ses.forEach(s => { if(!s.highTomado) niveles.push({p:s.high, txt:s.n.slice(0,3).toUpperCase() + ' H ' + num(s.high), col:'var(--up)'}); if(!s.lowTomado) niveles.push({p:s.low, txt:s.n.slice(0,3).toUpperCase() + ' L ' + num(s.low), col:'var(--down)'}); });
+    const niveles = []; ses.forEach(s => { niveles.push({p:s.high, txt:s.n.slice(0,3).toUpperCase() + ' H ' + num(s.high), col: tono[s.k]}); niveles.push({p:s.low, txt:s.n.slice(0,3).toUpperCase() + ' L ' + num(s.low), col: tono[s.k]}); });
     if(d.precio != null) niveles.push({p:d.precio, txt:'AHORA ' + num(d.precio), col:'var(--txt)', ahora:true});
     niveles.sort((a,b) => b.p - a.p); let last = -99; niveles.forEach(n => { let y = Y(n.p); if(y - last < 11) y = last + 11; n.y = y; last = y; });
     const etiquetas = niveles.map(n => `<text class="lbl" x="${Wg - R + 8}" y="${n.y + 3.5}" fill="${n.col}" ${n.tomado ? 'text-decoration="line-through"' : ''} ${n.ahora ? 'font-weight="700"' : ''}>${n.txt}</text>`).join('');
@@ -255,6 +255,7 @@
       niveles.push({n: s.n + ' Low', v: s.low, lado:'low', t: s.t1, tFin: tomaEn(s.t1, 'low', s.low)}); });
     if(prev){ const tp = rel(prev.vs[prev.vs.length-1]) + 5; niveles.push({n:'4H previa High', v: prev.high, lado:'high', t: tp, tFin: tomaEn(tp, 'high', prev.high)}); niveles.push({n:'4H previa Low', v: prev.low, lado:'low', t: tp, tFin: tomaEn(tp, 'low', prev.low)}); }
     niveles.forEach(nv => nv.tomado = nv.tFin != null);
+    for(let i = niveles.length - 1; i >= 0; i--){ const a = niveles[i]; if(!a.n.startsWith('4H')) continue; if(niveles.some(b => b !== a && !b.n.startsWith('4H') && b.lado === a.lado && Math.abs(b.v - a.v) <= Math.max(2, a.v * 0.0001))) niveles.splice(i, 1); }
     // qué manipuló esta vela: los niveles del lado contrario que barrió antes de expandir
     const t0cur = rel(cur.vs[0]);
     const barridos = niveles.filter(nv => nv.t <= t0cur + 5 && (arriba ? (nv.lado === 'low' && cur.low < nv.v && nv.v <= cur.open) : (nv.lado === 'high' && cur.high > nv.v && nv.v >= cur.open)));
