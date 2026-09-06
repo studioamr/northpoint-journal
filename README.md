@@ -53,7 +53,10 @@ por contrato, FIFO, con volteo de posición contemplado. Comisión y R llegan **
 valor del punto) y el trade queda marcado **por calificar**: en el Diario aparece con cuatro toques
 (COND · CONT · EQ+FVG · TP) y una palomita. Esa es la única parte tuya.
 
-## Las ocho vistas del menú (+ selector de cuentas y Ajustes en la cabecera)
+## El menú (+ selector de cuentas y Ajustes en la cabecera)
+
+Agrupado en **Operar** (Mercado, Trading, Diario, Calendario), **Analizar** (Panel, Reportes, Backtesting) y **Cuenta** (Cuentas,
+Payouts, Progreso). El Panel va por secciones: Resumen · Cuenta · Rendimiento · Alertas · Últimos trades.
 
 En la cabecera eliges **qué cuentas ver**: una sola (para operar), varias o todas a la vez (el Panel suma balances y colchones y
 muestra un chip por cuenta; Diario, Calendario, Reportes y Lab filtran igual).

@@ -216,6 +216,19 @@
       <div class="tabla-scroll" style="margin-top:8px">${tablaTrades(t.slice(-8).reverse())}</div></div>`)}`;
   };
 
+  Vistas._comparativa = trades => rendimientoEstrategias(trades);
+  function rendimientoEstrategias(trades){
+    if(!trades.length) return vacio('Registra trades con su estrategia y aquí ves cuál rinde.');
+    const grupos = Stats.desglose(trades, t => t.estrategia || 'Sin estrategia');
+    const max = Math.max(...grupos.map(g => Math.abs(g.pnl))) || 1;
+    return `<table><thead><tr><th>Estrategia</th><th class="num">n</th><th class="num">win</th><th class="num">PF</th><th class="num">expect.</th><th class="num">P&L</th><th style="width:110px"></th></tr></thead><tbody>
+      ${grupos.map(g => `<tr><td><b style="font-weight:600">${h(g.clave)}</b></td><td class="num tenue">${g.n}</td><td class="num">${pct(g.winRate,0)}</td>
+        <td class="num">${g.pf === Infinity ? '∞' : g.pf.toFixed(2)}</td><td class="num ${signo(g.expectativa)}">${fmt(g.expectativa)}</td>
+        <td class="num ${signo(g.pnl)}"><b>${masMenos(g.pnl)}</b></td>
+        <td><div class="barra ${g.pnl >= 0 ? 'up' : 'down'}"><i style="width:${(Math.abs(g.pnl)/max*100).toFixed(0)}%"></i></div></td></tr>`).join('')}
+      </tbody></table>`;
+  }
+  Vistas._rendimientoEstrategias = rendimientoEstrategias;
   function comparativaDisciplina(trades){
     const limpios = trades.filter(t => Motor.adherencia(t).limpio);
     const sucios  = trades.filter(t => !Motor.adherencia(t).limpio);
