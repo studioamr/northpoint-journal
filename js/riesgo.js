@@ -14,6 +14,17 @@
     const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
     const tp = e.tp, rk = e.riesgo;
     let out = '';
+    if(e.escalera){   // BUFFER: cada día ganado sube +target por la rama verde hasta el buffer; cada día perdido baja -daily loss por la roja hasta quemar la cuenta
+      const nW = Math.max(1, Math.ceil(e.hasta / e.tp)), nL = Math.max(1, Math.ceil(e.quema / e.dl)); const dy = 46; const Hc = 60 + Math.max(nW, nL) * dy + 30; const Wc = 700;
+      const x0 = 350, y0 = 40; out += caja(x0, y0, 250, [e.balanceTxt + ' · riesgo ' + num(e.riesgo) + ' · TP ' + num(e.tp)], TXT);
+      let px = x0, py = y0;
+      for(let k = 1; k <= nW; k++){ const x = x0 - 40 - k * 18, y = y0 + k * dy; const bal = e.balance + Math.min(e.hasta, k * e.tp); const fin = k === nW;
+        out += rama(px, py + 18, x, y - 18, UP, k === 1 ? 'WIN +' + num(e.tp) : ''); out += caja(x, y, fin ? 230 : 150, [fin ? 'BUFFER · ' + num(bal) : num(bal)], UP, 'var(--upSuave)'); px = x; py = y; }
+      px = x0; py = y0;
+      for(let k = 1; k <= nL; k++){ const x = x0 + 40 + k * 30, y = y0 + k * dy; const bal = e.balance - Math.min(e.quema, k * e.dl); const fin = k === nL;
+        out += rama(px, py + 18, x, y - 18, DOWN, k === 1 ? 'MAX LOSS -' + num(e.dl) : ''); out += caja(x, y, fin ? 230 : 150, [fin ? 'CUENTA QUEMADA · ' + num(bal) : num(bal)], DOWN, 'var(--downSuave)'); px = x; py = y; }
+      return `<svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;height:auto;display:block">${out}</svg>`;
+    }
     if(e.cadena){   // EVAL: si ganas, la rama sigue hasta el objetivo; si pierdes, no hay trade 2
       const n = Math.max(1, Math.min(4, Math.ceil(e.objetivo / tp))); const dy = 92; const Wc = 700; const Hc = 60 + n * dy + 40;
       for(let k = 0; k < n; k++){ const x = 450 - k * 105, y = 40 + k * dy; const xNext = x - 105, yNext = y + dy; const xLoss = x + 125, yLoss = y + dy;
@@ -46,8 +57,8 @@
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
     const E = {
       eval:  {cadena: true, objetivo: (cta && est && est.objetivo && cta.fase === 'eval') ? Math.max(F.eval.target, est.objetivo - cta.inicial) : 3000, tp: F.eval.target, riesgo: F.eval.loss, entrada: 'condición · continuación · EQ+FVG · TP interno'},
-      buffer:{tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS', lossTitulo:'FUERA', lossNota:'mañana existe · daily loss -' + fmt(F.fond.loss)},
-      pay:   {tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE? COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
+      buffer:{escalera: true, balance: (cta && cta.fase !== 'eval' && est) ? est.balance : ini, balanceTxt: (cta && cta.fase !== 'eval' && est) ? fmt(est.balance) : fmt(ini), hasta: (est && est.buffer && cta && cta.fase !== 'eval') ? Math.max(F.fond.target, est.buffer - est.balance) : 2100, quema: (cta && cta.reglas && cta.reglas.maxDD) ? cta.reglas.maxDD : 2000, tp: F.fond.target, dl: F.fond.loss, riesgo: F.fond.loss},
+      pay:   {tp: F.fond.target, riesgo: F.fond.loss, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE? COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
     };
     const tarjeta = (t, sub, col, e) => `<div class="card etapa ${col}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${arbolSVG(e)}</div></div>`;
     return `
@@ -70,7 +81,7 @@
       </div></div>
     <div class="grid g3 arboles">
       ${tarjeta('EVAL', 'riesgo ' + fmt(F.eval.loss) + ' para ' + fmt(F.eval.target) + ' de TP · si ganas sigues hasta el objetivo · si pierdes no hay trade 2', 'et-eval', E.eval)}
-      ${tarjeta('BUFFER', 'target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss) + ' · dos trades', 'et-buffer', E.buffer)}
+      ${tarjeta('BUFFER', 'cada día ganado +' + fmt(F.fond.target) + ' sube al buffer · cada día perdido -' + fmt(F.fond.loss) + ' baja a quemar la cuenta', 'et-buffer', E.buffer)}
       ${tarjeta('PAYOUTS', 'cobra al tope · el balance vuelve al buffer', 'et-payouts', E.pay)}
     </div>`;
   };
