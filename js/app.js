@@ -236,31 +236,31 @@
         const i = document.querySelector('[data-filtro]'); if(i){ i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 260); }
   });
 
-  /* ================================================= MODAL · CARGADOR === */
-  /* Diez balas. Cada trade real gasta una; se ven las últimas diez como ganadas
-     o perdidas y arriba, en grande, el win rate de esas diez. El mínimo para
-     no perder dinero a 1.5R es 40%: debajo de eso no se dispara, se revisa. */
+  /* ================================================== MODAL · BATERÍA === */
+  /* Diez celdas de energía. Cada trade real gasta una; las gastadas se ven
+     verdes (ganada) o rojas (perdida) y arriba, en grande, el win rate de esas
+     diez. Debajo del 40% (equilibrio a 1.5R) no se opera: se revisa. */
   function modalCargador(){
     const t = Store.tradesSel().slice().sort((a,b) => (a.fecha+(a.hora||'')) < (b.fecha+(b.hora||'')) ? -1 : 1);
     const ult = t.slice(-10);
-    const usadas = t.length % 10;                     // balas gastadas en el cargador actual
+    const usadas = t.length % 10;
     const g = ult.filter(x => Motor.neto(x) > 0).length, p = ult.filter(x => Motor.neto(x) < 0).length;
     const wr = (g + p) ? g / (g + p) : null;
     const minimo = 0.40;
     const bajo = wr !== null && ult.length >= 5 && wr < minimo;
-    const bala = (x, i, usada) => `<div class="bala ${usada ? (x ? (Motor.neto(x) > 0 ? 'win' : Motor.neto(x) < 0 ? 'loss' : 'be') : '') : (i === usadas ? 'siguiente' : 'llena')}" style="animation-delay:${i*45}ms" ${!usada ? 'data-acc="dispara"' : (x ? 'data-acc="editaTrade" data-id="' + x.id + '"' : '')} title="${x ? (UI.fechaCorta(x.fecha) + ' ' + (x.hora||'') + ' · ' + masMenos(Motor.neto(x))) : 'bala ' + (i+1)}">
-        <svg viewBox="0 0 24 64"><path d="M4 20 Q4 4 12 2 Q20 4 20 20 L20 56 Q20 62 12 62 Q4 62 4 56 Z"/></svg>
-        <span>${i+1}</span></div>`;
+    const A = Store.ajustes, hoyT = t.filter(x => x.fecha === Store.hoyISO());
+    const gano = A.pararTrasGanada && hoyT.some(x => Motor.neto(x) > 0), tope = hoyT.length >= A.maxTradesDia;
+    const celda = (x, i, usada) => `<div class="celda ${usada ? (x ? (Motor.neto(x) > 0 ? 'win' : Motor.neto(x) < 0 ? 'loss' : 'be') : '') : (i === usadas ? 'siguiente' : 'libre')}" style="animation-delay:${i*40}ms"
+        ${!usada ? 'data-acc="dispara"' : (x ? 'data-acc="editaTrade" data-id="' + x.id + '"' : '')} title="${x ? (UI.fechaCorta(x.fecha) + ' ' + (x.hora||'') + ' · ' + masMenos(Motor.neto(x))) : 'celda ' + (i+1)}"><span>${i+1}</span></div>`;
     const cuerpo = `
       <div class="cargador">
         <div class="wr ${bajo ? 'down' : wr !== null && wr >= 0.7 ? 'up' : ''}">${wr === null ? '—' : pct(wr, 0)}<small>win rate · últimas ${ult.length || 10}</small></div>
         <div class="wr-min"><span class="eti">mínimo</span> <b>${pct(minimo,0)}</b> <span class="tenue mini">para no perder a 1.5R · ${g}G · ${p}P</span></div>
-        <div class="balas">${Array.from({length:10}, (_, i) => bala(i < usadas ? t[t.length - usadas + i] : null, i, i < usadas)).join('')}</div>
-        <div class="mini dim" style="text-align:center;margin-top:14px">${usadas ? `Cargador ${Math.floor(t.length/10)+1}: ${usadas} de 10 gastadas · quedan ${10 - usadas}.` : 'Cargador nuevo: 10 balas.'} Toca la siguiente bala para registrar el trade.${bajo ? ' <b class="down">Estás debajo del 40%: antes de disparar, revisa qué regla estás rompiendo.</b>' : ''}</div>
-        ${(() => { const A = Store.ajustes, hoyT = t.filter(x => x.fecha === Store.hoyISO()); const gano = A.pararTrasGanada && hoyT.some(x => Motor.neto(x) > 0); const tope = hoyT.length >= A.maxTradesDia;
-          return `<div class="rm ${gano || tope ? 'down' : ''}"><span class="eti">risk management</span> ${A.maxTradesDia} trade${A.maxTradesDia > 1 ? 's' : ''}/día máx · if W get off the charts · ≤ ${((A.riesgoPctCuenta||0.01)*100).toFixed(0)}% por trade · máx ${A.maxContratos || 1} mini${gano ? ' — <b>hoy ya ganaste: fuera de las gráficas</b>' : tope ? ' — <b>hoy ya tomaste ' + hoyT.length + ': se acabó</b>' : ' — hoy llevas ' + hoyT.length}</div>`; })()}
+        <div class="bateria"><div class="celdas">${Array.from({length:10}, (_, i) => celda(i < usadas ? t[t.length - usadas + i] : null, i, i < usadas)).join('')}</div><div class="polo"></div></div>
+        <div class="mini dim" style="text-align:center;margin-top:12px">${usadas ? `Batería ${Math.floor(t.length/10)+1} · ${usadas} de 10 celdas usadas · quedan ${10 - usadas}.` : 'Batería llena: 10 celdas.'} Toca la siguiente celda para registrar el trade.${bajo ? ' <b class="down">Estás debajo del 40%: antes de gastar otra, revisa qué regla estás rompiendo.</b>' : ''}</div>
+        <div class="rm ${gano || tope ? 'down' : ''}"><span class="eti">risk management</span> ${A.maxTradesDia} trade${A.maxTradesDia > 1 ? 's' : ''}/día máx · if W get off the charts · ≤ ${((A.riesgoPctCuenta||0.01)*100).toFixed(0)}% por trade · máx ${A.maxContratos || 1} mini${gano ? ' — <b>hoy ya ganaste: fuera de las gráficas</b>' : tope ? ' — <b>hoy ya tomaste ' + hoyT.length + ': se acabó</b>' : ' — hoy llevas ' + hoyT.length}</div>
       </div>`;
-    modal('Registrar trade', cuerpo, `<div class="crece"></div><button class="btn" data-cerrar>Cancelar</button><button class="btn acc" data-acc="dispara">Disparar la bala ${usadas+1}</button>`, {ancho:720, sinFoco:true});
+    modal('Registrar trade', cuerpo, `<div class="crece"></div><button class="btn" data-cerrar>Cancelar</button><button class="btn acc" data-acc="dispara">Usar la celda ${usadas+1}</button>`, {ancho:720, sinFoco:true});
   }
 
   /* ==================================================== MODAL · TRADE === */

@@ -143,7 +143,8 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   (dirección, entrada, SL, TP, contratos, condición). El mismo tema, al revés, lleva los **avisos inteligentes** del journal al
   teléfono con la app ntfy: meta hecha, 2 pérdidas, escribe la condición, apertura de NY, cierre de ventana.
 - **Mercado** (`js/mercado.js`): calendario de **Forex Factory** de la semana, **solo lo que mueve ES/NQ/BTC** (datos USD de impacto
-  alto y medio, hora de Morelia, «HOY», próxima noticia fuerte con ventana de no-operar). Cada noticia se abre con su ficha: qué mide,
+  alto y medio, hora de Morelia, «HOY», próxima noticia fuerte con ventana de no-operar). Se muestra en **tabla estilo Forex Factory** (día, hora, divisa, cuadrito de impacto rojo/naranja, evento, real, pronóstico, previo) y
+  cada noticia se abre con su ficha: qué mide,
   cómo pega en ES/NQ/BTC, qué esperar si sale mejor o peor que el pronóstico (largos o cortos) y cómo operarla con la estrategia
   (la vela de la noticia deja el FVG → condición del día). Fichas para FOMC, Powell, CPI, PPI, NFP, desempleo, claims, PCE, PIB,
   ventas minoristas, ISM/PMI, confianza, JOLTS, ADP, duraderos, minutas, crudo, subastas y precios de **futuros**: NQ, ES y BTC del CME (Yahoo Finance: último, cambio vs cierre previo, rango del día; spot de CoinGecko
