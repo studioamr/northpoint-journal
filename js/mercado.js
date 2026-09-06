@@ -30,8 +30,12 @@
   async function noticias(){
     if(cache.ff && Date.now() - cache.ffT < 15*60000) return cache.ff;
     let j = null;
-    if(!window.__npNativo){ try{ const r = await fetch('data/ff_calendar_thisweek.json?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}); if(r.ok) j = await r.json(); }catch(e){} }
-    if(!j) j = await fetchJSON(FF);
+    /* 1) la API propia (GitHub Pages manda Access-Control-Allow-Origin: *, así que sirve en web Y en la app nativa) */
+    const propia = ['data/ff_calendar_thisweek.json', 'https://studioamr.github.io/northpoint-journal/data/ff_calendar_thisweek.json'];
+    for(const u of propia){ try{ const r = await fetch(u + '?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}); if(r.ok){ const t = await r.text(); if(t.trim().startsWith('[')){ j = JSON.parse(t); break; } } }catch(e){} }
+    /* 2) Forex Factory directo (nativo / proxy); si regresa HTML (bloqueo), se ignora */
+    if(!j){ try{ const x = await fetchJSON(FF); if(Array.isArray(x)) j = x; }catch(e){ if(!j) throw e; } }
+    if(!j) throw new Error('sin calendario por ahora');
     cache.ff = (j||[]).map(x => ({titulo:x.title, pais:x.country, t:new Date(x.date), impacto:x.impact, prev:x.previous, fc:x.forecast, actual:x.actual}));
     cache.ffT = Date.now(); return cache.ff;
   }
