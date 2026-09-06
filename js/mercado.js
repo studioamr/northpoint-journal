@@ -322,82 +322,6 @@
   }
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
-  /* ---------------------------------------------------- ESTRUCTURA 5m · fibo del último impulso + FVG que hace match
-     Pivotes (fractales de 2), el impulso más reciente, retrocesos 0.5 (EQ) · 0.62 · 0.705 · 0.79
-     y los FVG de 5 min que caen dentro de la zona de equilibrio: ahí está la entrada. */
-  const FIBOS = [[0.5, 'EQ 0.5'], [0.62, '0.62'], [0.705, '0.705'], [0.79, '0.79']];
-  function estructura(sym){
-    const j = cache['velas_' + sym]; const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) return null;
-    const ts = r.timestamp || [], q = ((r.indicators||{}).quote||[{}])[0], hi = q.high || [], lo = q.low || [], op = q.open || [], cl = q.close || [];
-    const todas = ts.map((t, i) => ({t: t*1000, hi: hi[i], lo: lo[i], op: op[i], cl: cl[i]})).filter(v => v.hi != null && v.lo != null).map(v => Object.assign(v, ny(v.t)));
-    const vs = todas.slice(-84); if(vs.length < 12) return null;                    // últimas 7 horas
-    const precio = (r.meta||{}).regularMarketPrice || vs[vs.length-1].cl;
-    // pivotes fractales (2 a cada lado)
-    const piv = [];
-    for(let i = 2; i < vs.length - 2; i++){
-      if(vs[i].hi > vs[i-1].hi && vs[i].hi > vs[i-2].hi && vs[i].hi >= vs[i+1].hi && vs[i].hi >= vs[i+2].hi) piv.push({i, v: vs[i].hi, tipo:'H'});
-      if(vs[i].lo < vs[i-1].lo && vs[i].lo < vs[i-2].lo && vs[i].lo <= vs[i+1].lo && vs[i].lo <= vs[i+2].lo) piv.push({i, v: vs[i].lo, tipo:'L'});
-    }
-    if(piv.length < 2) return null;
-    // el último impulso: del último pivote contrario al pivote más reciente
-    const ult = piv[piv.length-1]; const opuesto = piv.slice(0, -1).reverse().find(p => p.tipo !== ult.tipo); if(!opuesto) return null;
-    const alcista = ult.tipo === 'H'; const A = opuesto, B = ult; const rango = Math.abs(B.v - A.v); if(rango <= 0) return null;
-    const fib = k => alcista ? B.v - k * rango : B.v + k * rango;
-    const zona = {a: Math.min(fib(0.5), fib(0.79)), b: Math.max(fib(0.5), fib(0.79))};
-    // estructura: HH/HL o LH/LL con los dos últimos pivotes de cada tipo
-    const hs = piv.filter(p => p.tipo === 'H'), ls = piv.filter(p => p.tipo === 'L');
-    const hh = hs.length > 1 ? hs[hs.length-1].v > hs[hs.length-2].v : null, hl = ls.length > 1 ? ls[ls.length-1].v > ls[ls.length-2].v : null;
-    const est = hh === true && hl === true ? 'alcista (HH · HL)' : hh === false && hl === false ? 'bajista (LH · LL)' : hh === true ? 'alcista (HH)' : hh === false ? 'bajista (LH)' : hl === true ? 'alcista (HL)' : hl === false ? 'bajista (LL)' : 'sin definir';
-    // FVG de 5m dentro del impulso que caigan en la zona de equilibrio (o la toquen)
-    const fvgs = [];
-    for(let i = A.i + 2; i <= Math.min(vs.length-1, B.i + 6); i++){
-      const alc = vs[i].lo > vs[i-2].hi, baj = vs[i].hi < vs[i-2].lo;
-      if(alcista && alc) fvgs.push({i, a: vs[i-2].hi, b: vs[i].lo, alc:true});
-      if(!alcista && baj) fvgs.push({i, a: vs[i].hi, b: vs[i-2].lo, alc:false});
-    }
-    fvgs.forEach(f => { f.match = f.b >= zona.a && f.a <= zona.b; const desp = vs.slice(f.i + 1); f.roto = desp.some(v => f.alc ? v.cl < f.a : v.cl > f.b); f.probado = desp.some(v => f.alc ? v.lo <= f.b : v.hi >= f.a); });
-    const match = fvgs.filter(f => f.match && !f.roto).sort((x, y) => alcista ? y.b - x.b : x.a - y.a)[0] || null;
-    const retro = alcista ? (B.v - precio) / rango : (precio - B.v) / rango;   // cuánto ha retrocedido el precio (0 = en el extremo, 1 = en el origen)
-    const num = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    const hora = v => String(v.min/60|0).padStart(2,'0') + ':' + String(v.min%60).padStart(2,'0');
-    let lectura = `Estructura ${est}. Último impulso ${alcista ? 'alcista' : 'bajista'} ${num(A.v)} → ${num(B.v)} (${num(rango)} pts, ${hora(vs[A.i])}–${hora(vs[B.i])} NY). Zona de equilibrio ${num(zona.a)}–${num(zona.b)} (EQ ${num(fib(0.5))} · 0.705 ${num(fib(0.705))} · 0.79 ${num(fib(0.79))}). `;
-    lectura += retro < 0 ? 'El precio está más allá del extremo: el impulso sigue, espera el retroceso.' : retro < 0.5 ? `Retrocedió ${(retro*100).toFixed(0)}%: todavía no llega al equilibrio.` : retro <= 0.79 ? `Está en la zona de equilibrio (${(retro*100).toFixed(0)}%).` : 'Retrocedió más del 0.79: el impulso perdió fuerza, no es continuación limpia.';
-    lectura += match ? ` FVG de 5m ${num(match.a)}–${num(match.b)} hace match con el equilibrio${match.probado ? ' y ya lo probó' : ''}: ahí va la entrada ${alcista ? 'larga' : 'corta'}, stop detrás del 0.79 (${num(fib(0.79))}), TP conservador al ${alcista ? 'high' : 'low'} interno ${num(B.v)}.` : ' No hay FVG de 5m en la zona de equilibrio: sin match, sin entrada.';
-    return {sym, vs, piv, A, B, alcista, rango, fib, zona, fvgs, match, precio, retro, est, lectura, hora};
-  }
-  function graficaEstructura(d){
-    const Wg = 1000, Hg = 320, L = 8, R = 120, T = 18, B = 26;
-    const vs = d.vs; const n = vs.length, plotR = Wg - R, paso = (plotR - L) / n, cw = Math.max(2, paso * 0.6);
-    const pMin = Math.min(...vs.map(v => v.lo)), pMax = Math.max(...vs.map(v => v.hi)); const pad = (pMax - pMin) * 0.06 || 1;
-    const lo0 = pMin - pad, hi0 = pMax + pad;
-    const X = i => L + i * paso + paso / 2, Y = v => T + (1 - (v - lo0) / (hi0 - lo0)) * (Hg - T - B);
-    const num = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    let ejeT = ''; vs.forEach((v, i) => { if(v.min % 60 === 0) ejeT += `<text x="${X(i)}" y="${Hg - 8}" text-anchor="middle">${d.hora(v)}</text>`; });
-    const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
-      return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
-    // pivotes
-    const pivs = d.piv.map(p => `<text class="ses" x="${X(p.i)}" y="${Y(p.v) + (p.tipo === 'H' ? -6 : 12)}" text-anchor="middle" fill="var(--dim)">${p.tipo}</text>`).join('');
-    // impulso A → B
-    const leg = `<line x1="${X(d.A.i)}" x2="${X(d.B.i)}" y1="${Y(d.A.v)}" y2="${Y(d.B.v)}" stroke="var(--txt)" stroke-opacity=".7" stroke-width="1.5"/><circle cx="${X(d.A.i)}" cy="${Y(d.A.v)}" r="3" fill="var(--txt)"/><circle cx="${X(d.B.i)}" cy="${Y(d.B.v)}" r="3" fill="var(--txt)"/>`;
-    // zona de equilibrio + fibos
-    const x0 = X(d.B.i);
-    const zona = `<rect x="${x0}" y="${Y(d.zona.b)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(d.zona.a) - Y(d.zona.b))}" fill="var(--acc)" fill-opacity=".08"/>`;
-    const fibos = [[0, alcOrig(d, 0)], ...FIBOS.map(([k, t]) => [k, t]), [1, alcOrig(d, 1)]].map(([k, t]) => { const v = d.fib(k); const fuerte = k === 0.5 || k === 0.705 || k === 0.79;
-      return `<line x1="${x0}" x2="${plotR - 2}" y1="${Y(v)}" y2="${Y(v)}" stroke="${fuerte ? 'var(--acc)' : 'var(--dim)'}" stroke-opacity="${fuerte ? .9 : .5}" stroke-dasharray="${k === 0 || k === 1 ? '' : '4 3'}"/><text class="ses" x="${plotR + 6}" y="${Y(v) + 3}" fill="${fuerte ? 'var(--acc)' : 'var(--dim)'}">${t} ${num(v)}</text>`; }).join('');
-    // FVGs: los que hacen match brillan, los demás tenues
-    const fv = d.fvgs.map(f => { const col = f.alc ? 'var(--up)' : 'var(--down)'; const x1 = X(f.i) - paso/2;
-      return `<rect x="${x1}" y="${Y(f.b)}" width="${plotR - 2 - x1}" height="${Math.max(2, Y(f.a) - Y(f.b))}" fill="${f === d.match ? '#39FF14' : col}" fill-opacity="${f === d.match ? .35 : f.roto ? .06 : .12}" stroke="${f === d.match ? '#39FF14' : col}" stroke-opacity="${f === d.match ? 1 : .4}" ${f === d.match ? 'style="filter:drop-shadow(0 0 6px #39FF14)"' : ''}/>${f === d.match ? `<text class="lbl" x="${x1 + 4}" y="${Y(f.b) - 4}" fill="#39FF14" font-weight="700">FVG · MATCH CON EQ · ENTRADA</text>` : ''}`; }).join('');
-    const ahora = `<line x1="${L}" x2="${plotR - 2}" y1="${Y(d.precio)}" y2="${Y(d.precio)}" stroke="var(--txt)" stroke-opacity=".35" stroke-dasharray="2 3"/><text class="lbl" x="${plotR - 4}" y="${Y(d.precio) - 4}" text-anchor="end" fill="var(--txt)">AHORA ${num(d.precio)}</text>`;
-    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${zona}${fibos}${fv}${leg}${velas}${pivs}${ahora}</svg>`;
-  }
-  function alcOrig(d, k){ return k === 0 ? (d.alcista ? 'HIGH' : 'LOW') : (d.alcista ? 'LOW' : 'HIGH'); }
-  function pintaEstructura(S){
-    const d = estructura('NQ=F'); if(!d){ S.style.display = 'none'; return; }
-    const num = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    S.style.display = ''; S.innerHTML = `<div class="fila" style="gap:12px"><h3>Estructura 5m · fibo del último impulso + FVG</h3><span class="pill ${d.alcista ? 'ok' : 'mal'}">${d.est.toUpperCase()}</span>${d.match ? `<span class="pill" style="background:rgba(57,255,20,.16);color:#39FF14;border:1px solid rgba(57,255,20,.5)">FVG EN EQ · ${num(d.match.a)}–${num(d.match.b)}</span>` : '<span class="pill">SIN MATCH</span>'}<div class="crece"></div><span class="mono dim">EQ ${num(d.fib(0.5))} · 0.705 ${num(d.fib(0.705))} · 0.79 ${num(d.fib(0.79))}</span></div>
-      <div style="margin-top:10px">${graficaEstructura(d)}</div>
-      <div class="mini dim" style="margin-top:6px">${d.lectura}</div>`;
-  }
   function pintaNoche(A){
     const datos = ['NQ=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -425,7 +349,6 @@
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
-    <div class="card" id="mkEstr" style="margin-bottom:12px;display:none"></div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
       
@@ -448,7 +371,6 @@
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
       if(A) pintaNoche(A);
       const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
-      const ES1 = document.getElementById('mkEstr'); if(ES1) pintaEstructura(ES1);
     }catch(e){}
     try{
       const lista = await noticias();
@@ -488,5 +410,5 @@
     const corto = /CORTOS/.test(I.mejor) && /LARGOS/.test(I.peor) ? 'alto → cortos · bajo → largos' : /LARGOS/.test(I.mejor) && /CORTOS/.test(I.peor) ? 'fuerte → largos · débil → cortos' : 'ver ficha';
     return {nombre: I.n, corto, I};
   }
-  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal, noche, po3, po3Html, po3Dashboard, estructura };
+  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal, noche, po3, po3Html, po3Dashboard };
 })();
