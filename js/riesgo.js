@@ -37,32 +37,32 @@
     for(let i = 0; i < n; i++){ const c = canica(P); if(c.ruta.some(r => r.hito === 'PASAS')) out.pasan++; if(c.ruta.some(r => r.hito === 'BUFFER')) out.buffer++; if(c.pagos > 0) out.pagan++; if(/quemada/.test(c.fin)) out.queman++; if(/concluida/.test(c.fin)) out.concluyen++; out.pagos += c.pagos; out.cobrado += c.cobrado; out.dias += c.dia; hist[c.pagos] = (hist[c.pagos] || 0) + 1; }
     return Object.assign(out, {n, hist}); }
 
-  /* ---- pirámide: árbol binario completo como en la libreta. WIN a la izquierda, LOSS a la derecha. */
+  /* ---- pirámide: como en la libreta, pero hasta el final. Cada fila es un día; los recuadros con el mismo balance el mismo día
+     se juntan (por eso abre como pirámide y no explota), WIN a la izquierda, LOSS a la derecha, y NINGÚN camino se corta:
+     todos terminan en la meta (PASAS / BUFFER / COBRAS) o en X (quemada). */
   function piramide(P, etapa, ruta){
     const piso = P.inicial - P.quema;
-    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', prof: Math.max(2, Math.min(4, Math.ceil(P.objetivo / P.evalTP)))}
-      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', prof: 4}
-      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', prof: 4};
-    const W = 1000, dy = 74, T = 34, H = T + cfg.prof * dy + 40;
-    const pasos = ruta ? ruta.filter(r => r.fase === etapa || (etapa === 'buffer' && r.fase === 'buffer') ).slice(0, cfg.prof + 1) : null;   // la canica en esta etapa
+    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS'}
+      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER'}
+      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS'};
+    const MAXD = 60; const filas = [[cfg.bal0]]; const aristas = [];
+    for(let d = 0; d < MAXD; d++){ const sig = new Set(); let vivos = 0;
+      for(const b of filas[d]){ if(b >= cfg.fin || b <= piso) continue; vivos++; const up = Math.round((b + cfg.tp) * 100) / 100, dn = Math.round((b - cfg.dl) * 100) / 100; sig.add(up); sig.add(dn); aristas.push({d, b, nb: up, win:true}); aristas.push({d, b, nb: dn, win:false}); }
+      if(!vivos) break; filas.push([...sig].sort((a, b) => b - a)); }
+    const maxN = Math.max(...filas.map(f => f.length)); const W = 1000, colW = Math.max(34, Math.min(92, (W - 40) / maxN)), dy = colW < 50 ? 44 : 60, T = 30, H = T + (filas.length - 1) * dy + 40;
+    const X = (d, b) => { const f = filas[d]; const k = f.indexOf(b); return W / 2 + (k - (f.length - 1) / 2) * colW; }, Y = d => T + d * dy;
+    const fs = colW < 44 ? 6.5 : colW < 60 ? 7.5 : 9;
+    const pasos = ruta ? ruta.filter(r => r.fase === etapa) : null; const enRuta = (d, b) => pasos && pasos[d] && Math.abs(pasos[d].bal - b) < 1;
     let g = '';
-    const nodo = (d, i, bal, camino) => {
-      const x = (i + 0.5) / Math.pow(2, d) * W, y = T + d * dy; const term = bal >= cfg.fin ? 'fin' : bal <= piso ? 'quema' : null;
-      const enRuta = pasos && pasos[d] && Math.abs(pasos[d].bal - bal) < 1 && camino;
-      const col = term === 'fin' ? UP : term === 'quema' ? DOWN : d === 0 ? TXT : 'var(--dim)';
-      const w = Math.max(44, Math.min(150, W / Math.pow(2, d) - 8)); const fs = d >= 4 ? 7.5 : d === 3 ? 8.5 : 10;
-      const txt = (term === 'fin' ? cfg.finTxt + ' ' : term === 'quema' ? 'X ' : '') + Math.round(bal).toLocaleString('en-US');
-      g += `<rect x="${x - w/2}" y="${y - 10}" width="${w}" height="20" rx="10" fill="${term === 'fin' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : enRuta ? 'var(--accSuave)' : 'rgba(255,255,255,.05)'}" stroke="${enRuta ? 'var(--acc)' : col}" stroke-width="${enRuta ? 2 : 1}" stroke-opacity="${term || d === 0 || enRuta ? .95 : .4}"/>`;
-      g += `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${fs}" font-weight="${term || d === 0 || enRuta ? 700 : 400}" fill="${enRuta ? 'var(--acc)' : col}" font-family="JetBrains Mono, monospace">${txt}</text>`;
-      if(enRuta) g += `<circle cx="${x - w/2 - 8}" cy="${y}" r="5" fill="var(--acc)" style="filter:drop-shadow(0 0 5px var(--acc))"/>`;
-      if(term || d >= cfg.prof) return;
-      const xl = (2*i + 0.5) / Math.pow(2, d+1) * W, xr = (2*i + 1.5) / Math.pow(2, d+1) * W, y2 = y + dy;
-      const sigueL = enRuta && pasos[d+1] && pasos[d+1].bal > bal, sigueR = enRuta && pasos[d+1] && pasos[d+1].bal < bal;
-      g += `<line x1="${x}" y1="${y + 10}" x2="${xl}" y2="${y2 - 10}" stroke="${UP}" stroke-opacity="${sigueL ? 1 : .55}" stroke-width="${sigueL ? 2.5 : 1.2}"/><line x1="${x}" y1="${y + 10}" x2="${xr}" y2="${y2 - 10}" stroke="${DOWN}" stroke-opacity="${sigueR ? 1 : .55}" stroke-width="${sigueR ? 2.5 : 1.2}"/>`;
-      if(d === 0) g += `<text x="${(x + xl)/2 - 10}" y="${(y + y2)/2}" text-anchor="end" font-size="8.5" fill="${UP}" font-family="JetBrains Mono, monospace">WIN +${num(cfg.tp)}</text><text x="${(x + xr)/2 + 10}" y="${(y + y2)/2}" font-size="8.5" fill="${DOWN}" font-family="JetBrains Mono, monospace">LOSS -${num(cfg.dl)}</text>`;
-      nodo(d+1, 2*i, bal + cfg.tp, sigueL); nodo(d+1, 2*i + 1, bal - cfg.dl, sigueR);
-    };
-    nodo(0, 0, cfg.bal0, true);
+    aristas.forEach(a => { const x1 = X(a.d, a.b), x2 = X(a.d + 1, a.nb); const viva = enRuta(a.d, a.b) && enRuta(a.d + 1, a.nb);
+      g += `<line x1="${x1}" y1="${Y(a.d) + 8}" x2="${x2}" y2="${Y(a.d + 1) - 8}" stroke="${a.win ? UP : DOWN}" stroke-opacity="${viva ? 1 : .45}" stroke-width="${viva ? 2.4 : 1}"/>`; });
+    filas.forEach((f, d) => f.forEach(b => { const x = X(d, b), y = Y(d); const term = b >= cfg.fin ? 'fin' : b <= piso ? 'quema' : null; const r = enRuta(d, b);
+      const col = term === 'fin' ? UP : term === 'quema' ? DOWN : d === 0 ? TXT : 'var(--dim)'; const w = colW - 4;
+      const txt = term === 'fin' ? cfg.finTxt : term === 'quema' ? 'X' : Math.round(b).toLocaleString('en-US');
+      g += `<rect x="${x - w/2}" y="${y - 8}" width="${w}" height="16" rx="8" fill="${term === 'fin' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : r ? 'var(--accSuave)' : 'rgba(255,255,255,.05)'}" stroke="${r ? 'var(--acc)' : col}" stroke-width="${r ? 1.8 : 1}" stroke-opacity="${term || d === 0 || r ? .95 : .4}"/>`;
+      g += `<text x="${x}" y="${y + 3}" text-anchor="middle" font-size="${fs}" font-weight="${term || d === 0 || r ? 700 : 400}" fill="${r ? 'var(--acc)' : col}" font-family="JetBrains Mono, monospace">${txt}</text>`; }));
+    g += `<text x="${W/2 - colW/2 - 6}" y="${T + dy/2 + 3}" text-anchor="end" font-size="8.5" fill="${UP}" font-family="JetBrains Mono, monospace">WIN +${num(cfg.tp)}</text><text x="${W/2 + colW/2 + 6}" y="${T + dy/2 + 3}" font-size="8.5" fill="${DOWN}" font-family="JetBrains Mono, monospace">LOSS -${num(cfg.dl)}</text>`;
+    filas.forEach((f, d) => { g += `<text x="6" y="${Y(d) + 3}" font-size="7.5" fill="var(--tenue)" font-family="JetBrains Mono, monospace">${d ? 'D' + d : 'HOY'}</text>`; });
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>`;
   }
 
