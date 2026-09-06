@@ -156,7 +156,7 @@
     const sec = (t, s, cuerpo) => `<section class="sec"><div class="sec-h"><h2>${t}</h2>${s ? `<span class="dim">${s}</span>` : ''}</div>${cuerpo}</section>`;
     return `
     <div class="fila" style="margin-bottom:6px">
-      <div><div class="eti">Dashboard · ${varias ? sel.length + ' cuentas a la vez' : h(cta.alias || cta.firma)}</div>
+      <div>
         <h2 style="margin:3px 0 0">${masMenos(m.pnl)} <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trades · ${m.dias} días</span></h2></div>
       <div class="crece"></div>
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
@@ -262,7 +262,7 @@
 
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Trades · ${Store.cuentasSel().length > 1 ? Store.cuentasSel().length + ' cuentas' : h((Store.cuentaActiva()||{}).alias || 'cuenta')}</div>
+      <div>
       <h2 style="margin:3px 0 0;font-size:19px;font-weight:600">${t.length} trades <span class="dim mono" style="font-size:13px">${masMenos(m.pnl)} · win ${pct(m.winRate,0)}</span></h2></div>
       <div class="crece"></div>
       ${porCal.length ? `<span class="chip" style="color:var(--oro);background:var(--oroSuave);border-color:transparent"><b></b>${porCal.length} por calificar</span>` : ''}

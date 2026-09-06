@@ -164,7 +164,7 @@
     let t = cfg.fuente === 'cuenta' ? Store.tradesSel() : cfg.fuente === 'todas' ? S.trades.filter(x => x.modo === 'real') : S.trades.filter(x => x.modo === 'backtest');
     const m = Stats.metricas(t);
     const cab = `<div class="fila" style="margin-bottom:14px">
-      <div><div class="eti">Lab · ciencia de datos sobre tus trades</div><h2>Lo que tu muestra dice si se repite</h2></div>
+      <div><h2>Lab</h2></div>
       <div class="crece"></div>
       <div class="seg" data-seg="labFuente">${[['cuenta','Cuentas seleccionadas'],['todas','Todas las cuentas'],['backtest','Backtest']].map(([v,tx]) => `<button data-v="${v}" class="${cfg.fuente===v?'on':''}">${tx}</button>`).join('')}</div>
     </div>`;

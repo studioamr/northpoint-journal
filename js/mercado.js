@@ -196,6 +196,76 @@
       <text x="${L}" y="${Hg - 4}">${hora(tMin)} NY</text><text x="${Wg - R - 2}" y="${Hg - 4}" text-anchor="end">${hora(ultimo.min2 + 5)}</text>
     </svg>`;
   }
+  /* ---------------------------------------------------- PO3 de la vela de 4H
+     Open → Manipulación → Distribución. Las velas de 4H del CME arrancan a las
+     18:00 NY (18 · 22 · 02 · 06 · 10 · 14). Se arma con las velas de 5 min. */
+  function po3(sym){
+    const j = cache['velas_' + sym]; const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) return null;
+    const ts = r.timestamp || [], q = ((r.indicators||{}).quote||[{}])[0], hi = q.high || [], lo = q.low || [], op = q.open || [], cl = q.close || [];
+    const velas = ts.map((t, i) => ({t: t*1000, hi: hi[i], lo: lo[i], op: op[i], cl: cl[i]})).filter(v => v.hi != null && v.lo != null).map(v => Object.assign(v, ny(v.t)));
+    if(!velas.length) return null;
+    const bloque = v => { const b = Math.floor(((v.min - 18*60) + 1440) % 1440 / 240); return v.ymd + '#' + b; };   // 0 = 18:00, 1 = 22:00, 2 = 02:00, 3 = 06:00, 4 = 10:00, 5 = 14:00
+    const claves = []; velas.forEach(v => { const k = bloque(v); if(claves[claves.length-1] !== k) claves.push(k); });
+    const arma = k => { const vs = velas.filter(v => bloque(v) === k); if(!vs.length) return null; const b = +k.split('#')[1];
+      return {k, ini: (18*60 + b*240) % 1440, vs, open: vs[0].op != null ? vs[0].op : vs[0].cl, high: Math.max(...vs.map(v => v.hi)), low: Math.min(...vs.map(v => v.lo)), close: vs[vs.length-1].cl, n: vs.length}; };
+    const cur = arma(claves[claves.length-1]), prev = claves.length > 1 ? arma(claves[claves.length-2]) : null;
+    const precio = (r.meta||{}).regularMarketPrice || cur.close;
+    const ahora = ny(Date.now()); const enCurso = bloque({ymd: ahora.ymd, min: ahora.min}) === cur.k;
+    const restan = enCurso ? 240 - (((ahora.min - cur.ini) + 1440) % 1440) : 0;
+    // lectura PO3: dónde está el precio contra el open y si ya hubo la manipulación (barrida del lado contrario)
+    const arriba = precio > cur.open; const manipAbajo = cur.low < cur.open - (cur.open * 0.0004), manipArriba = cur.high > cur.open + (cur.open * 0.0004);
+    let fase, lectura;
+    if(arriba && manipAbajo){ fase = 'DISTRIBUCIÓN ▲'; lectura = 'Ya barrió abajo del open (manipulación) y ahora expande arriba: PO3 alcista en curso · busca largos en el retroceso al equilibrio.'; }
+    else if(!arriba && manipArriba){ fase = 'DISTRIBUCIÓN ▼'; lectura = 'Ya barrió arriba del open (manipulación) y ahora expande abajo: PO3 bajista en curso · busca cortos en el retroceso al equilibrio.'; }
+    else if(arriba){ fase = 'MANIPULACIÓN ▲ ?'; lectura = 'Arriba del open sin haber barrido abajo: puede ser la manipulación de un PO3 bajista. Espera que rompa o que regrese al open.'; }
+    else { fase = 'MANIPULACIÓN ▼ ?'; lectura = 'Abajo del open sin haber barrido arriba: puede ser la manipulación de un PO3 alcista. Espera que rompa o que regrese al open.'; }
+    if(cur.n < 4) { fase = 'OPEN'; lectura = 'La vela apenas abre: acumulación alrededor del open. Todavía no hay manipulación que leer.'; }
+    /* en distribución: ¿ya rompió el break (high/low de la vela previa) y hay un FVG de 5m en la expansión que el precio respete? */
+    let bos = null, fvg = null;
+    if(fase.startsWith('DISTRIBUCIÓN')){
+      const vs = cur.vs; const iExt = arriba ? vs.findIndex(v => v.lo === cur.low) : vs.findIndex(v => v.hi === cur.high);   // dónde fue la manipulación
+      if(prev) bos = arriba ? (precio > prev.high ? 'rompió el high de la vela previa (' + prev.high.toFixed(2) + ')' : 'aún no rompe el high previo ' + prev.high.toFixed(2)) : (precio < prev.low ? 'rompió el low de la vela previa (' + prev.low.toFixed(2) + ')' : 'aún no rompe el low previo ' + prev.low.toFixed(2));
+      for(let i = vs.length - 1; i >= Math.max(2, iExt + 2); i--){   // el FVG más reciente de la expansión
+        if(arriba && vs[i].lo > vs[i-2].hi){ fvg = {a: vs[i-2].hi, b: vs[i].lo, i}; break; }
+        if(!arriba && vs[i].hi < vs[i-2].lo){ fvg = {a: vs[i].hi, b: vs[i-2].lo, i}; break; }
+      }
+      if(fvg){ const despues = vs.slice(fvg.i + 1);
+        const probado = despues.some(v => arriba ? v.lo <= fvg.b : v.hi >= fvg.a);
+        const roto = despues.some(v => arriba ? v.cl < fvg.a : v.cl > fvg.b);
+        fvg.estado = roto ? 'roto' : probado ? 'respetado' : 'sin probar'; }
+    }
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg};
+  }
+  function graficaPo3(d){
+    const Wg = 320, Hg = 170, T = 14, B = 22;
+    const c = d.cur, p = d.prev; const velas = [p, c].filter(Boolean);
+    const pMin = Math.min(...velas.map(v => v.low)), pMax = Math.max(...velas.map(v => v.high)); const pad = (pMax - pMin) * 0.12 || 1;
+    const Y = v => T + (1 - (v - (pMin - pad)) / ((pMax + pad) - (pMin - pad))) * (Hg - T - B);
+    const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const vela = (v, x, w, actual) => { const up = v.close >= v.open; const col = up ? 'var(--up)' : 'var(--down)';
+      return `<line x1="${x}" x2="${x}" y1="${Y(v.high)}" y2="${Y(v.low)}" stroke="${col}" stroke-width="1.5"/>
+        <rect x="${x - w/2}" y="${Y(Math.max(v.open, v.close))}" width="${w}" height="${Math.max(2, Math.abs(Y(v.open) - Y(v.close)))}" rx="2" fill="${col}" fill-opacity="${actual ? '.9' : '.45'}" stroke="${col}"/>`; };
+    const xs = p ? [90, 200] : [150];
+    const cuerpo = velas.map((v, i) => vela(v, xs[i], 34, v === c)).join('');
+    const xc = xs[velas.length-1];
+    const marcas = [['OPEN', c.open, 'var(--txt)'], [d.manipAbajo || d.manipArriba ? 'MANIPULACIÓN' : '', d.arriba ? c.low : c.high, 'var(--oro)'], ['AHORA', d.precio, d.arriba ? 'var(--up)' : 'var(--down)']].filter(m => m[0]);
+    const banda = d.fvg ? `<rect x="${xc - 17}" y="${Y(d.fvg.b)}" width="${Wg - 4 - (xc - 17)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".18" stroke="var(--azul)" stroke-opacity=".6"/><text class="ses" x="${xc + 22}" y="${Y(d.fvg.b) - 3}" fill="var(--azul)">FVG 5m · ${d.fvg.estado}</text>` : '';
+    const ordenadas = marcas.map(([t, v, col]) => ({t, v, col, y: Y(v)})).sort((a, b) => a.y - b.y); let last = -99; ordenadas.forEach(mk => { if(mk.y - last < 12) mk.ty = last + 12; else mk.ty = mk.y; last = mk.ty; });
+    const etiquetas = banda + ordenadas.map(mk => `<line x1="${xc + 20}" x2="${Wg - 4}" y1="${mk.y}" y2="${mk.y}" stroke="${mk.col}" stroke-opacity=".5" stroke-dasharray="3 3"/><text class="lbl" x="${Wg - 4}" y="${mk.ty + 3.5}" text-anchor="end" fill="${mk.col}">${mk.t} ${num(mk.v)}</text>`).join('');
+    const hora = mm => String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0');
+    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${etiquetas}${cuerpo}
+      ${p ? `<text class="ses" x="${xs[0]}" y="${Hg - 6}" text-anchor="middle">${hora(p.ini)} NY · previa</text>` : ''}
+      <text class="ses" x="${xc}" y="${Hg - 6}" text-anchor="middle" fill="var(--txt)">${hora(c.ini)} NY · ${d.enCurso ? 'quedan ' + Math.floor(d.restan/60) + 'h ' + (d.restan%60) + 'm' : 'cerrada'}</text></svg>`;
+  }
+  function pintaPo3(P){
+    const datos = ['NQ=F','ES=F'].map(po3).filter(Boolean); if(!datos.length){ P.style.display = 'none'; return; }
+    const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    P.style.display = ''; P.innerHTML = `<div class="fila"><h3>Vela de 4H · Open → Manipulación → Distribución</h3><div class="crece"></div></div>
+      <div class="grid g2" style="margin-top:10px;gap:12px">${datos.map(d => { const dif = d.precio - d.cur.open; return `<div>
+        <div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}" style="font-size:9px">${d.fase}</span><div class="crece"></div><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span></div>
+        ${graficaPo3(d)}
+        <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('')}</div>`;
+  }
   function pintaNoche(A){
     const datos = ['NQ=F','ES=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -218,10 +288,11 @@
     setTimeout(cargar, 0);
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Mercado</div><h2>Noticias y precios</h2></div>
+      <div></div>
       <div class="crece"></div><button class="btn chico" data-acc="mercadoRecarga">↻ actualizar</button>
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
+    <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
       
@@ -243,6 +314,7 @@
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
       if(A) pintaNoche(A);
+      const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
     }catch(e){}
     try{
       const lista = await noticias();

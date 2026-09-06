@@ -138,7 +138,7 @@
     const usd = META_MXN() / TC();
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Progreso de André</div><h2>De aquí a ${META_MXN().toLocaleString('es-MX')} MXN al mes</h2></div>
+      <div><h2>${META_MXN().toLocaleString('es-MX')} MXN al mes</h2></div>
       <div class="crece"></div>
       <label class="campo" style="width:110px"><span>MXN por USD</span><input type="number" step="0.5" data-ajuste="tc" value="${TC()}"></label>
       <label class="campo" style="width:130px"><span>Meta MXN/mes</span><input type="number" step="5000" data-ajuste="metaMXN" value="${META_MXN()}"></label>

@@ -41,7 +41,7 @@
 
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Reportes · ${Store.cuentasSel().length > 1 ? Store.cuentasSel().length + ' cuentas' : h((Store.cuentaActiva()||{}).alias || 'cuenta')}</div>
+      <div>
       <h2 style="margin:3px 0 0;font-size:19px;font-weight:600">Radiografía de ${t.length} trades</h2></div>
     </div>
     <div class="grid g5" style="margin-bottom:12px">
@@ -150,7 +150,7 @@
 
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Backtesting${estrSel ? ' · ' + h(estrSel) : ''}</div>
+      <div>
       <h2>${bt.length} trades probados <span class="dim mono" style="font-size:13px">${m.rTotal ? m.rTotal.toFixed(1)+'R · ' : ''}win ${pct(m.winRate,0)}</span></h2></div>
       <div class="crece"></div>
       <label class="campo" style="min-width:230px"><span>Estrategia</span><select data-ajuste="btEstrategia">${opciones([{v:'', t:'Todas las estrategias'}].concat(estrategias.map(e => ({v:e, t:e}))), estrSel)}</select></label>
@@ -239,7 +239,7 @@
 
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Historial · todas las cuentas</div>
+      <div>
       <h2>${t.length} trades en ${cuentas.length} cuentas <span class="dim mono" style="font-size:13px">${masMenos(m.pnl)} en cuentas · ${m.rTotal ? m.rTotal.toFixed(1) + 'R · ' : ''}win ${pct(m.winRate,0)}</span></h2></div>
       <div class="crece"></div>
       <button class="btn" data-ir="cuentas">Cuentas</button>
@@ -308,7 +308,7 @@
     }).join('');
 
     return `<div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Cuentas</div><h2 style="margin:3px 0 0;font-size:19px;font-weight:600">Tu flota · ${S.cuentas.length}</h2></div>
+      <div><h2 style="margin:3px 0 0;font-size:19px;font-weight:600">${S.cuentas.length} cuentas</h2></div>
       <div class="crece"></div><button class="btn acc" data-acc="nuevaCuenta">+ Nueva cuenta</button></div>
       <div class="grid g2">${tarjetas}</div>
 `;
@@ -340,7 +340,7 @@
 
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Payouts · ${h(c.alias || c.firma)}</div>
+      <div>
       <h2 style="margin:3px 0 0;font-size:19px;font-weight:600">${fmt(mio)} <span class="dim mono" style="font-size:13px">cobrados a tu bolsillo (${pct(r.split||0.9,0)} de ${fmt(cobrado)})</span></h2></div>
       <div class="crece"></div><button class="btn acc" data-acc="nuevoPayout">+ Registrar retiro</button></div>
 
@@ -381,7 +381,7 @@
     const soporta = !!window.showDirectoryPicker || !!Sync.nativo;
     return `
     <div class="fila" style="margin-bottom:14px">
-      <div><div class="eti">Sincronizar</div>
+      <div>
       <h2 style="margin:3px 0 0;font-size:20px;font-weight:700">Tus trades entran solos</h2></div>
       <div class="crece"></div>${Vistas._latido()}
       ${porCal ? `<button class="btn" data-ir="diario">${porCal} por calificar →</button>` : ''}
@@ -528,7 +528,7 @@
     const simbolos = [['CAPITALCOM:US100','NQ · US100'],['CAPITALCOM:US500','ES · US500'],['BINANCE:BTCUSDT','BTC'],['NASDAQ:QQQ','QQQ'],['AMEX:SPY','SPY']];
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Trading</div><h2>Opera aquí mismo</h2></div>
+      <div></div>
       <div class="crece"></div>
       <div class="seg acc" data-seg="plataforma">
         <button data-v="tradovate" class="${plat==='tradovate'?'on':''}">Tradovate</button>
@@ -579,7 +579,7 @@
     const S = Store.estado;
     const P = Tema.perfil(), AL = Alertas.cfg(), alertas = (S.alertas||[]).slice(0,6);
     return `<div style="max-width:920px">
-      <div class="eti">Ajustes</div>
+
       <h2 style="margin:3px 0 14px">Perfil, tema, alertas y topes</h2>
 
       <div class="grid g2" style="margin-bottom:12px">
