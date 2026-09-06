@@ -356,7 +356,7 @@ html .cal .d.p-eval{box-shadow:inset 0 0 0 1.5px var(--etEval),0 0 22px -8px var
 .cal .d.p_{background:linear-gradient(180deg,rgba(255,77,90,.18),rgba(255,77,90,.04));border-color:rgba(255,77,90,.35)}
 .cal .d.hoy{outline:1px solid var(--acc);outline-offset:-1px}
 /* hoy: blanco, y ya */
-html .cal .d.hoy{background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.1));border-color:#fff;outline:none;box-shadow:0 0 0 1.5px #fff,0 0 34px -6px rgba(255,255,255,.9)} html .cal .d.hoy .n{color:#fff;font-weight:700}
+html .cal .d.hoy.hoy{background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.1));border-color:#fff;outline:none;box-shadow:0 0 0 1.5px #fff,0 0 34px -6px rgba(255,255,255,.9)} html .cal .d.hoy.hoy .n{color:#fff;font-weight:700}
 .cal .d .marca{position:absolute;right:8px;top:7px;font-size:9px;color:var(--acc)}
 
 /* ---------------------------------------------------------------- gráficas */
