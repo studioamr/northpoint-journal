@@ -288,8 +288,10 @@
     /* CONDICIÓN (la del video): el FVG de 5m que el precio va a probar. Si lo respeta → va por la liquidez de ese lado;
        si lo invierte → va por la del otro. Eso dicta la dirección, no un sesgo diario. */
     const cerca = dir => niveles.filter(nv => !nv.tomado && (dir ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio))).sort((a, b) => dir ? a.v - b.v : b.v - a.v)[0] || null;
-    const ventana = velasD.slice(-96); const cands = [];
+    /* el FVG de la condición es el que dejan las velas de 5 min de 9:30 a 9:45 NY (se cierra en la de 9:40 o la de 9:45); queda marcado todo el día */
+    const ventana = velasD.filter(v => v.ymd === D); const cands = [];
     for(let i = 2; i < ventana.length; i++){
+      if(ventana[i].min < 9*60+40 || ventana[i].min > 9*60+45 || ventana[i-2].min < 9*60+30) continue;
       const alc = ventana[i].lo > ventana[i-2].hi, baj = ventana[i].hi < ventana[i-2].lo; if(!alc && !baj) continue;
       const f = {i, alc, a: alc ? ventana[i-2].hi : ventana[i].hi, b: alc ? ventana[i].lo : ventana[i-2].lo, t: rel(ventana[i])};   // a = piso · b = techo
       const alto = f.b - f.a; if(alto < precio * 0.00015) continue;
@@ -301,13 +303,16 @@
       cands.push(f);
     }
     const ahoraRel = ahora.ymd === D ? ahora.min : ahora.min - 1440;
-    let condicion = cands.filter(f => (f.estado === 'probando' || f.estado === 'sin probar') && f.dist <= precio * 0.004).sort((x, y) => x.dist - y.dist)[0]
-      || cands.filter(f => (f.estado === 'respetado' || f.estado === 'invertido') && f.tRes != null && (velasD[velasD.length-1] ? rel(velasD[velasD.length-1]) - f.tRes <= 180 : true)).sort((x, y) => y.tRes - x.tRes)[0] || null;
+    // de los de la apertura, el más cercano al precio de las 9:45 (el que el mercado va a probar primero)
+    const v945 = ventana.find(v => v.min >= 9*60+45) || ventana[ventana.length-1]; const p945 = v945 ? v945.cl : precio;
+    cands.forEach(f => { f.dist945 = p945 > f.b ? p945 - f.b : p945 < f.a ? f.a - p945 : 0; });
+    let condicion = cands.sort((x, y) => x.dist945 - y.dist945)[0] || null;
     let dirCond = null;
     if(condicion){ const c0 = condicion; c0.siRespeta = c0.alc ? cerca(true) : cerca(false); c0.siInvierte = c0.alc ? cerca(false) : cerca(true);
       if(c0.estado === 'respetado') dirCond = c0.alc; else if(c0.estado === 'invertido') dirCond = !c0.alc; }
     /* objetivo: si la condición ya se resolvió, ella manda la dirección; si no, la fase PO3 */
-    const dirObj = dirCond != null ? dirCond : (fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba));
+    const dirPo3 = fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba);
+    const dirObj = dirCond != null ? dirCond : dirPo3;
     const objetivo = cerca(dirObj);
     const numC = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hC = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
@@ -315,6 +320,7 @@
       if(dirCond != null){ lectura = lectura.replace(/ · busca (largos|cortos) en el retroceso al equilibrio\./, '.'); if(dirCond !== arriba && fase.startsWith('DISTRIBUCIÓN')) lectura += ' La 4H va en contra de la condición: espera el retroceso a la zona 0.705–0.79 antes de entrar.'; }
       lectura = `<b>Condición:</b> FVG 5m ${c0.alc ? 'alcista' : 'bajista'} ${numC(c0.a)}–${numC(c0.b)} (${hC(c0.t)}). Si lo <b>respeta</b> → ${c0.alc ? 'sube' : 'baja'} por ${c0.siRespeta ? c0.siRespeta.n + ' ' + numC(c0.siRespeta.v) : 'la liquidez ' + (c0.alc ? 'de arriba' : 'de abajo')}. Si lo <b>invierte</b> → ${c0.alc ? 'baja' : 'sube'} por ${c0.siInvierte ? c0.siInvierte.n + ' ' + numC(c0.siInvierte.v) : 'la liquidez ' + (c0.alc ? 'de abajo' : 'de arriba')}. `
         + (c0.estado === 'respetado' ? `<b class="up">Respetado a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'alcista' : 'bajista'}: solo ${c0.alc ? 'largos' : 'cortos'}, continuación.` : c0.estado === 'invertido' ? `<b class="down">Invertido a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'bajista' : 'alcista'}: solo ${c0.alc ? 'cortos' : 'largos'}, continuación.` : c0.estado === 'probando' ? 'Lo está probando ahora: espera el cierre.' : 'Todavía no lo prueba.') + ' ' + lectura; }
+    if(!condicion && ventana.some(v => v.min >= 9*60+45)) lectura = '<b>Condición:</b> la apertura de 9:30–9:45 no dejó FVG de 5m. ' + lectura;
     if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
     /* fibo del último impulso válido: en distribución, de la manipulación (extremo contrario) al extremo alcanzado desde entonces;
        si aún no hay distribución, el impulso de la 4H previa. Niveles 0 · EQ 0.5 · 0.705 · 0.79 · 1 */
@@ -322,7 +328,7 @@
     const legDe = (vsArr, alc) => { if(!vsArr.length) return null; const iA = alc ? vsArr.findIndex(v => v.lo === Math.min(...vsArr.map(x => x.lo))) : vsArr.findIndex(v => v.hi === Math.max(...vsArr.map(x => x.hi)));
       const desp = vsArr.slice(iA); const A = alc ? vsArr[iA].lo : vsArr[iA].hi; const B = alc ? Math.max(...desp.map(x => x.hi)) : Math.min(...desp.map(x => x.lo)); const iB = iA + desp.findIndex(v => (alc ? v.hi : v.lo) === B);
       if(Math.abs(B - A) < A * 0.0005) return null; return {A, B, alc, tA: rel(vsArr[iA]), tB: rel(vsArr[iB])}; };
-    fibo = legDe(cur.vs, dirObj) || (prev ? legDe(prev.vs.concat(cur.vs), dirObj) : null);   // el impulso hacia el objetivo: su retroceso es la entrada
+    fibo = legDe(cur.vs, dirPo3) || (prev ? legDe(prev.vs.concat(cur.vs), dirPo3) : null);   // el fibo sigue al impulso de la 4H (como estaba), no a la condición
     if(fibo){ const r2 = Math.abs(fibo.B - fibo.A); fibo.nivel = k => fibo.alc ? fibo.B - k * r2 : fibo.B + k * r2; fibo.rango = r2;
       fibo.entrada = fibo.nivel(0.705); fibo.stop = fibo.nivel(1) + (fibo.alc ? -1 : 1) * Math.max(2, r2 * 0.05);
       if(objetivo){ const riesgo = Math.abs(fibo.entrada - fibo.stop), premio = Math.abs(objetivo.v - fibo.entrada); fibo.rr = riesgo > 0 ? premio / riesgo : null; } }
