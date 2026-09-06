@@ -64,9 +64,9 @@ muestra un chip por cuenta; Diario, Calendario, Reportes y Lab filtran igual).
 - **Panel** — el tablero tipo TradeZella: P&L, win rate, profit factor, días ganadores, curva de balance
   contra el piso, **Puntaje NP** (salud del proceso, no del P&L) y **Estrategias**: el rendimiento de cada una (n, win, PF,
   expectativa, P&L). Cada trade se registra con su estrategia; la lista se edita en Ajustes o con «+ nueva» desde el formulario.
-- **Registrar trade** — primero el **cargador**: diez balas, cada trade real gasta una (las gastadas se ven ganadas/perdidas), y
-  arriba en grande el **win rate de las últimas diez** con el mínimo de 40% (equilibrio a 1.5R); debajo de 40% avisa que revises
-  antes de disparar. Tocas la siguiente bala y sale el formulario rápido: dirección, P&L (o entrada/salida y se calcula), **las 4 reglas como cuatro botones**,
+- **Registrar trade** — primero la **batería**: diez celdas, cada trade real gasta una (las usadas se ven verdes/rojas, la siguiente
+  pulsa), y arriba en grande el **win rate de las últimas diez** con el mínimo de 40% (equilibrio a 1.5R); debajo de 40% avisa que
+  revises antes de gastar otra. Tocas la siguiente celda y sale el formulario rápido: dirección, P&L (o entrada/salida y se calcula), **las 4 reglas como cuatro botones**,
   **screenshot** (pega con ⌘V, arrastra o clic; se guarda comprimido en IndexedDB) y notas. Lo demás plegado en «Más detalles».
 - **Diario** — todos los trades, filtrables por resultado y por disciplina (4/4 reglas vs reglas rotas). Exporta CSV.
 - **Calendario** — arriba, el **balance en grande** de la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia

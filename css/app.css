@@ -181,7 +181,9 @@ nav button:hover{color:var(--txt);background:rgba(255,255,255,.05)}
 nav button.on{color:#0b0f0a;background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -4px 10px rgba(0,0,0,.25),0 8px 22px -10px var(--acc)}
 nav button.on::before{content:none}
 nav button span.i{width:14px;text-align:center;font-size:10px;font-family:var(--mono);opacity:.7}
-nav .sep{margin:14px 8px 6px;font-family:var(--mono);font-size:8.5px;letter-spacing:.24em;color:var(--tenue);text-transform:uppercase}
+nav .sep{margin:18px 12px 8px;font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;color:var(--tenue);text-transform:uppercase;font-weight:600}
+nav .sep:first-child{margin-top:4px}
+nav{gap:3px}
 aside .pie{padding:12px 8px 0;border-top:1px solid var(--linea);font-family:var(--mono);font-size:9.5px;color:var(--tenue);line-height:1.7}
 aside .pie a{cursor:pointer;color:var(--dim);text-decoration:none;border-bottom:1px solid var(--linea2)}
 
@@ -536,3 +538,11 @@ table.ff tr.ffinfo .ninfo{padding:8px 0 4px}
 .celda.libre{opacity:.55}
 .celda:hover{transform:translateY(-3px)}
 .cargador .celdas{margin-bottom:22px}
+
+/* ------------------------------------------------------------- secciones */
+.sec{margin-top:26px}
+.sec:first-of-type{margin-top:14px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:0 0 10px 2px;padding-bottom:8px;border-bottom:1px solid var(--linea)}
+.sec-h h2{font-size:17px;margin:0;font-weight:600;letter-spacing:-.01em}
+.sec-h span{font-size:12px}
+.sec .grid{gap:14px}

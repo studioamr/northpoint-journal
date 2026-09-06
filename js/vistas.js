@@ -153,23 +153,24 @@
     const ddTotal = sel.reduce((a,c) => a + c.reglas.maxDD, 0);
     const progreso = est.objetivo ? Math.max(0, Math.min(1, est.ganancia / (est.objetivo - cta.inicial))) : 0;
 
+    const sec = (t, s, cuerpo) => `<section class="sec"><div class="sec-h"><h2>${t}</h2>${s ? `<span class="dim">${s}</span>` : ''}</div>${cuerpo}</section>`;
     return `
-    <div class="fila" style="margin-bottom:14px">
+    <div class="fila" style="margin-bottom:6px">
       <div><div class="eti">Panel · ${varias ? sel.length + ' cuentas a la vez' : h(cta.alias || cta.firma)}</div>
-        <h2 style="margin:3px 0 0;font-size:19px;font-weight:600">${masMenos(m.pnl)} <span class="dim mono" style="font-size:13px">en ${m.n} trades · ${m.dias} días</span></h2></div>
+        <h2 style="margin:3px 0 0">${masMenos(m.pnl)} <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trades · ${m.dias} días</span></h2></div>
       <div class="crece"></div>
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
 
-    <div class="grid g5" style="margin-bottom:12px">
+    ${sec('Resumen', 'los cinco números del día a día', `<div class="grid g5">
       ${kpi('Balance', fmt(balanceTotal), `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
       ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
       ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
       ${kpi('Días ganadores', pct(m.diaWinRate,0), `${m.diasG} de ${m.dias} días`, '', null, m.diaWinRate, 'var(--oro)')}
       ${kpi('Prom. gana / pierde', `${fmt(m.avgWin)} <span class="tenue">/</span> ${fmt(m.avgLoss)}`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
-    </div>
+    </div>`)}
 
-    <div class="grid" style="grid-template-columns:1fr 300px;margin-bottom:12px">
+    ${sec('Cuenta', varias ? 'suma de ' + sel.length + ' cuentas' : 'balance, objetivo y drawdown', `<div class="grid" style="grid-template-columns:1fr 320px">
       <div class="card">
         <div class="fila"><h3>Curva de balance</h3><div class="crece"></div>
           <span class="mini tenue mono">${varias ? 'suma de ' + sel.length + ' cuentas' : 'piso ' + fmt(est.piso) + ' · pico ' + fmt(est.pico)}</span></div>
@@ -196,37 +197,25 @@
         ${Stats.radar(pt.ejes)}
         <div class="mini tenue" style="text-align:center;margin-top:4px">Disciplina: ${m.adherencia.toFixed(0)}/100 de adherencia a las 4 reglas</div>
       </div>
-    </div>
+    </div>`)}
 
-    <div class="grid g2" style="margin-bottom:12px">
+    ${sec('Rendimiento', 'por día y por estrategia', `<div class="grid g2">
       <div class="card"><h3>P&L por día</h3><div class="sub">Días ganadores apilados > días grandes</div>
         <div style="margin-top:10px">${Stats.barras(m.serieDias.map(d => ({k:d.fecha, v:d.pnl})))}</div></div>
       <div class="card"><div class="fila"><h3>Estrategias</h3><div class="crece"></div><button class="btn chico fantasma" data-acc="nuevaEstrategia">+ estrategia</button></div>
         <div class="sub">Rendimiento de cada una · se asigna al registrar el trade</div>
         <div style="margin-top:10px">${rendimientoEstrategias(t)}</div></div>
-    </div>
+    </div>`)}
 
-    ${(Store.estado.alertas||[]).length ? `<div class="card" style="margin-bottom:12px"><div class="fila"><h3>Alertas NP JOURNAL</h3>${Vistas._latidoAlertas()}<div class="crece"></div><button class="btn chico fantasma" data-ir="ajustes">Configurar</button></div>
+    ${(Store.estado.alertas||[]).length ? sec('Alertas', 'NP JOURNAL · TradingView', `<div class="card"><div class="fila"><h3>Últimas alertas</h3>${Vistas._latidoAlertas()}<div class="crece"></div><button class="btn chico fantasma" data-ir="ajustes">Configurar</button></div>
       <table style="margin-top:8px"><tbody>${(Store.estado.alertas||[]).slice(0,5).map(a => `<tr><td class="mono tenue" style="width:120px">${new Date(a.t).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${h(a.datos ? Alertas.resumen(a.datos) : (a.titulo + ' · ' + a.texto))}</td>
-        <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
-    <div class="card"><div class="fila"><h3>Últimos trades</h3><div class="crece"></div>
+        <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`) : ''}
+
+    ${sec('Últimos trades', 'los ocho más recientes', `<div class="card"><div class="fila"><h3>Trades</h3><div class="crece"></div>
       <button class="btn chico fantasma" data-ir="diario">Ver todos</button></div>
-      <div class="tabla-scroll" style="margin-top:8px">${tablaTrades(t.slice(-8).reverse())}</div></div>`;
+      <div class="tabla-scroll" style="margin-top:8px">${tablaTrades(t.slice(-8).reverse())}</div></div>`)}`;
   };
 
-  Vistas._comparativa = trades => rendimientoEstrategias(trades);
-  function rendimientoEstrategias(trades){
-    if(!trades.length) return vacio('Registra trades con su estrategia y aquí ves cuál rinde.');
-    const grupos = Stats.desglose(trades, t => t.estrategia || 'Sin estrategia');
-    const max = Math.max(...grupos.map(g => Math.abs(g.pnl))) || 1;
-    return `<table><thead><tr><th>Estrategia</th><th class="num">n</th><th class="num">win</th><th class="num">PF</th><th class="num">expect.</th><th class="num">P&L</th><th style="width:110px"></th></tr></thead><tbody>
-      ${grupos.map(g => `<tr><td><b style="font-weight:600">${h(g.clave)}</b></td><td class="num tenue">${g.n}</td><td class="num">${pct(g.winRate,0)}</td>
-        <td class="num">${g.pf === Infinity ? '∞' : g.pf.toFixed(2)}</td><td class="num ${signo(g.expectativa)}">${fmt(g.expectativa)}</td>
-        <td class="num ${signo(g.pnl)}"><b>${masMenos(g.pnl)}</b></td>
-        <td><div class="barra ${g.pnl >= 0 ? 'up' : 'down'}"><i style="width:${(Math.abs(g.pnl)/max*100).toFixed(0)}%"></i></div></td></tr>`).join('')}
-      </tbody></table>`;
-  }
-  Vistas._rendimientoEstrategias = rendimientoEstrategias;
   function comparativaDisciplina(trades){
     const limpios = trades.filter(t => Motor.adherencia(t).limpio);
     const sucios  = trades.filter(t => !Motor.adherencia(t).limpio);

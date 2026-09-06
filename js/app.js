@@ -5,16 +5,19 @@
   const {h, fmt, pct, signo, masMenos, kpi, opciones, modal, cerrar, toast, vacio, aviso, fechaLarga} = UI;
 
   const MENU = [
+    {g:'Operar'},
     {id:'mercado',    t:'Mercado',      i:'◉'},
-    {id:'panel',      t:'Panel',        i:'▤'},
+    {id:'trading',    t:'Trading',      i:'◫'},
     {id:'diario',     t:'Diario',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
+    {g:'Analizar'},
+    {id:'panel',      t:'Panel',        i:'▤'},
     {id:'reportes',   t:'Reportes',     i:'◔'},
     {id:'backtest',   t:'Backtesting',  i:'⟲'},
+    {g:'Cuenta'},
     {id:'cuentas',    t:'Cuentas',      i:'▣'},
     {id:'payouts',    t:'Payouts',      i:'$'},
-    {id:'progreso',   t:'Progreso',     i:'▲'},
-    {id:'trading',    t:'Trading',      i:'◫'}
+    {id:'progreso',   t:'Progreso',     i:'▲'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial'};
   let vista = location.hash.replace('#','') || 'panel';
