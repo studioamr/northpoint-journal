@@ -507,3 +507,18 @@ svg.radar{width:100%;max-width:250px;height:auto;margin:0 auto;display:block}
 [data-theme^="glass"] .balance-hero{background:var(--panel);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 [data-theme="glass-claro"] .balance-hero{box-shadow:0 8px 30px -18px rgba(30,40,60,.35),inset 0 1px 0 rgba(255,255,255,.9)}
 @media(max-width:900px){.balance-hero{grid-template-columns:1fr}}
+
+/* --------------------------------------------------- estilo Forex Factory */
+table.ff td{padding:9px 10px;vertical-align:middle}
+table.ff tr.ffr{cursor:pointer}
+table.ff tr.ffr.nuevo td{border-top:1px solid var(--linea2)}
+table.ff tr.ffr.pasada td{opacity:.45}
+table.ff tr.ffr.hoy td{background:var(--accSuave)}
+table.ff tr.ffr.abierta td{background:var(--panel3)}
+table.ff .ffd{width:70px;font-size:11.5px;color:var(--dim);line-height:1.2;white-space:nowrap}
+table.ff .ffd b{color:var(--txt)}
+table.ff .ffn{font-weight:500}
+.ffi{display:inline-block;width:14px;height:11px;border-radius:2px;background:#E23B3B;vertical-align:middle}
+.ffi.alto{background:#E23B3B} .ffi.medio{background:#F2A93B}
+table.ff tr.ffinfo td{background:var(--panel2);border-bottom:1px solid var(--linea2)}
+table.ff tr.ffinfo .ninfo{padding:8px 0 4px}

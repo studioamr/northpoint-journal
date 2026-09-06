@@ -5,6 +5,7 @@
   const {h, fmt, pct, signo, masMenos, kpi, opciones, modal, cerrar, toast, vacio, aviso, fechaLarga} = UI;
 
   const MENU = [
+    {id:'mercado',    t:'Mercado',      i:'◉'},
     {id:'panel',      t:'Panel',        i:'▤'},
     {id:'diario',     t:'Diario',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
@@ -13,7 +14,6 @@
     {id:'cuentas',    t:'Cuentas',      i:'▣'},
     {id:'payouts',    t:'Payouts',      i:'$'},
     {id:'progreso',   t:'Progreso',     i:'▲'},
-    {id:'mercado',    t:'Mercado',      i:'◉'},
     {id:'trading',    t:'Trading',      i:'◫'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial'};

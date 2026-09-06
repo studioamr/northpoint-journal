@@ -69,7 +69,8 @@ muestra un chip por cuenta; Diario, Calendario, Reportes y Lab filtran igual).
   antes de disparar. Tocas la siguiente bala y sale el formulario rápido: dirección, P&L (o entrada/salida y se calcula), **las 4 reglas como cuatro botones**,
   **screenshot** (pega con ⌘V, arrastra o clic; se guarda comprimido en IndexedDB) y notas. Lo demás plegado en «Más detalles».
 - **Diario** — todos los trades, filtrables por resultado y por disciplina (4/4 reglas vs reglas rotas). Exporta CSV.
-- **Calendario** — el mes con el P&L de cada día. Clic en un **día pasado**: la **ficha oficial del día** (`js/ficha.js`, PNG
+- **Calendario** — arriba, el **balance en grande** de la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia
+  objetivo/buffer); debajo el mes con el P&L de cada día. Clic en un **día pasado**: la **ficha oficial del día** (`js/ficha.js`, PNG
   1080×1350 dibujado en canvas: NORTHPOINT, fecha, P&L grande, win/PF/disciplina, condición, trades, hasta dos screenshots, notas)
   para descargar o compartir, más su bitácora y el botón **«Marcar targets del día siguiente →»** que abre el siguiente día hábil. El Calendario ve **una cuenta a la vez** (selector arriba), porque cada
   cuenta va en su fase: en **evaluación** target +$1,000 y daily loss −$2,000 (el chiste: pasar en 3 días de trading arriesgando el

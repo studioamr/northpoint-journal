@@ -151,8 +151,8 @@
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
-    <div class="card"><div class="fila"><h3>Noticias que mueven ES · NQ · BTC</h3><div class="crece"></div><span class="chip"><b></b>USD · alto y medio impacto</span></div>
-      <div class="sub">Forex Factory · hora de Morelia · solo lo que pega en los índices y en bitcoin: datos USD de impacto alto y medio</div>
+    <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="mini dim">alto</span><span class="ffi medio" style="margin-left:8px"></span><span class="mini dim">medio</span></div>
+      <div class="sub">Forex Factory · hora de Morelia · datos USD que mueven ES · NQ · BTC · clic en una noticia para ver cómo pega</div>
       <div id="mkTabla" style="margin-top:10px">${vacio('Cargando Forex Factory…')}</div></div>`;
   };
 
@@ -177,22 +177,24 @@
       const vis = lista.filter(n => n.pais === 'USD' && (n.impacto === 'High' || n.impacto === 'Medium'));
       const ahora = Date.now(); const hoy = new Date().toDateString();
       if(!document.getElementById('mkTabla')) return;
-      T.innerHTML = vis.length ? `<div class="noticias">${vis.map(n => { const esHoy = n.t.toDateString() === hoy, pasado = n.t.getTime() < ahora, I = info(n);
-          return `<details class="noti ${pasado ? 'pasada' : ''} ${esHoy ? 'hoy' : ''}"><summary>
-            <span class="mono nt">${esHoy ? '<b class="acc">HOY</b> ' : diaLocal(n.t) + ' '}${horaLocal(n.t)}</span>
-            <span class="nn">${h(n.titulo)}</span>
-            <span class="pill ${n.impacto === 'High' ? 'no' : 'acc'}">${n.impacto === 'High' ? 'ALTO' : 'MEDIO'}</span>
-            <span class="mono mini tenue nd">previo ${h(n.prev||'—')} · pronóstico ${h(n.fc||'—')}${n.actual ? ' · <b class="acc">real ' + h(n.actual) + '</b>' : ''}</span>
-            <span class="tenue mini">info ▾</span></summary>
-            <div class="ninfo">
+      // tabla estilo Forex Factory: día agrupado · hora · divisa · impacto · evento · real · pronóstico · previo
+      let ultimoDia = '';
+      T.innerHTML = vis.length ? `<table class="ff"><thead><tr><th>Día</th><th>Hora</th><th>Divisa</th><th>Impacto</th><th>Evento</th><th class="num">Real</th><th class="num">Pronóstico</th><th class="num">Previo</th></tr></thead><tbody>
+        ${vis.map(n => { const esHoy = n.t.toDateString() === hoy, pasado = n.t.getTime() < ahora, I = info(n);
+          const dia = n.t.toDateString(); const nuevoDia = dia !== ultimoDia; ultimoDia = dia;
+          const diaTxt = nuevoDia ? `<b>${n.t.toLocaleDateString('es-MX',{weekday:'short'})}</b><br>${n.t.toLocaleDateString('es-MX',{month:'short', day:'numeric'})}` : '';
+          return `<tr class="ffr ${nuevoDia ? 'nuevo' : ''} ${esHoy ? 'hoy' : ''} ${pasado ? 'pasada' : ''}" data-ff="${n.t.getTime()}">
+            <td class="ffd">${diaTxt}${esHoy && nuevoDia ? ' <span class="pill acc">HOY</span>' : ''}</td>
+            <td class="mono">${horaLocal(n.t)}</td><td class="mono">${h(n.pais)}</td>
+            <td><span class="ffi ${n.impacto === 'High' ? 'alto' : 'medio'}" title="${n.impacto === 'High' ? 'Alto impacto' : 'Impacto medio'}"></span></td>
+            <td class="ffn">${h(n.titulo)} <span class="tenue mini">info ▾</span></td>
+            <td class="num">${n.actual ? '<b>' + h(n.actual) + '</b>' : ''}</td><td class="num">${h(n.fc||'')}</td><td class="num tenue">${h(n.prev||'')}</td></tr>
+          <tr class="ffinfo" hidden><td></td><td colspan="7"><div class="ninfo">
               <div><div class="eti">Qué es</div><b>${h(I.n)}</b> · ${h(I.mide)}</div>
               <div><div class="eti">Cómo pega en ES · NQ · BTC</div>${h(I.pega)}</div>
-              <div class="grid g2" style="gap:8px">
-                <div class="nbox down"><div class="eti">Si sale ${/CORTOS/.test(I.mejor) ? 'más alto que el pronóstico' : 'mejor que el pronóstico'}</div>${h(I.mejor)}</div>
-                <div class="nbox up"><div class="eti">Si sale ${/LARGOS/.test(I.peor) ? 'más bajo que el pronóstico' : 'peor que el pronóstico'}</div>${h(I.peor)}</div>
-              </div>
-              <div><div class="eti">Cómo buscar largos o cortos con tu estrategia</div>${h(I.como)}</div>
-            </div></details>`; }).join('')}</div>` : vacio('Esta semana no hay datos USD de impacto alto o medio.');
+              <div class="grid g2" style="gap:8px"><div class="nbox down"><div class="eti">Si sale más alto / mejor</div>${h(I.mejor)}</div><div class="nbox up"><div class="eti">Si sale más bajo / peor</div>${h(I.peor)}</div></div>
+              <div><div class="eti">Cómo buscar largos o cortos con tu estrategia</div>${h(I.como)}</div></div></td></tr>`; }).join('')}</tbody></table>` : vacio('Esta semana no hay datos USD de impacto alto o medio.');
+      T.querySelectorAll('tr.ffr').forEach(tr => tr.addEventListener('click', () => { const inf = tr.nextElementSibling; inf.hidden = !inf.hidden; tr.classList.toggle('abierta', !inf.hidden); }));
       const prox = proximaAlta(lista);
       if(prox){ const min = Math.round((prox.t.getTime() - ahora)/60000);
         A.style.display = ''; A.innerHTML = `<h3 class="${min <= 30 && min >= -30 ? 'down' : ''}">Próxima noticia fuerte USD: ${h(prox.titulo)}</h3><div class="sub">${diaLocal(prox.t)} ${horaLocal(prox.t)} · ${min > 0 ? 'en ' + (min >= 60 ? Math.floor(min/60) + 'h ' + (min%60) + 'm' : min + ' min') : 'hace ' + Math.abs(min) + ' min'}</div>
