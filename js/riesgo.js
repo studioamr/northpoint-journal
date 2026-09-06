@@ -20,11 +20,11 @@
     // izquierda: paras
     out += caja(150, 172, 210, [e.winTitulo, '+' + num(tp) + ' · ' + e.winNota], UP, 'var(--upSuave)');
     // derecha: trade 2
-    out += rama(470, 190, 330, 290, UP, 'WIN ' + num(tp)) + rama(470, 190, 540, 290, DOWN, 'LOSS ' + num(rk));
+    out += rama(470, 190, 330, 290, UP, 'WIN ' + num(tp)) + rama(470, 190, 510, 290, DOWN, 'LOSS ' + num(rk));
     out += caja(470, 172, 220, ['TRADE 2 · riesgo ' + num(rk) + ' · TP ' + num(tp), 'misma condición, nada de revancha'], TXT);
     // hojas del trade 2
     out += caja(330, 312, 200, ['PARAS · +' + num(tp - rk), 'día verde chico · if W → fuera'], UP, 'var(--upSuave)');
-    out += caja(540, 312, 150, [e.lossTitulo, '-' + num(2*rk) + ' · ' + e.lossNota], e.lossCol || DOWN, e.lossCol === ORO ? 'var(--oroSuave)' : 'var(--downSuave)');
+    out += caja(510, 312, 210, [e.lossTitulo + ' · -' + num(2*rk), e.lossNota], e.lossCol || DOWN, e.lossCol === ORO ? 'var(--oroSuave)' : 'var(--downSuave)');
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${out}</svg>`;
   }
   Vistas.riesgo = function(){
@@ -35,7 +35,7 @@
     const r = cta ? cta.reglas : {}; const cap = r.capPayout ? fmt(r.capPayout) : 'el tope de tu plan'; const maxP = r.maxPayouts || null;
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
     const E = {
-      eval:  {tp: F.eval.target, riesgo: F.eval.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'día hecho · faltan ' + (cta && est && est.faltaTarget != null ? fmt(est.faltaTarget) : 'lo que resta') + ' para pasar', lossTitulo:'FUERA', lossNota:'si esto se repite 2 días: cuenta quemada', lossCol: ORO_},
+      eval:  {tp: F.eval.target, riesgo: F.eval.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'día hecho · faltan ' + (cta && est && est.faltaTarget != null ? fmt(est.faltaTarget) : 'lo que resta') + ' para pasar', lossTitulo:'FUERA', lossNota:'2 días así = cuenta quemada', lossCol: ORO_},
       buffer:{tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS EL DÍA', winNota:'sumas al buffer', lossTitulo:'FUERA', lossNota:'mañana existe · daily loss -' + fmt(F.fond.loss)},
       pay:   {tp: F.fond.target, riesgo: F.fond.target/2, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE?', winNota:'si tocaste ' + cap + ' → COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
     };
