@@ -32,7 +32,16 @@
     cache.ffT = Date.now(); return cache.ff;
   }
   /* Futuros (Yahoo Finance, sin CORS → app nativa o proxy local): NQ, ES, BTC del CME. Spot BTC de CoinGecko como respaldo. */
-  const FUT = [{k:'NQ', y:'NQ=F', n:'Nasdaq 100 · futuro'}, {k:'ES', y:'ES=F', n:'S&P 500 · futuro'}, {k:'BTC', y:'BTC=F', n:'Bitcoin · futuro CME'}];
+  /* el contrato que él opera (MNQU2026 = Micro Nasdaq septiembre 2026). Si no lo fija en Ajustes, se calcula el trimestral vigente
+     (H mar · M jun · U sep · Z dic; rueda el 3er viernes del mes de vencimiento). En Yahoo el símbolo es MNQU26.CME. */
+  function contratoAuto(){ const d = new Date(); let y = d.getFullYear(), q = Math.floor(d.getMonth() / 3); const mes = [2, 5, 8, 11][q];
+    const tercerViernes = (yy, mm) => { const f = new Date(yy, mm, 1); const off = (5 - f.getDay() + 7) % 7; return new Date(yy, mm, 1 + off + 14); };
+    if(d.getMonth() > mes || (d.getMonth() === mes && d >= tercerViernes(y, mes))){ q++; if(q > 3){ q = 0; y++; } }
+    return 'MNQ' + 'HMUZ'[q] + String(y).slice(2); }
+  const contrato = () => (Store.ajustes.contrato || contratoAuto()).toUpperCase().replace('.CME', '');
+  const SYM_NQ = () => contrato() + '.CME';
+  const nombreContrato = () => { const c = contrato(); const m2 = c.match(/^([A-Z]+)([HMUZ])(\d\d)$/); return m2 ? m2[1] + m2[2] + '20' + m2[3] : c; };
+  const FUT = [{k:'NQ', get y(){ return SYM_NQ(); }, n:'Micro Nasdaq'}, {k:'ES', y:'ES=F', n:'S&P 500 · futuro'}, {k:'BTC', y:'BTC=F', n:'Bitcoin · futuro CME'}];
   async function yahoo(sym){
     const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=2d');
     cache['velas_' + sym] = j;
@@ -309,10 +318,10 @@
     return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}</svg>`;
   }
   function po3Html(){
-    const datos = ['NQ=F'].map(po3).filter(Boolean); if(!datos.length) return '';
+    const datos = [SYM_NQ()].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
-        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${d.sym.replace('=F','')}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
         ${graficaPo3(d)}
         <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('');
   }
@@ -323,13 +332,13 @@
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
   function pintaNoche(A){
-    const datos = ['NQ=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
+    const datos = [SYM_NQ()].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const d0 = datos[0];
     const fechaD = new Date(d0.D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
     const estadoNY = d0.pasada ? 'Mercado cerrado · última noche: ' + fechaD : d0.abrioNY ? 'NY ya abrió · los niveles vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm' : 'Noche en curso';
     A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>La noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div></div>
-      <div style="margin-top:10px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
+      <div style="margin-top:10px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${nombreContrato()}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
   }
 
   /* Próxima noticia USD de alto impacto: para el semáforo y el Panel */
@@ -347,7 +356,7 @@
       <div></div>
       <div class="crece"></div><button class="btn chico" data-acc="mercadoRecarga">↻ actualizar</button>
     </div>
-    <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
+    <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi(nombreContrato() + ' · Micro Nasdaq','…','contrato')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
@@ -364,7 +373,7 @@
       const fila = (q, dec) => !q ? 'sin datos · usa la app de escritorio' : (q.chg != null ? `<span class="${q.chg >= 0 ? 'up' : 'down'}">${q.chg >= 0 ? '+' : ''}${q.chg.toFixed(2)}%${q.pts != null ? ' · ' + (q.pts >= 0 ? '+' : '') + num(q.pts, dec) + ' pts' : ''}</span>` : '') + (q.hi != null ? ` · hoy ${num(q.lo, dec)}–${num(q.hi, dec)}` : '') + (q.spot ? ' · spot' : '');
       const val = (q, dec) => q ? num(q.precio, dec) : '—';
       if(document.getElementById('mkPrecios')) P.innerHTML =
-        kpi('NQ · Nasdaq', val(px.fut.NQ, 2), fila(px.fut.NQ, 2)) +
+        kpi(nombreContrato() + ' · Micro Nasdaq', val(px.fut.NQ, 2), fila(px.fut.NQ, 2)) +
         kpi('ES · S&P 500', val(px.fut.ES, 2), fila(px.fut.ES, 2)) +
         kpi('BTC', val(px.fut.BTC, 0), fila(px.fut.BTC, 0)) +
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');

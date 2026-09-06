@@ -644,6 +644,7 @@
         <div class="grid g3" style="margin-top:11px">
           <label class="campo"><span>Instrumento</span><select data-ajuste="instrumento">
             ${opciones(Object.keys(INSTRUMENTOS).map(k => ({v:k, t:k + ' · ' + INSTRUMENTOS[k].nombre + ' ($' + INSTRUMENTOS[k].puntoUSD + '/pt)'})), A.instrumento)}</select></label>
+          <label class="campo"><span>Contrato (Mercado · vela 4H)</span><input type="text" data-ajuste="contrato" placeholder="MNQU26 · vacío = el vigente" value="${h(A.contrato || '')}"></label>
           <label class="campo"><span>Stop típico (puntos)</span><input type="number" step="1" data-ajuste="slPuntos" value="${A.slPuntos}"></label>
           <label class="campo"><span>Meta mínima del día ($)</span><input type="number" step="25" data-ajuste="metaDiaria" value="${A.metaDiaria}"></label>
           <label class="campo"><span>Techo del día · cierras ($)</span><input type="number" step="25" data-ajuste="metaMaxDia" value="${A.metaMaxDia ?? 500}"></label>
