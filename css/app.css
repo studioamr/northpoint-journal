@@ -672,3 +672,8 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 .ruta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
 .camino-mini{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:10px;padding:4px 0;border-bottom:1px solid var(--linea)} .camino-mini i{flex:1 1 0;min-width:3px;max-width:12px;background:var(--dim);opacity:.55;border-radius:2px 2px 0 0} .camino-mini i.eval{background:var(--etEval)} .camino-mini i.buffer{background:var(--etBuffer)} .camino-mini i.payouts{background:var(--etPay)} .camino-mini i.hito{opacity:1;box-shadow:0 0 8px currentColor} .camino-mini i.fin{background:var(--down);opacity:1}
 .arboles .arbol{max-width:none}
+
+/* pizarrón del árbol completo */
+.pizarron{position:relative;height:72vh;min-height:520px;overflow:hidden;border:1px solid var(--linea);border-radius:14px;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.04),transparent 60%),rgba(0,0,0,.25);cursor:grab;margin-top:10px;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:40px 40px}
+.pizarron.agarrado{cursor:grabbing} .piz-lienzo{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform} .piz-lienzo svg{display:block}
+.leyenda i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 10px;vertical-align:middle}
