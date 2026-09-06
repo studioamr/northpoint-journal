@@ -7,11 +7,10 @@
   const MENU = [
     {g:'Operar'},
     {id:'mercado',    t:'Mercado',      i:'◉'},
-    {id:'trading',    t:'Trading',      i:'◫'},
-    {id:'diario',     t:'Diario',       i:'≡'},
+    {id:'panel',      t:'Dashboard',    i:'▤'},
+    {id:'diario',     t:'Trades',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
     {g:'Analizar'},
-    {id:'panel',      t:'Panel',        i:'▤'},
     {id:'reportes',   t:'Reportes',     i:'◔'},
     {id:'backtest',   t:'Backtesting',  i:'⟲'},
     {g:'Cuenta'},
@@ -19,7 +18,7 @@
     {id:'payouts',    t:'Payouts',      i:'$'},
     {id:'progreso',   t:'Progreso',     i:'▲'}
   ];
-  const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial'};
+  const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading'};
   let vista = location.hash.replace('#','') || 'panel';
   if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'panel';
 
@@ -138,14 +137,17 @@
 
     if(!e.target.closest('.selcta') && selAbierto){ selAbierto = false; const p = document.querySelector('.selpanel'); if(p) p.hidden = true; }
     const b = e.target.closest('[data-acc]');
-    if(!b){ const fila = e.target.closest('tr[data-trade]'); if(fila) modalTrade(Store.estado.trades.find(t => t.id === fila.dataset.trade)); return; }
+    if(!b){ const fila = e.target.closest('tr[data-trade]'); if(fila) modalFichaTrade(fila.dataset.trade); return; }
     const acc = b.dataset.acc, id = b.dataset.id;
     const F = {
       nuevoTrade: () => modalCargador(),
       dispara: () => { cerrar(); modalTrade(null); },
       tradeBacktest: () => modalTrade(null, {modo:'backtest'}),
       tradeSesion: () => modalTrade(null, {modo:'backtest', sesionId:id}),
-      editaTrade: () => modalTrade(Store.estado.trades.find(t => t.id === id)),
+      editaTrade: () => modalFichaTrade(id),
+      editaTradeForm: () => { cerrar(); modalTrade(Store.estado.trades.find(t => t.id === id)); },
+      fichaTradeDescarga: () => Ficha.descargaTrade(id).then(() => toast('Ficha guardada')),
+      fichaTradeComparte: () => Ficha.comparteTrade(id).then(ok => { if(!ok){ Ficha.descargaTrade(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       nuevaCuenta: () => modalCuenta(null),
       editaCuenta: () => modalCuenta(Store.cuenta(id)),
       borraCuenta: () => { if(confirm('¿Borrar la cuenta y todos sus trades?')) Store.borraCuenta(id); },
@@ -445,8 +447,29 @@
       else if(imgQuitar && t){ await Img.del(t.id); Store.editaTrade(t.id, {img: null}); }
       document.removeEventListener('paste', onPaste);
       cerrar(); toast(t ? 'Trade actualizado' : 'Registrado · ' + masMenos(n));
+      modalFichaTrade(guardado.id);
     });
     if(t) q('#btnBorra').addEventListener('click', () => { if(confirm('¿Borrar este trade?')){ Img.del(t.id); Store.borraTrade(t.id); document.removeEventListener('paste', onPaste); cerrar(); } });
+  }
+
+  /* ============================================== MODAL · FICHA DE TRADE === */
+  /* La ficha es lo principal: se genera sola con los datos del trade.
+     Desde aquí se edita, se descarga o se comparte.                      */
+  function modalFichaTrade(id){
+    const t = Store.estado.trades.find(x => x.id === id); if(!t) return;
+    const n = Motor.neto(t), a = Motor.adherencia(t);
+    const cuerpo = `<div class="fichaWrap">
+      <div class="fila" style="margin-bottom:10px">
+        <span class="chip ${n > 0 ? 'up' : n < 0 ? 'down' : ''}"><b></b>${masMenos(n)}</span>
+        <span class="chip"><b></b>${a.puntos}/100</span>
+        ${t.estrategia ? `<span class="chip"><b></b>${h(t.estrategia)}</span>` : ''}
+        <div class="crece"></div>
+        <button class="btn chico acc" data-acc="editaTradeForm" data-id="${id}">✎ Editar</button>
+        <button class="btn chico" data-acc="fichaTradeDescarga" data-id="${id}">⤓ PNG</button>
+        <button class="btn chico" data-acc="fichaTradeComparte" data-id="${id}">Compartir</button></div>
+      <div id="fichaPreview" class="fichaPreview">${vacio('Generando la ficha…')}</div></div>`;
+    const v = modal('Trade · ' + fechaLarga(t.fecha) + (t.hora ? ' · ' + t.hora : ''), cuerpo, `<div class="crece"></div><button class="btn" data-cerrar>Cerrar</button>`, {ancho:820, sinFoco:true});
+    Ficha.dibujaTrade(id).then(src => { const el = v.querySelector('#fichaPreview'); if(el && src) el.innerHTML = `<img src="${src}" alt="ficha del trade">`; });
   }
 
   /* =================================================== MODAL · CUENTA === */

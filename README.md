@@ -31,7 +31,7 @@ Sin cuentas: la pantalla de arranque es la lista de cosas por hacer (cuenta, ris
 | 03 | **Equilibrio 0.5 + FVG** | Que la entrada tenga las **dos** confluencias, nunca una sola |
 | 04 | **TP conservador** | Que el objetivo sea liquidez **interna**, no el home run |
 
-Cada trade sale con una calificación de 0 a 100 (25 puntos por regla). El Panel compara sin piedad
+Cada trade sale con una calificación de 0 a 100 (25 puntos por regla). El Dashboard compara sin piedad
 **"con las 4 reglas cumplidas" vs "con al menos una rota"**: win rate, profit factor y expectativa de cada grupo.
 Ese contraste es el corazón de la app.
 
@@ -50,28 +50,33 @@ Nada de capturar números a mano. Tres vías, de la más automática a la más m
 
 El Performance CSV ya trae trades cerrados; los Orders/Fills se emparejan en posiciones (abre → queda plano)
 por contrato, FIFO, con volteo de posición contemplado. Comisión y R llegan **estimados** (tu stop típico ×
-valor del punto) y el trade queda marcado **por calificar**: en el Diario aparece con cuatro toques
+valor del punto) y el trade queda marcado **por calificar**: en Trades aparece con cuatro toques
 (COND · CONT · EQ+FVG · TP) y una palomita. Esa es la única parte tuya.
 
 ## El menú (+ selector de cuentas y Ajustes en la cabecera)
 
-Agrupado en **Operar** (Mercado, Trading, Diario, Calendario), **Analizar** (Panel, Reportes, Backtesting) y **Cuenta** (Cuentas,
-Payouts, Progreso). El Panel va por secciones: Resumen · Cuenta · Rendimiento · Alertas · Últimos trades.
+Agrupado en **Operar** (Mercado, Dashboard, Trades, Calendario), **Analizar** (Reportes, Backtesting) y **Cuenta** (Cuentas,
+Payouts, Progreso). El Dashboard va por secciones: Resumen · Cuenta · Rendimiento · Alertas · Últimos trades.
+La vista Trading (Tradovate / TradingView embebidos) sigue existiendo en `#trading`, pero ya no está en el menú.
 
-En la cabecera eliges **qué cuentas ver**: una sola (para operar), varias o todas a la vez (el Panel suma balances y colchones y
-muestra un chip por cuenta; Diario, Calendario, Reportes y Lab filtran igual).
+En la cabecera eliges **qué cuentas ver**: una sola (para operar), varias o todas a la vez (el Dashboard suma balances y colchones y
+muestra un chip por cuenta; Trades, Calendario, Reportes y Lab filtran igual).
 
 - *(fuera del menú, en `#plan`)* **Plan del día** — semáforo (`PUEDES OPERAR` / `ESCRIBE LA CONDICIÓN` / `SE ACABÓ EL DÍA` / `META HECHA`),
   colchón real, riesgo de hoy, contratos que te tocan, meta del día, la condición con sus dos ramas y la rutina
   por horario (la apertura de NY se calcula sola según el horario de verano).
-- **Panel** — el tablero tipo TradeZella: P&L, win rate, profit factor, días ganadores, curva de balance
+- **Dashboard** — el tablero tipo TradeZella: P&L, win rate, profit factor, días ganadores, curva de balance
   contra el piso, **Puntaje NP** (salud del proceso, no del P&L) y **Estrategias**: el rendimiento de cada una (n, win, PF,
   expectativa, P&L). Cada trade se registra con su estrategia; la lista se edita en Ajustes o con «+ nueva» desde el formulario.
 - **Registrar trade** — primero la **batería**: diez celdas, cada trade real gasta una (las usadas se ven verdes/rojas, la siguiente
   pulsa), y arriba en grande el **win rate de las últimas diez** con el mínimo de 40% (equilibrio a 1.5R); debajo de 40% avisa que
   revises antes de gastar otra. Tocas la siguiente celda y sale el formulario rápido: dirección, P&L (o entrada/salida y se calcula), **las 4 reglas como cuatro botones**,
   **screenshot** (pega con ⌘V, arrastra o clic; se guarda comprimido en IndexedDB) y notas. Lo demás plegado en «Más detalles».
-- **Diario** — todos los trades, filtrables por resultado y por disciplina (4/4 reglas vs reglas rotas). Exporta CSV.
+- **Trades** — todos los trades, filtrables por resultado y por disciplina (4/4 reglas vs reglas rotas). Exporta CSV.
+  Al registrar un trade (o al abrir uno) lo primero que ves es su **ficha**, generada sola con los datos del trade
+  (`Ficha.dibujaTrade`, PNG 1080×1350): dirección, instrumento, P&L en grande, entrada/salida/R, las 4 reglas con ✓/✗ y la
+  disciplina, la condición, el screenshot si lo pegaste (o entrada · salida · R en grande si no) y las notas. Desde la ficha:
+  **Editar** (abre el formulario), **PNG** y **Compartir**.
 - **Calendario** — arriba, el **balance en grande** de la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia
   objetivo/buffer); debajo el mes con el P&L de cada día. Clic en un **día pasado**: la **ficha oficial del día** (`js/ficha.js`, PNG
   1080×1350 dibujado en canvas: NORTHPOINT, fecha, P&L grande, win/PF/disciplina, condición, trades, hasta dos screenshots, notas)
@@ -163,7 +168,7 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   negro + azul suave, esferas desenfocadas de fondo, Inter 500), **Glass Claro** (blanco, clean · calm · clear), Lima, **Bosque** (#051F20→#8EB69B),
   **Océano** (#021024→#7DA0CA), **Noche** (navy + azul + ámbar), Blanco, Oro, Papel, Cobalto y los Aurora. Base del rediseño: tarjetas 22px,
   botones **liquid glass** en pastilla (brillo superior, sombra interior), anillos de progreso en los KPIs, Inter en todo.
-- **Trading**: en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
+- **Trading** (`#trading`, fuera del menú): en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
   vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la
   vista). En navegador ninguno se deja embeber: botón para abrirlos en pestaña, o el «chart rápido» (widget gratis de TradingView).
 
