@@ -11,6 +11,11 @@ python3 -m http.server 4356 --directory ~/claude/mesa
 
 Todo vive en el `localStorage` del navegador. Nada sale de tu máquina. Respaldo en **Ajustes → Exportar**.
 
+## Descargar
+
+- Mac: https://studioamr.github.io/northpoint-journal/download/NORTHPOINT.dmg (arrastrar a Aplicaciones; la 1ª vez clic derecho → Abrir)
+- Web: https://studioamr.github.io/northpoint-journal/ (los datos viven en el navegador de cada quien)
+
 ## La estrategia que vigila (`js/reglas.js` → `ESTRATEGIA`)
 
 | # | Regla | Qué mide la app |
