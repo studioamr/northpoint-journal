@@ -8,3 +8,6 @@ desktop-app/dmg-stage
 desktop-app/logo-raw.png
 .claude/
 .DS_Store
+desktop-win/node_modules/
+desktop-win/dist/
+desktop-win/web/

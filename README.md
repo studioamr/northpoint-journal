@@ -207,6 +207,16 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la
   vista). En navegador ninguno se deja embeber: botón para abrirlos en pestaña, o el «chart rápido» (widget gratis de TradingView).
 
+## App de escritorio (Windows)
+
+`desktop-win/` es la misma web envuelta en **Electron** con el mismo puente nativo que la de Mac (`preload.js` expone
+`window.webkit.messageHandlers.np`; `main.js` resuelve `fetch` sin CORS, guardar PNG/PDF, carpeta vigilada de CSV, notificaciones,
+abrir links y Tradovate/TradingView embebidos en un BrowserView). Se construye desde la Mac con `npm run dist:win` (electron-builder,
+NSIS + portable, sin firma). Descarga: **https://github.com/studioamr/northpoint-journal/releases/latest** →
+`NORTHPOINT-Setup-1.0.0.exe` (instalador) o `NORTHPOINT-Portable-1.0.0.exe` (sin instalar). Windows avisará que el editor es
+desconocido (no está firmado): «Más información → Ejecutar de todas formas». Cada persona crea su perfil y sus cuentas; los datos
+viven en su PC.
+
 ## App de escritorio (Mac)
 
 `desktop-app/` — app nativa (WKWebView en Swift, sin navegador ni Electron), binario universal Intel + Apple Silicon.
