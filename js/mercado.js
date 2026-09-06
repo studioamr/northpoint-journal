@@ -341,8 +341,8 @@
     const caja = '';
     // fibo: líneas desde el extremo B hasta la columna; zona 0.5–0.79 sombreada
     let fibG = '';
-    if(d.fibo){ const xB = xDe(d.fibo.tB);
-      FIB.forEach(([k]) => { fibG += `<line x1="${xB}" x2="${xLbl - 6}" y1="${Y(d.fibo.nivel(k))}" y2="${Y(d.fibo.nivel(k))}" stroke="#FF2E63" stroke-width="1.4" stroke-opacity=".95"/>`; }); }
+    if(d.fibo){ const xB = xDe(d.fibo.tB); const y1 = Y(d.fibo.nivel(0.705)), y2 = Y(d.fibo.nivel(0.79));   // zona de entrada 0.705–0.79 como fondo rojo
+      fibG += `<rect x="${xB}" y="${Math.min(y1, y2)}" width="${Math.max(2, xLbl - 6 - xB)}" height="${Math.max(2, Math.abs(y2 - y1))}" fill="#FF2E63" fill-opacity=".22" stroke="#FF2E63" stroke-opacity=".5"/>`; }
     const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
       return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
     // la vela de 4H en grande (sin texto encima: el precio va en la columna)
