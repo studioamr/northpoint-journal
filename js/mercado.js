@@ -413,7 +413,8 @@
   }
   function pintaPo3(P){
     const html = po3Html(); if(!html){ P.style.display = 'none'; return; }
-    P.style.display = ''; P.innerHTML = `<div class="fila"><h3>Vela de 4H · Open → Manipulación → Distribución</h3><div class="crece"></div><span class="mono mini dim">se mueve solo · ${new Date().toLocaleTimeString('es-MX')}</span></div><div style="display:grid;gap:18px;margin-top:10px">${html}</div>`;
+    const ult = (() => { const j = cache['velas_' + SYM_NQ()]; const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r || !r.timestamp || !r.timestamp.length) return ''; const q = ((r.indicators||{}).quote||[{}])[0]; let k = r.timestamp.length - 1; while(k >= 0 && (q.close[k] == null)) k--; if(k < 0) return ''; const t = new Date(r.timestamp[k]*1000); const min = Math.round((Date.now() - t.getTime())/60000); return 'última vela ' + t.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}) + (min > 20 ? ' · <b class="down">Yahoo va ' + min + ' min atrás</b>' : ''); })();
+    P.style.display = ''; P.innerHTML = `<div class="fila"><h3>Vela de 4H · Open → Manipulación → Distribución</h3><div class="crece"></div><span class="mono mini dim">${ult} · se mueve solo · ${new Date().toLocaleTimeString('es-MX')}</span></div><div style="display:grid;gap:18px;margin-top:10px">${html}</div>`;
   }
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
