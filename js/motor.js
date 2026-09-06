@@ -189,10 +189,10 @@
     if(est.quemada) alto('CUENTA TRONADA', 'El balance tocó el piso de drawdown. Esta cuenta ya no opera.');
     else if(est.cuenta.estado !== 'viva') alto('CUENTA ' + est.cuenta.estado.toUpperCase(), 'La marcaste así en Cuentas.');
     else if(est.pasado && fase === 'eval') alto('OBJETIVO CUMPLIDO', 'Ya pasaste la evaluación. Un trade más solo puede quitarte la cuenta.');
-    else if(hoy.length >= A.maxTradesDia) alto('SE ACABÓ EL DÍA', 'Ya tomaste ' + hoy.length + ' trades (tope ' + A.maxTradesDia + ').');
-    else if(A.pararTrasGanada && hoy.some(t => (t.pnl - (t.comision||0)) > 0)){ luz = 'meta'; titulo = 'GANASTE · FUERA DE LAS GRÁFICAS'; razones.push('If W, get off the charts. Ya hay un trade ganador hoy: cierra la plataforma.'); }
-    else if(seguidas >= A.pararTrasPerdidas) alto('SE ACABÓ EL DÍA', seguidas + ' pérdidas seguidas. El día siguiente existe.');
-    else if(est.pnlHoy <= -riesgoDia && riesgoDia > 0) alto('SE ACABÓ EL DÍA', 'Perdiste ' + fmt(-est.pnlHoy) + ', tu tope de hoy era ' + fmt(riesgoDia) + '.');
+    else if(hoy.length >= A.maxTradesDia) alto(Tema.voz('fin.titulo','SE ACABÓ EL DÍA'), 'Ya tomaste ' + hoy.length + ' trades (tope ' + A.maxTradesDia + ').');
+    else if(A.pararTrasGanada && hoy.some(t => (t.pnl - (t.comision||0)) > 0)){ luz = 'meta'; titulo = Tema.voz('gana.titulo','GANASTE · FUERA DE LAS GRÁFICAS'); razones.push(Tema.voz('gana.razon','If W, get off the charts. Ya hay un trade ganador hoy: cierra la plataforma.')); }
+    else if(seguidas >= A.pararTrasPerdidas) alto(Tema.voz('fin.titulo','SE ACABÓ EL DÍA'), seguidas + ' pérdidas seguidas. El día siguiente existe.');
+    else if(est.pnlHoy <= -riesgoDia && riesgoDia > 0) alto(Tema.voz('fin.titulo','SE ACABÓ EL DÍA'), 'Perdiste ' + fmt(-est.pnlHoy) + ', tu tope de hoy era ' + fmt(riesgoDia) + '.');
     else if(metaMax && est.pnlHoy >= metaMax){ luz = 'meta'; titulo = 'TECHO DEL DÍA · CIERRA'; razones.push('Llevas ' + fmt(est.pnlHoy) + ', el techo es ' + fmt(metaMax) + '. Cierra la plataforma: lo que sigue es propina para el mercado.'); }
     else if(est.pnlHoy >= meta && meta > 0 && fase !== 'eval'){ luz = 'meta'; titulo = 'DÍA GANADO · MÁXIMO UNO MÁS'; razones.push('Llevas ' + fmt(est.pnlHoy) + ' (meta ' + fmt(meta) + '). Un trade más solo si es 4/4, mismo tamaño, y luego cierras.'); }
     else if(est.pnlHoy >= meta && meta > 0){ luz = 'meta'; titulo = 'OBJETIVO A LA VISTA'; razones.push('Llevas ' + fmt(est.pnlHoy) + '. Registra y revisa si ya pasaste.'); }

@@ -446,7 +446,7 @@
       if(imgPendiente){ await Img.put(guardado.id, imgPendiente); Store.editaTrade(guardado.id, {img: true}); }
       else if(imgQuitar && t){ await Img.del(t.id); Store.editaTrade(t.id, {img: null}); }
       document.removeEventListener('paste', onPaste);
-      cerrar(); toast(t ? 'Trade actualizado' : 'Registrado · ' + masMenos(n));
+      cerrar(); toast(t ? 'Trade actualizado' : Tema.voz(n > 0 ? 'trade.win' : n < 0 ? 'trade.loss' : 'trade.be', 'Registrado · ' + masMenos(n), masMenos(n)));
       modalFichaTrade(guardado.id);
     });
     if(t) q('#btnBorra').addEventListener('click', () => { if(confirm('¿Borrar este trade?')){ Img.del(t.id); Store.borraTrade(t.id); document.removeEventListener('paste', onPaste); cerrar(); } });

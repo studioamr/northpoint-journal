@@ -105,59 +105,92 @@
   async function dibujaTrade(id){
     const t = Store.estado.trades.find(x => x.id === id); if(!t) return null;
     const cta = Store.cuenta(t.cuentaId); const P = Tema.perfil(); const a = Motor.adherencia(t); const n = Motor.neto(t);
-    const acc = color('--acc') || '#5B9BFF', up = color('--up') || '#6FCF97', down = color('--down') || '#F07C8A';
+    const esD = document.documentElement.getAttribute('data-theme') === 'glass-diamante';
+    const up = esD ? '#39FF14' : (color('--up') || '#6FCF97'), down = esD ? '#FF2E63' : (color('--down') || '#F07C8A'), acc = esD ? '#EAF4FF' : (color('--acc') || '#5B9BFF');
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
-    c.fillStyle = '#0a0d14'; c.fillRect(0, 0, W, H);
+    c.fillStyle = esD ? '#04050a' : '#0a0d14'; c.fillRect(0, 0, W, H);
     const g = c.createRadialGradient(W*0.85, 0, 40, W*0.85, 0, 760); g.addColorStop(0, (n >= 0 ? 'rgba(111,207,151,.16)' : 'rgba(240,124,138,.16)')); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0,0,W,H);
+    const MONO = '"JetBrains Mono", monospace';
+    /* --- datos derivados */
+    const ins = (window.INSTRUMENTOS||{})[t.instrumento] || {}; const pUSD = ins.puntoUSD || null;
+    const puntos = (t.entrada != null && t.salida != null) ? (t.direccion === 'long' ? t.salida - t.entrada : t.entrada - t.salida) : null;
+    const riesgoPts = (t.entrada != null && t.sl != null) ? Math.abs(t.entrada - t.sl) : null;
+    const riesgoUSD = riesgoPts != null && pUSD ? riesgoPts * pUSD * (t.contratos||1) : null;
+    const rCalc = t.r != null ? +t.r : (riesgoUSD ? n / riesgoUSD : null);
+    const clave = x => x.fecha + (x.hora||'');
+    const balanceDespues = cta ? cta.inicial + Store.estado.trades.filter(x => x.cuentaId === cta.id && clave(x) <= clave(t)).reduce((s2,x) => s2 + Motor.neto(x), 0) : null;
+    const pctCta = cta ? n / cta.inicial * 100 : null;
+    let fase = ''; try{ if(cta){ const est = Motor.estadoCuenta(cta); fase = cta.fase === 'eval' && est.pasado ? 'pasada' : Motor.faseReal(est); } else if(t.modo === 'backtest') fase = 'backtest'; }catch(e){}
+    const faseTxt = {eval:'EVALUACIÓN', pasada:'EVAL PASADA', buffer:'FUNDED · BUFFER', payouts:'FUNDED · PAYOUTS', backtest:'BACKTEST'}[fase] || '';
+    let sesion = '—';
+    if(t.hora){ const [hh, mm] = t.hora.split(':').map(Number); const m = hh*60 + (mm||0); const ny = Motor.aperturaNY(new Date(t.fecha + 'T12:00'));
+      sesion = m < ny - 60 ? 'PRE-NY' : m < ny ? 'PRE-APERTURA' : m < ny + 90 ? 'NY AM · KILLZONE' : m < ny + 210 ? 'NY MEDIODÍA' : 'NY PM'; }
+    const num = (v, d) => v == null || isNaN(v) ? '—' : (+v).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+    const etiqueta = (x, y, k, v, col, ancho, tam) => { c.textAlign = 'left'; c.fillStyle = '#8a8a86'; c.font = '500 12px ' + MONO; c.fillText(k, x, y); c.fillStyle = col || '#F4F4F4'; c.font = '600 ' + (tam||24) + 'px Inter, sans-serif'; c.fillText(corta(c, v, ancho - 8), x, y + (tam||24) + 8); };
+    /* --- cabecera */
     c.fillStyle = '#F4F4F4'; c.font = '600 34px Inter, sans-serif'; c.fillText('NORTHPOINT', 64, 96);
-    c.fillStyle = '#8a8a86'; c.font = '500 18px "JetBrains Mono", monospace';
-    c.fillText(UI.fechaLarga(t.fecha).toUpperCase() + '  ·  ' + (t.hora || '') + '  ·  ' + (cta ? (cta.alias || cta.firma).toUpperCase() : (t.modo === 'backtest' ? 'BACKTEST' : '')), 64, 132);
+    c.fillStyle = '#8a8a86'; c.font = '500 18px ' + MONO;
+    c.fillText(UI.fechaLarga(t.fecha).toUpperCase() + '  ·  ' + (t.hora || '') + '  ·  ' + (cta ? (cta.alias || cta.firma).toUpperCase() : (t.modo === 'backtest' ? 'BACKTEST' : '')) + (faseTxt ? '  ·  ' + faseTxt : ''), 64, 132);
     c.textAlign = 'right'; c.fillText((P.nombre || 'ANDRÉ').toUpperCase(), W-64, 96); c.textAlign = 'left';
-    // dirección + instrumento
-    c.fillStyle = t.direccion === 'long' ? up : down; c.font = '700 26px Inter, sans-serif';
-    c.fillText((t.direccion === 'long' ? '▲ LARGO' : '▼ CORTO') + '   ' + t.instrumento + '   ×' + (t.contratos || 1), 64, 214);
-    // P&L grande
-    let fs = 168; const txt = masMenos(Math.round(n));
-    do { c.font = '700 ' + fs + 'px Inter, sans-serif'; fs -= 6; } while(c.measureText(txt).width > W - 120 && fs > 60);
-    c.fillStyle = n > 0 ? up : n < 0 ? down : '#F4F4F4'; c.fillText(txt, 56, 380);
-    c.fillStyle = '#8a8a86'; c.font = '500 18px "JetBrains Mono", monospace';
-    const linea2 = [t.entrada != null ? 'ENTRADA ' + t.entrada : '', t.salida != null ? 'SALIDA ' + t.salida : '', t.sl != null ? 'SL ' + t.sl : '', t.r != null ? (+t.r).toFixed(2) + 'R' : '', t.estrategia ? t.estrategia.toUpperCase() : ''].filter(Boolean).join('  ·  ');
-    c.fillText(corta(c, linea2, W-128), 64, 424);
-    // 4 reglas
-    let y = 480;
+    /* --- pills */
+    let px = 64; const py = 176;
+    const pill = (txt, col) => { c.font = '700 20px Inter, sans-serif'; const w = c.measureText(txt).width + 36; c.fillStyle = col ? col : 'rgba(255,255,255,.08)'; redondo(c, px, py, w, 44, 22); c.fill(); c.fillStyle = col ? '#000' : '#F4F4F4'; c.fillText(txt, px + 18, py + 30); px += w + 12; };
+    pill(t.direccion === 'long' ? '▲ LARGO' : '▼ CORTO', t.direccion === 'long' ? up : down); pill(t.instrumento + '  ×' + (t.contratos || 1)); if(t.estrategia) pill(t.estrategia.toUpperCase()); pill(t.modo === 'backtest' ? 'BACKTEST' : 'REAL');
+    /* --- P&L grande + columna derecha */
+    let fs = 150; const txt = masMenos(Math.round(n));
+    do { c.font = '700 ' + fs + 'px Inter, sans-serif'; fs -= 6; } while(c.measureText(txt).width > 640 && fs > 60);
+    c.fillStyle = n > 0 ? up : n < 0 ? down : '#F4F4F4'; c.fillText(txt, 56, 372);
+    c.textAlign = 'right';
+    c.fillStyle = '#8a8a86'; c.font = '500 12px ' + MONO; c.fillText('BALANCE DESPUÉS', W-64, 262);
+    c.fillStyle = '#F4F4F4'; c.font = '600 34px Inter, sans-serif'; c.fillText(balanceDespues != null ? fmt(balanceDespues) : '—', W-64, 300);
+    c.fillStyle = '#8a8a86'; c.font = '500 12px ' + MONO; c.fillText('% DE LA CUENTA  ·  R', W-64, 336);
+    c.fillStyle = n > 0 ? up : n < 0 ? down : '#F4F4F4'; c.font = '600 30px Inter, sans-serif'; c.fillText((pctCta != null ? (pctCta >= 0 ? '+' : '') + pctCta.toFixed(2) + '%' : '—') + '   ' + (rCalc != null ? (rCalc >= 0 ? '+' : '') + rCalc.toFixed(2) + 'R' : '—'), W-64, 372);
+    c.textAlign = 'left';
+    /* --- rejilla de datos: 4 × 3 */
+    const gx = 64, gw = (W-128 - 3*14)/4; let gy = 420;
+    const celdas = [
+      ['ENTRADA', num(t.entrada, 2)], ['SALIDA', num(t.salida, 2)], ['STOP', num(t.sl, 2)], ['TAKE PROFIT', num(t.tp, 2)],
+      ['PUNTOS', puntos != null ? (puntos >= 0 ? '+' : '') + num(puntos, 2) : '—', puntos > 0 ? up : puntos < 0 ? down : null], ['RIESGO $', riesgoUSD != null ? fmt(riesgoUSD) : '—'], ['COMISIÓN', t.comision ? fmt(t.comision) : '$0'], ['BRUTO', masMenos(t.pnl||0)],
+      ['SESIÓN', sesion, null, 18], ['TIPO', t.tipo === 'continuacion' ? 'Continuación' : 'Reversión', t.tipo === 'continuacion' ? up : down, 20], ['TAKE PROFIT A', t.tpTipo === 'interno' ? 'Liquidez interna' : 'Liquidez externa', t.tpTipo === 'interno' ? up : down, 20], ['CONFLUENCIAS', (t.confluencias||[]).length ? t.confluencias.map(x => x.toUpperCase()).join(' + ') : '—', null, 18]
+    ];
+    celdas.forEach((cd, i) => { const col = i % 4, fila = Math.floor(i/4); const x = gx + col*(gw+14), y = gy + fila*88;
+      c.fillStyle = 'rgba(255,255,255,.045)'; redondo(c, x, y, gw, 76, 12); c.fill(); c.strokeStyle = 'rgba(255,255,255,.1)'; c.lineWidth = 1; redondo(c, x, y, gw, 76, 12); c.stroke();
+      etiqueta(x+14, y+24, cd[0], cd[1], cd[2], gw-14, cd[3] || 24); });
+    let y = gy + 3*88 + 12;
+    /* --- 4 reglas */
+    c.fillStyle = a.limpio ? up : a.puntos >= 75 ? acc : down; c.font = '700 22px Inter, sans-serif'; c.textAlign = 'right'; c.fillText('DISCIPLINA ' + a.puntos + '/100', W-64, y + 4); c.textAlign = 'left';
+    c.fillStyle = '#8a8a86'; c.font = '500 12px ' + MONO; c.fillText('LAS 4 REGLAS', 64, y + 4); y += 18;
     const boxW = (W - 128 - 3*14) / 4;
     a.det.forEach((r, i) => { const x = 64 + i * (boxW + 14);
-      c.fillStyle = r.ok ? 'rgba(111,207,151,.14)' : 'rgba(240,124,138,.12)'; redondo(c, x, y, boxW, 104, 14); c.fill();
-      c.strokeStyle = r.ok ? up : down; c.lineWidth = 1.5; redondo(c, x, y, boxW, 104, 14); c.stroke();
-      c.fillStyle = r.ok ? up : down; c.font = '700 22px Inter, sans-serif'; c.fillText(r.ok ? '✓' : '✗', x+16, y+38);
-      c.fillStyle = '#F4F4F4'; c.font = '600 15px Inter, sans-serif'; lineas(c, r.titulo, boxW-32, 2).forEach((l, j) => c.fillText(l, x+16, y+62+j*19)); });
-    c.fillStyle = a.limpio ? up : a.puntos >= 75 ? acc : down; c.font = '700 22px Inter, sans-serif'; c.textAlign = 'right'; c.fillText('DISCIPLINA ' + a.puntos + '/100', W-64, y - 14); c.textAlign = 'left';
-    y += 134;
-    // condición
-    if(t.condicion){ c.fillStyle = acc; c.font = '600 13px "JetBrains Mono", monospace'; c.fillText('CONDICIÓN', 64, y); y += 30;
-      c.fillStyle = '#F4F4F4'; c.font = '500 22px Inter, sans-serif'; lineas(c, t.condicion, W-128, 2).forEach(l => { c.fillText(l, 64, y); y += 30; }); y += 12; }
-    // errores
-    if((t.errores||[]).length){ c.fillStyle = down; c.font = '600 13px "JetBrains Mono", monospace'; c.fillText('ERRORES', 64, y); y += 28;
-      c.fillStyle = '#F0A0A8'; c.font = '500 19px Inter, sans-serif'; c.fillText(corta(c, t.errores.join('  ·  '), W-128), 64, y); y += 34; }
-    // screenshot
+      c.fillStyle = r.ok ? (esD ? 'rgba(57,255,20,.12)' : 'rgba(111,207,151,.14)') : (esD ? 'rgba(255,46,99,.12)' : 'rgba(240,124,138,.12)'); redondo(c, x, y, boxW, 92, 14); c.fill();
+      c.strokeStyle = r.ok ? up : down; c.lineWidth = 1.5; redondo(c, x, y, boxW, 92, 14); c.stroke();
+      c.fillStyle = r.ok ? up : down; c.font = '700 22px Inter, sans-serif'; c.fillText(r.ok ? '✓' : '✗', x+16, y+36);
+      c.fillStyle = '#F4F4F4'; c.font = '600 14px Inter, sans-serif'; lineas(c, r.titulo, boxW-32, 2).forEach((l, j) => c.fillText(l, x+16, y+58+j*18)); });
+    y += 92 + 26;
+    /* --- condición · objetivo · errores */
+    c.fillStyle = acc; c.font = '600 12px ' + MONO; c.fillText('CONDICIÓN' + (t.condicionCumplida === false ? ' · NO SE CUMPLIÓ' : ''), 64, y); y += 28;
+    c.fillStyle = '#F4F4F4'; c.font = '500 21px Inter, sans-serif'; lineas(c, t.condicion || 'Sin condición escrita', W-128, 2).forEach(l => { c.fillText(l, 64, y); y += 28; });
+    const extra = [t.condicionPDA ? 'PDA: ' + t.condicionPDA : '', t.objetivo ? 'Objetivo: ' + t.objetivo : ''].filter(Boolean).join('   ·   ');
+    if(extra){ c.fillStyle = '#c9c9c4'; c.font = '500 16px ' + MONO; c.fillText(corta(c, extra, W-128), 64, y + 4); y += 26; }
+    if((t.errores||[]).length){ c.fillStyle = down; c.font = '600 12px ' + MONO; c.fillText('ERRORES', 64, y + 10); y += 34;
+      c.fillStyle = '#F0A0A8'; c.font = '500 18px Inter, sans-serif'; c.fillText(corta(c, t.errores.join('  ·  '), W-128), 64, y); y += 22; }
+    y += 14;
+    /* --- screenshot + notas en lo que queda */
     const src = t.img ? await Img.get(t.id) : null; const im = src ? await cargaImg(src) : null;
-    const notas = t.notas || '';
-    const notasH = notas ? 90 : 0;
-    const areaH = Math.max(160, H - y - 120 - notasH);
+    const notas = (t.notas || '').trim();
+    const notasL = notas ? lineas(c, notas, W-128, 3).length : 0; const notasH = notas ? 30 + notasL*24 : 0;
+    const areaH = Math.max(120, H - y - 100 - notasH);
     if(im){ const w = W-128; const esc = Math.min(w / im.width, areaH / im.height); const iw = im.width*esc, ih = im.height*esc;
       c.save(); redondo(c, 64, y, w, areaH, 16); c.clip(); c.fillStyle = '#0b0b0d'; c.fillRect(64, y, w, areaH); c.drawImage(im, 64 + (w-iw)/2, y + (areaH-ih)/2, iw, ih); c.restore();
-      c.strokeStyle = 'rgba(255,255,255,.14)'; redondo(c, 64, y, w, areaH, 16); c.stroke(); y += areaH + 22; }
-    else { c.fillStyle = 'rgba(255,255,255,.04)'; redondo(c, 64, y, W-128, areaH, 16); c.fill();
-      const cifras = [[t.entrada != null ? String(t.entrada) : '—', 'ENTRADA'], [t.salida != null ? String(t.salida) : '—', 'SALIDA'], [t.r != null ? (+t.r).toFixed(2) + 'R' : '—', 'RESULTADO EN R']];
-      const cw = (W-128)/3; cifras.forEach(([v, k], i) => { const cx = 64 + cw*i + cw/2; c.textAlign = 'center';
-        c.fillStyle = '#F4F4F4'; c.font = '700 44px Inter, sans-serif'; c.fillText(corta(c, v, cw-30), cx, y + areaH/2 - 4);
-        c.fillStyle = '#8a8a86'; c.font = '500 13px "JetBrains Mono", monospace'; c.fillText(k, cx, y + areaH/2 + 28); });
-      c.fillStyle = '#5f6a7e'; c.font = '500 14px "JetBrains Mono", monospace'; c.fillText('SIN SCREENSHOT · pégalo al editar', W/2, y + areaH - 24); c.textAlign = 'left'; y += areaH + 22; }
-    if(notas){ c.fillStyle = acc; c.font = '600 13px "JetBrains Mono", monospace'; c.fillText('NOTAS', 64, y); y += 26;
-      c.fillStyle = '#c9c9c4'; c.font = '400 19px Inter, sans-serif'; lineas(c, notas, W-128, 2).forEach(l => { c.fillText(l, 64, y); y += 26; }); }
+      c.strokeStyle = 'rgba(255,255,255,.14)'; redondo(c, 64, y, w, areaH, 16); c.stroke(); }
+    else { c.fillStyle = 'rgba(255,255,255,.035)'; redondo(c, 64, y, W-128, areaH, 16); c.fill();
+      c.fillStyle = '#5f6a7e'; c.font = '500 14px ' + MONO; c.textAlign = 'center'; c.fillText('SIN SCREENSHOT · pégalo al editar', W/2, y + areaH/2 + 5); c.textAlign = 'left'; }
+    y += areaH + 22;
+    if(notas){ c.font = '400 18px Inter, sans-serif'; c.fillStyle = acc; c.font = '600 12px ' + MONO; c.fillText('NOTAS', 64, y); y += 24;
+      c.fillStyle = '#c9c9c4'; c.font = '400 18px Inter, sans-serif'; lineas(c, notas, W-128, 3).forEach(l => { c.fillText(l, 64, y); y += 24; }); }
     c.fillStyle = 'rgba(255,255,255,.14)'; c.fillRect(64, H-72, W-128, 1.5);
-    c.fillStyle = '#8a8a86'; c.font = '500 13px "JetBrains Mono", monospace';
-    c.fillText('CONDICIÓN · CONTINUACIÓN · EQUILIBRIO + FVG · TP INTERNO', 64, H-40);
+    c.fillStyle = '#8a8a86'; c.font = '500 13px ' + MONO;
+    c.fillText(Tema.voz('ficha.pie', 'CONDICIÓN · CONTINUACIÓN · EQUILIBRIO + FVG · TP INTERNO'), 64, H-40);
     c.textAlign = 'right'; c.fillText('northpoint', W-64, H-40); c.textAlign = 'left';
     return cv.toDataURL('image/png');
   }

@@ -34,7 +34,8 @@
   /* Futuros (Yahoo Finance, sin CORS → app nativa o proxy local): NQ, ES, BTC del CME. Spot BTC de CoinGecko como respaldo. */
   const FUT = [{k:'NQ', y:'NQ=F', n:'Nasdaq 100 · futuro'}, {k:'ES', y:'ES=F', n:'S&P 500 · futuro'}, {k:'BTC', y:'BTC=F', n:'Bitcoin · futuro CME'}];
   async function yahoo(sym){
-    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=1d');
+    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=2d');
+    cache['velas_' + sym] = j;
     const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) throw new Error('sin datos');
     const me = r.meta || {};
     const precio = me.regularMarketPrice, prev = me.chartPreviousClose || me.previousClose;
@@ -134,6 +135,51 @@
       como:'No entres 15 min antes ni después. Deja que la vela de la noticia forme su FVG y escribe la condición sobre él.'};
   }
 
+  /* ---------------------------------------------------- resumen de la noche
+     Asia (18:00–02:00 NY), Londres (02:00–08:30 NY) y pre-apertura (08:30–09:30 NY):
+     high y low de cada sesión, si ya se tomaron, y dónde está el precio antes
+     de que abra Nueva York a las 9:30. Sale de las velas de 5 min de Yahoo. */
+  const SESIONES = [{k:'asia', n:'Asia', d:-1, ini:18*60, fin:24*60+2*60}, {k:'lon', n:'Londres', d:0, ini:2*60, fin:8*60+30}, {k:'pre', n:'Pre-NY', d:0, ini:8*60+30, fin:9*60+30}];
+  const fmtNY = new Intl.DateTimeFormat('en-CA', {timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+  function ny(ts){ const p = {}; fmtNY.formatToParts(new Date(ts)).forEach(x => p[x.type] = x.value); return {ymd: p.year + '-' + p.month + '-' + p.day, min: (+p.hour)*60 + (+p.minute)}; }
+  const diaMas = (ymd, d) => { const x = new Date(ymd + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + d); return x.toISOString().slice(0,10); };
+  function noche(sym){
+    const j = cache['velas_' + sym]; const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) return null;
+    const ts = r.timestamp || [], q = ((r.indicators||{}).quote||[{}])[0], hi = q.high || [], lo = q.low || [], cl = q.close || [];
+    const ahora = ny(Date.now());
+    const velas = ts.map((t, i) => ({t: t*1000, hi: hi[i], lo: lo[i], cl: cl[i]})).filter(v => v.hi != null && v.lo != null).map(v => Object.assign(v, ny(v.t)));
+    let D = ahora.min >= 18*60 ? diaMas(ahora.ymd, 1) : ahora.ymd;            // día de trading: el de la apertura de NY que sigue (o la de hoy)
+    const enSesionDe = (v, s, dd) => { const dia = diaMas(dd, s.d); if(s.fin > 24*60) return (v.ymd === dia && v.min >= s.ini) || (v.ymd === dd && v.min < s.fin - 24*60); return v.ymd === dia && v.min >= s.ini && v.min < s.fin; };
+    let pasada = false;
+    if(!velas.some(v => SESIONES.some(s => enSesionDe(v, s, D))) && velas.length){       // fin de semana / feriado: enseña la última noche que sí hubo
+      const u = velas[velas.length-1]; D = u.min >= 18*60 ? diaMas(u.ymd, 1) : u.ymd; pasada = true; }
+    const enSesion = (v, s) => enSesionDe(v, s, D);
+    const precio = (r.meta||{}).regularMarketPrice || (velas.length ? velas[velas.length-1].cl : null);
+    const out = { sym, precio, D, pasada, abrioNY: !pasada && ahora.ymd === D && ahora.min >= 9*60+30, minParaNY: !pasada && ahora.ymd === D ? (9*60+30) - ahora.min : null, sesiones: [] };
+    SESIONES.forEach(s => { const vs = velas.filter(v => enSesion(v, s)); if(!vs.length){ out.sesiones.push({k:s.k, n:s.n, vacia:true}); return; }
+      const high = Math.max(...vs.map(v => v.hi)), low = Math.min(...vs.map(v => v.lo)); const fin = vs[vs.length-1].t;
+      const despues = velas.filter(v => v.t > fin);
+      out.sesiones.push({k:s.k, n:s.n, high, low, rango: high - low, highTomado: despues.some(v => v.hi > high), lowTomado: despues.some(v => v.lo < low), velas: vs.length}); });
+    return out;
+  }
+  function pintaNoche(A){
+    const datos = ['NQ=F','ES=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
+    const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const d0 = datos[0];
+    const fechaD = new Date(d0.D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
+    const estadoNY = d0.pasada ? 'Mercado cerrado · la última noche fue la del ' + fechaD + ' · así se ve el resumen cada mañana antes de las 9:30' : d0.abrioNY ? 'NY ya abrió · los niveles que sigan vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm · escribe la condición con estos niveles' : 'Noche en curso · los rangos se van completando';
+    A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>Resumen de la noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div><span class="mini dim">Asia 18:00–02:00 · Londres 02:00–08:30 · Pre-NY 08:30–09:30 (hora de NY)</span></div>
+      <div class="grid g2" style="margin-top:10px;gap:10px">${datos.map(d => `<div class="nbox"><div class="fila" style="margin-bottom:6px"><b>${d.sym.replace('=F','')}</b><span class="mini dim">ahora</span><b class="mono">${num(d.precio)}</b></div>
+        <table class="ff noche"><thead><tr><th>Sesión</th><th class="num">High</th><th class="num">Low</th><th class="num">Rango</th><th>Precio</th></tr></thead><tbody>
+        ${d.sesiones.map(s => s.vacia ? `<tr><td>${s.n}</td><td colspan="4" class="tenue">sin velas todavía</td></tr>` : `<tr>
+          <td><b>${s.n}</b></td>
+          <td class="num mono"><span class="${s.highTomado ? 'tenue tachado' : 'up'}">${num(s.high)}</span>${s.highTomado ? ' <span class="mini tenue">tomado</span>' : ' <span class="mini up">vivo</span>'}</td>
+          <td class="num mono"><span class="${s.lowTomado ? 'tenue tachado' : 'down'}">${num(s.low)}</span>${s.lowTomado ? ' <span class="mini tenue">tomado</span>' : ' <span class="mini down">vivo</span>'}</td>
+          <td class="num mono">${num(s.rango)}</td>
+          <td class="mini">${d.precio == null ? '—' : d.precio > s.high ? '<span class="up">arriba del rango</span>' : d.precio < s.low ? '<span class="down">abajo del rango</span>' : 'dentro · ' + Math.round((d.precio - s.low)/(s.rango||1)*100) + '%'}</td></tr>`).join('')}</tbody></table></div>`).join('')}</div>
+      <div class="mini dim" style="margin-top:8px">Los highs y lows vivos son liquidez: la condición del día se escribe sobre ellos (si barre el low de Asia y respeta el FVG → largo al high de Londres, etc.).</div>`;
+  }
+
   /* Próxima noticia USD de alto impacto: para el semáforo y el Panel */
   function proximaAlta(lista){
     const ahora = Date.now();
@@ -170,6 +216,7 @@
         kpi('BTC', val(px.fut.BTC, 0), fila(px.fut.BTC, 0)) +
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
+      if(A) pintaNoche(A);
     }catch(e){}
     try{
       const lista = await noticias();
@@ -195,10 +242,6 @@
               <div class="grid g2" style="gap:8px"><div class="nbox down"><div class="eti">Si sale más alto / mejor</div>${h(I.mejor)}</div><div class="nbox up"><div class="eti">Si sale más bajo / peor</div>${h(I.peor)}</div></div>
               <div><div class="eti">Cómo buscar largos o cortos con tu estrategia</div>${h(I.como)}</div></div></td></tr>`; }).join('')}</tbody></table>` : vacio('Esta semana no hay datos USD de impacto alto o medio.');
       T.querySelectorAll('tr.ffr').forEach(tr => tr.addEventListener('click', () => { const inf = tr.nextElementSibling; inf.hidden = !inf.hidden; tr.classList.toggle('abierta', !inf.hidden); }));
-      const prox = proximaAlta(lista);
-      if(prox){ const min = Math.round((prox.t.getTime() - ahora)/60000);
-        A.style.display = ''; A.innerHTML = `<h3 class="${min <= 30 && min >= -30 ? 'down' : ''}">Próxima noticia fuerte USD: ${h(prox.titulo)}</h3><div class="sub">${diaLocal(prox.t)} ${horaLocal(prox.t)} · ${min > 0 ? 'en ' + (min >= 60 ? Math.floor(min/60) + 'h ' + (min%60) + 'm' : min + ' min') : 'hace ' + Math.abs(min) + ' min'}</div>
-          <div class="mini dim" style="margin-top:6px">${min <= 30 && min >= -30 ? '<b class="down">Ventana de noticia: no entres 15 min antes ni 15 después.</b>' : 'Planea el día alrededor: la condición se escribe antes, la ejecución no cruza la noticia.'}</div>`; }
     }catch(e){ if(document.getElementById('mkTabla')) T.innerHTML = vacio('No se pudo leer Forex Factory (' + e.message + '). En la app de escritorio se lee directo.'); }
   }
 
@@ -213,5 +256,5 @@
     const corto = /CORTOS/.test(I.mejor) && /LARGOS/.test(I.peor) ? 'alto → cortos · bajo → largos' : /LARGOS/.test(I.mejor) && /CORTOS/.test(I.peor) ? 'fuerte → largos · débil → cortos' : 'ver ficha';
     return {nombre: I.n, corto, I};
   }
-  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal };
+  window.Mercado = { noticias, precios, proximaAlta, cargar, cache, info, noticiasDe, escenario, horaLocal, noche };
 })();
