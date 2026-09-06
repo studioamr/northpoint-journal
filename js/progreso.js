@@ -152,10 +152,6 @@
       ${kpi('Pasos', hechos + ' / ' + P.length, sig ? 'siguiente: ' + sig.t : 'todo hecho')}
     </div>
 
-    <div class="card" style="margin-bottom:12px">
-      <div class="fila"><h3>Dónde estás</h3><div class="crece"></div><span class="mono acc">${pct(hechos/P.length,0)}</span></div>
-      <div class="barra" style="margin-top:10px;height:8px"><i style="width:${(hechos/P.length*100).toFixed(0)}%"></i></div>
-    </div>
 
     ${tablaPlan()}
 
