@@ -518,23 +518,30 @@
      app de escritorio, una ventana con TradingView completo para OPERAR con tu
      bróker conectado (Tradovate). En navegador, el botón abre tradingview.com. */
   Vistas.trading = function(){
-    const sym = Store.ajustes.tvSymbol || 'CAPITALCOM:US100';
-    const iv = Store.ajustes.tvIntervalo || '5';
-    const tema = document.documentElement.dataset.theme || 'acido';
-    const dark = tema !== 'papel';
-    const url = 'https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=' + encodeURIComponent(sym) + '&interval=' + iv + '&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=' + (dark ? '0a0a0a' : 'f3f2ed') + '&studies=%5B%5D&theme=' + (dark ? 'dark' : 'light') + '&style=1&timezone=America%2FMexico_City&withdateranges=1&locale=es&hideideas=1';
-    // el widget gratis no trae datos del CME: se usan los índices espejo (US100 = Nasdaq, US500 = S&P) que se mueven igual que NQ/ES
-    const simbolos = [['CAPITALCOM:US100','NQ · US100'],['CAPITALCOM:US500','ES · US500'],['BINANCE:BTCUSDT','BTC'],['NASDAQ:QQQ','QQQ'],['AMEX:SPY','SPY'],['CME_MINI:MNQ1!','MNQ (tu cuenta TV)']];
+    const A = Store.ajustes;
+    const plat = A.plataforma || 'tradovate';
+    const nativo = !!window.__npNativo;
+    const sym = A.tvSymbol || 'CAPITALCOM:US100', iv = A.tvIntervalo || '5';
+    const tema = document.documentElement.dataset.theme || 'acido', dark = tema !== 'papel';
+    const widget = 'https://s.tradingview.com/widgetembed/?frameElementId=tv&symbol=' + encodeURIComponent(sym) + '&interval=' + iv + '&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=' + (dark ? '0a0a0a' : 'f3f2ed') + '&studies=%5B%5D&theme=' + (dark ? 'dark' : 'light') + '&style=1&timezone=America%2FMexico_City&withdateranges=1&locale=es&hideideas=1';
+    const URLS = {tradovate:'https://trader.tradovate.com/', tradingview:'https://www.tradingview.com/chart/?symbol=CME_MINI%3AMNQ1!'};
+    const simbolos = [['CAPITALCOM:US100','NQ · US100'],['CAPITALCOM:US500','ES · US500'],['BINANCE:BTCUSDT','BTC'],['NASDAQ:QQQ','QQQ'],['AMEX:SPY','SPY']];
     return `
     <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Trading · TradingView</div><h2>Opera aquí mismo</h2></div>
+      <div><div class="eti">Trading</div><h2>Opera aquí mismo</h2></div>
       <div class="crece"></div>
-      <div class="seg" data-seg="tvSym">${simbolos.map(([v,t]) => `<button data-v="${v}" class="${sym===v?'on':''}">${t}</button>`).join('')}</div>
-      <div class="seg" data-seg="tvIv">${[['1','1m'],['2','2m'],['5','5m'],['15','15m'],['60','1h']].map(([v,t]) => `<button data-v="${v}" class="${iv===v?'on':''}">${t}</button>`).join('')}</div>
-      <button class="btn acc" data-acc="tvOperar">${window.__npNativo ? '⌘T · Abrir TradingView para operar' : 'Abrir TradingView para operar'}</button>
+      <div class="seg acc" data-seg="plataforma">
+        <button data-v="tradovate" class="${plat==='tradovate'?'on':''}">Tradovate</button>
+        <button data-v="tradingview" class="${plat==='tradingview'?'on':''}">TradingView</button>
+        <button data-v="chart" class="${plat==='chart'?'on':''}">Chart rápido</button></div>
+      ${plat === 'chart' ? `<div class="seg" data-seg="tvSym">${simbolos.map(([v,t2]) => `<button data-v="${v}" class="${sym===v?'on':''}">${t2}</button>`).join('')}</div>
+      <div class="seg" data-seg="tvIv">${[['1','1m'],['5','5m'],['15','15m'],['60','1h']].map(([v,t2]) => `<button data-v="${v}" class="${iv===v?'on':''}">${t2}</button>`).join('')}</div>` : ''}
+      ${plat !== 'chart' && !nativo ? `<button class="btn acc" data-acc="abrirPlataforma" data-id="${plat}">Abrir ${plat === 'tradovate' ? 'Tradovate' : 'TradingView'} en una pestaña</button>` : ''}
     </div>
-    <div class="tv-wrap"><iframe id="tv" src="${url}" allowfullscreen allow="clipboard-write"></iframe></div>
-    <div class="mini tenue" style="margin-top:8px">El chart es el widget oficial de TradingView (gratis, sin login; los futuros del CME solo se ven en tu TradingView completo, por eso aquí van US100/US500, que se mueven igual que NQ/ES). Para ejecutar órdenes hace falta TradingView completo con tu bróker conectado (Tradovate): en la app de escritorio se abre en su propia ventana y conserva tu sesión; en navegador se abre en una pestaña. Los indicadores NP (np-journal.pine) se cargan en tu cuenta de TradingView, no en el widget.</div>`;
+    <div class="tv-wrap" id="tvWrap" data-url="${plat === 'chart' ? '' : URLS[plat]}">${plat === 'chart' ? `<iframe id="tv" src="${widget}" allowfullscreen allow="clipboard-write"></iframe>`
+      : nativo ? `<div class="tv-hueco">cargando ${plat === 'tradovate' ? 'Tradovate' : 'TradingView'}…</div>`
+      : `<div class="tv-hueco">${plat === 'tradovate' ? 'Tradovate' : 'TradingView'} no se deja embeber en un navegador: en la <b>app de escritorio</b> se abre aquí mismo con tu sesión. Aquí, usa el botón para abrirlo en una pestaña o el chart rápido.</div>`}</div>
+    <div class="mini tenue" style="margin-top:8px">${plat === 'tradovate' ? 'Inicias sesión en Tradovate una vez y se queda: tus cuentas de fondeo, posiciones y órdenes, aquí dentro.' : plat === 'tradingview' ? 'TradingView completo con tu login: indicadores NP, alertas y, con Tradovate conectado, ejecutar órdenes.' : 'Widget gratis de TradingView, sin login: para ver, no para operar. Los futuros del CME solo salen en tu cuenta.'}</div>`;
   };
 
   /* ======================================================= PLAYBOOK ==== */

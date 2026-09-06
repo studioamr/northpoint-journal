@@ -80,6 +80,19 @@
 
   document.addEventListener('mesa:cambio', pinta);
   document.addEventListener('mesa:sync', () => { if(!document.querySelector('.velo')) pinta(); });
+
+  /* plataforma embebida (app nativa): Swift pone un WKWebView exactamente sobre #tvWrap */
+  const np = m => { try{ window.webkit.messageHandlers.np.postMessage(m); }catch(e){} };
+  function colocaPlataforma(){
+    if(!window.__npNativo) return;
+    const w = document.getElementById('tvWrap'); const url = w && w.dataset.url;
+    if(!w || !url || document.querySelector('.velo') || document.getElementById('acceso') && !document.getElementById('acceso').hidden){ np({cmd:'plataformaOcultar'}); return; }
+    const r = w.getBoundingClientRect();
+    np({cmd:'plataforma', url, x:r.left, y:r.top, w:r.width, h:r.height, ratio: window.devicePixelRatio || 1});
+  }
+  document.addEventListener('mesa:pintado', () => setTimeout(colocaPlataforma, 30));
+  addEventListener('resize', colocaPlataforma); addEventListener('scroll', colocaPlataforma, true);
+  new MutationObserver(() => { if(document.querySelector('.velo') || !document.getElementById('tvWrap')) np({cmd:'plataformaOcultar'}); else colocaPlataforma(); }).observe(document.body, {childList:true});
   window.addEventListener('hashchange', () => { const v = location.hash.replace('#',''); if(Vistas[v]){ vista = v; pinta(); } });
 
   /* -------------------------------------------------------------- eventos */
@@ -97,6 +110,7 @@
       else if(cual === 'labFuente'){ Vistas._lab.fuente = v; pinta(); }
       else if(cual === 'labEscala'){ Vistas._lab.escala = +v; pinta(); }
       else if(cual === 'mkFiltro'){ Store.ajustes.mkFiltro = v; Store.guardar(); }
+      else if(cual === 'plataforma'){ Store.ajustes.plataforma = v; Store.guardar(); }
       else if(cual === 'tvSym'){ Store.ajustes.tvSymbol = v; Store.guardar(); }
       else if(cual === 'tvIv'){ Store.ajustes.tvIntervalo = v; Store.guardar(); }
       return;
@@ -168,6 +182,7 @@
       fichaComparte: () => Ficha.comparte(id).then(ok => { if(!ok){ Ficha.descarga(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       abreDia: () => { cerrar(); modalDia(id); },
       salir: () => Acceso.salir(),
+      abrirPlataforma: () => window.open(id === 'tradovate' ? 'https://trader.tradovate.com/' : 'https://www.tradingview.com/chart/?symbol=CME_MINI%3AMNQ1!', '_blank'),
       tvOperar: () => { if(window.__npNativo){ try{ window.webkit.messageHandlers.np.postMessage({cmd:'trading'}); }catch(e){} } else window.open('https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('CME_MINI:MNQ1!'), '_blank'); },
       exportarCompleto: () => Store.exportaCompleto().then(n => toast('Respaldo con ' + n + ' screenshots')),
       reporteDia: () => reporteDia(),

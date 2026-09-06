@@ -11,6 +11,8 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
     var timer: Timer?
     var tvWindow: NSWindow?
     var tvWeb: WKWebView?
+    var platWeb: WKWebView?
+    var platURL: String = ""
     var carpeta: URL?
     let defaults = UserDefaults.standard
 
@@ -90,6 +92,11 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             p.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
             p.begin { r in if r == .OK, let u = p.url { try? data.write(to: u) } }
         case "trading": abrirTrading()
+        case "plataforma":
+            guard let u = d["url"] as? String, let url = URL(string: u) else { return }
+            let x = d["x"] as? Double ?? 0, y = d["y"] as? Double ?? 0, w = d["w"] as? Double ?? 0, h = d["h"] as? Double ?? 0
+            colocaPlataforma(url: url, x: x, y: y, w: w, h: h)
+        case "plataformaOcultar": platWeb?.isHidden = true
         case "fetch":
             // la web pide un recurso sin CORS (Forex Factory); lo baja Swift y se lo devuelve en base64
             guard let s = d["url"] as? String, let u = URL(string: s), let id = d["id"] as? String else { return }
@@ -101,6 +108,24 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             }.resume()
         default: break
         }
+    }
+
+    // ---------------------------------------------------------------- Tradovate / TradingView EMBEBIDOS en la ventana
+    // Un WKWebView hermano del principal, colocado exactamente sobre el hueco #tvWrap de la vista Trading.
+    // Conserva cookies/login (data store por defecto) aunque cambies de vista.
+    func colocaPlataforma(url: URL, x: Double, y: Double, w: Double, h: Double) {
+        guard let cv = window.contentView else { return }
+        if platWeb == nil {
+            let cfg = WKWebViewConfiguration(); cfg.websiteDataStore = WKWebsiteDataStore.default()
+            cfg.applicationNameForUserAgent = "Version/17.4 Safari/605.1.15"
+            let web = WKWebView(frame: .zero, configuration: cfg); web.uiDelegate = self
+            web.setValue(false, forKey: "drawsBackground")
+            cv.addSubview(web, positioned: .above, relativeTo: webView); platWeb = web
+        }
+        if platURL != url.absoluteString { platURL = url.absoluteString; platWeb?.load(URLRequest(url: url)) }
+        let H = cv.bounds.height
+        platWeb?.frame = NSRect(x: x, y: H - y - h, width: w, height: h)
+        platWeb?.isHidden = false
     }
 
     // ---------------------------------------------------------------- TradingView completo, en su ventana
