@@ -51,7 +51,7 @@
       ${kpi('Racha', `${m.rachaG}G <span class="tenue">/</span> ${m.rachaP}P`, 'máximas seguidas')}
       ${kpi('Disciplina', m.adherencia.toFixed(0) + '/100', 'promedio de las 4 reglas')}
     </div>
-    <div class="card" style="margin-bottom:12px"><h3>Hallazgos</h3><div class="sub">Lo que los números dicen de tu proceso</div>
+    <div class="card" style="margin-bottom:12px"><h3>Hallazgos</h3>
       <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px">${hallazgos(t).map(x => `<div class="fila" style="align-items:flex-start;gap:8px">
         <span class="mono ${x.tono}" style="font-size:10px;margin-top:2px">${x.tono === 'up' ? '▲' : x.tono === 'down' ? '▼' : '■'}</span>
         <span style="font-size:12.5px;color:var(--dim)">${x.txt}</span></div>`).join('')}</div></div>
@@ -166,7 +166,7 @@
     </div>
     ${comparar}
     <div class="card" style="margin-bottom:12px"><h3>Curva de R</h3>
-      <div class="sub">Los backtests se leen en R, no en dólares</div>
+      
       <div style="margin-top:10px">${curvaR(bt)}</div></div>
     <div class="card" style="padding:0"><div class="tabla-scroll">${Vistas._tablaTrades(bt.slice().reverse().slice(0,40), true)}</div></div>`;
   };
@@ -189,7 +189,7 @@
   function tablaMeses(trades){
     const meses = porMes(trades);
     if(!meses.length) return '';
-    return `<div class="card" style="margin-bottom:12px"><h3>Mes a mes</h3><div class="sub">La consistencia se ve aquí, no en un día bueno</div>
+    return `<div class="card" style="margin-bottom:12px"><h3>Mes a mes</h3>
       <div class="tabla-scroll"><table style="margin-top:8px"><thead><tr><th>Mes</th><th class="num">trades</th><th class="num">días</th><th class="num">win</th>
       <th class="num">PF</th><th class="num">R</th><th class="num">P&L</th><th class="num">mejor día</th><th class="num">peor día</th><th class="num">disc.</th></tr></thead><tbody>
       ${meses.map(x => { const [y,mm] = x.clave.split('-'); return `<tr><td style="text-transform:capitalize">${UI.MESES[+mm-1]} ${y}</td>
@@ -260,7 +260,7 @@
       ${kpi('Resultado real', `<span class="${signo(neto)}">${masMenos(neto)}</span>`, 'lo cobrado menos lo que costaron las cuentas — el único número que importa', '', 'Los P&L dentro de las cuentas no son tuyos hasta que se cobran')}
     </div>
 
-    <div class="card" style="margin-bottom:12px"><h3>Curva de R</h3><div class="sub">Todas las cuentas, en orden cronológico</div>
+    <div class="card" style="margin-bottom:12px"><h3>Curva de R</h3>
       <div style="margin-top:10px">${curvaR(t)}</div></div>
 
     ${tablaMeses(t)}
@@ -330,7 +330,7 @@
         ${kpi('Colchón', fmt(e.colchon), 'piso ' + fmt(e.piso))}
         ${kpi('Días operados', e.dias.length, e.diasGanadores + ' ganadores')}
       </div>
-      <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3><div class="sub">De la evaluación al payout · todas tus cuentas</div>
+      <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3>
         <div style="margin-top:6px">${progresoCuentas()}</div></div>`;
     const r = c.reglas;
     const ps = Store.payoutsDe(c.id).slice().sort((a,b) => a.fecha < b.fecha ? 1 : -1);
@@ -355,11 +355,11 @@
     ${e.bloqueoRetiro.length ? `<div class="card" style="margin-bottom:12px"><h3>Qué te falta para cobrar</h3>
       <ul class="dim" style="font-size:12.5px;margin:8px 0 0;padding-left:17px">${e.bloqueoRetiro.map(b => `<li>${h(b)}</li>`).join('')}</ul></div>`
       : `<div class="card" style="margin-bottom:12px"><h3 class="up">Puedes solicitar ${fmt(e.retirable)}</h3>
-         <div class="sub">Cumples días válidos, consistencia y mínimo</div></div>`}
+         </div>`}
 
     ${muerte ? aviso(muerte + ' Con topes de ' + (r.capPayout ? fmt(r.capPayout) : '—') + ' por retiro, la extracción máxima de por vida de esta cuenta es ' + (r.capPayout ? fmt(r.capPayout * r.maxPayouts) : '—') + '. Es una cuenta desechable: planea la siguiente antes del último retiro.') : ''}
 
-    <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3><div class="sub">De la evaluación al payout · todas tus cuentas</div>
+    <div class="card" style="margin-top:12px"><h3>Progreso de cada cuenta</h3>
       <div style="margin-top:6px">${progresoCuentas()}</div></div>
 
     <div class="card" style="padding:0;margin-top:12px">${ps.length ? `<div class="tabla-scroll"><table>
@@ -406,8 +406,8 @@
         </div>
       </div>
       <div class="card">
-        <h3>Arrastrar o pegar</h3><div class="sub">Cualquier navegador</div>
-        <div class="sync-zona" id="zona" style="margin-top:10px" data-acc="syncArchivo">Suelta aquí el CSV de Tradovate<br><span class="mini tenue">o haz clic para elegirlo</span></div>
+        <h3>Arrastrar o pegar</h3>
+        <div class="sync-zona" id="zona" style="margin-top:10px" data-acc="syncArchivo">Suelta aquí el CSV de Tradovate<br></div>
         <label class="campo" style="margin-top:10px"><span>O pega la tabla (copiada de Tradovate)</span>
           <textarea id="pegado" placeholder="symbol,qty,buyPrice,sellPrice,pnl,boughtTimestamp,soldTimestamp…" style="min-height:64px;font-family:var(--mono);font-size:11px"></textarea></label>
         <div class="fila" style="margin-top:8px"><button class="btn" data-acc="syncPegar">Importar lo pegado</button></div>
@@ -415,7 +415,7 @@
       <div class="card">
         <div class="fila"><h3>Tradovate API</h3><div class="crece"></div>
           ${A.activo ? '<span class="chip up"><span class="latido"></span>CONECTADA</span>' : '<span class="chip">EXPERIMENTAL</span>'}</div>
-        <div class="sub">Solo si tu cuenta tiene acceso API</div>
+        
         ${A.activo ? `<p class="dim" style="font-size:12.5px;margin:10px 0">Sondeo cada 30 s. ${A.ultimo ? 'Último ' + A.ultimo.toLocaleTimeString('es-MX') + '.' : ''}
             ${A.cuentas.length ? 'Cuenta Tradovate: <b class="mono">' + h((A.cuentas.find(c => c.id === A.cuentaId)||{}).name || A.cuentaId) + '</b>.' : ''}
             ${A.error ? '<br><span class="down">' + h(A.error) + '</span>' : ''}</p>
@@ -428,13 +428,13 @@
               <label class="campo"><span>CID (API key)</span><input name="tvCid" value="${h(cfg.cid||'')}" autocomplete="off"></label>
               <label class="campo" style="grid-column:1/-1"><span>Secret (API key)</span><input name="tvSec" type="password" autocomplete="off"></label>
             </div>
-            <div class="mini tenue">La contraseña y el secret viven solo en esta pestaña; nunca se guardan. Las API keys se crean en Tradovate → Settings → API Access (si tu firma lo permite).</div>
+            
             ${A.error ? '<div class="down mini">' + h(A.error) + '</div>' : ''}
             <div><button class="btn acc" data-acc="apiConectar">Conectar</button></div></div>`}
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px"><h3>Bitácora de sincronización</h3><div class="sub">Qué entró y cuándo</div>
+    <div class="card" style="margin-top:14px"><h3>Bitácora de sincronización</h3>
       ${S.log && S.log.length ? `<table style="margin-top:8px"><tbody>${S.log.slice(0,14).map(l => `<tr>
         <td class="mono tenue" style="width:150px">${new Date(l.t).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
         <td>${h(l.msg)}</td></tr>`).join('')}</tbody></table>` : `<div style="margin-top:10px">${vacio('Todavía no ha entrado nada.')}</div>`}
@@ -454,7 +454,7 @@
     const cobros = [];
     vivas.forEach(c => { const p = Vistas._proyeccion(hoy, fin, c); Object.entries(p).forEach(([iso, d]) => d.hitos.filter(x => x.monto).forEach(x => cobros.push(Object.assign({iso, alias: c.alias || c.firma}, x)))); });
     cobros.sort((a,b) => a.iso < b.iso ? -1 : 1);
-    if(!cobros.length) return `<div class="card" style="margin-top:12px"><h3>Estrategia de retiros</h3><div class="sub">En orden, para llegar a tu meta</div>${vacio('Con las cuentas de hoy no se proyecta ningún cobro en 120 días.')}</div>`;
+    if(!cobros.length) return `<div class="card" style="margin-top:12px"><h3>Estrategia de retiros</h3>${vacio('Con las cuentas de hoy no se proyecta ningún cobro en 120 días.')}</div>`;
     const tc = A.tc || 18.5, metaMXN = A.metaMXN || 100000, metaUSD = metaMXN / tc;
     const btcPor = (A.plan5 && A.plan5.btcPorPayout) || 500, reinv = 0.5, costoEval = 155;
     const meses = {}; let acumBolsillo = 0, acumBtc = 0, evalsNuevas = 0, primerMesMeta = null;
@@ -473,7 +473,7 @@
     const necesarias = Math.ceil(metaUSD / Math.max(1, (porCuenta[0] && porCuenta[0].cap ? porCuenta[0].cap * 0.9 * 5 : 5400)));
     return `<div class="card" style="margin-top:12px"><div class="fila"><h3>Estrategia de retiros · en orden</h3><div class="crece"></div>
         <span class="chip ${primerMesMeta ? 'up' : ''}"><b></b>${primerMesMeta ? 'meta de ' + metaMXN.toLocaleString('es-MX') + ' MXN en ' + UI.MESES[+primerMesMeta.split('-')[1]-1] : 'la meta mensual no se alcanza aún'}</span></div>
-      <div class="sub">Con tus cuentas de hoy y los targets por fase: qué cuenta cobra primero, cuánto, y a dónde va cada dólar</div>
+      
       <div class="grid g4" style="gap:8px;margin:12px 0">
         ${kpi('Cuentas vivas', vivas.length, vivas.filter(c => c.fase !== 'eval').length + ' fondeadas · ' + vivas.filter(c => c.fase === 'eval').length + ' en examen', 'mini')}
         ${kpi('Para ' + metaMXN.toLocaleString('es-MX') + ' MXN/mes', necesarias + ' fondeadas', fmt(metaUSD) + ' USD · con retiros de ' + fmt(porCuenta[0] && porCuenta[0].cap ? porCuenta[0].cap*0.9 : 1080), 'mini')}
@@ -558,14 +558,14 @@
           <p>${h(r.texto)}</p>
           <div class="falla">Si la rompes: ${h(r.falla)}</div></div>`).join('')}
       </div>
-      <div class="card" style="margin-bottom:14px"><h3>Risk management</h3><div class="sub">Las reglas de tamaño</div>
+      <div class="card" style="margin-bottom:14px"><h3>Risk management</h3>
         <ul class="dim" style="font-size:13.5px;margin:8px 0 0;padding-left:18px;line-height:1.7">${ESTRATEGIA.riesgo.map(x => `<li>${h(x)}</li>`).join('')}</ul></div>
       <div class="card" style="margin-bottom:14px"><h3>Mentalidad</h3>
         <p class="dim" style="margin:8px 0 0;font-size:13px">${h(ESTRATEGIA.mentalidad)}</p></div>
       <div class="grid g2">
-        <div class="card"><h3>PDAs que usas</h3><div class="sub">Sobre esto se escribe la condición</div>
+        <div class="card"><h3>PDAs que usas</h3>
           <div class="fila" style="margin-top:9px;gap:6px">${ESTRATEGIA.pdas.map(p => `<span class="pill">${h(p)}</span>`).join('')}</div></div>
-        <div class="card"><h3>Liquidez de referencia</h3><div class="sub">A dónde puede querer ir el precio</div>
+        <div class="card"><h3>Liquidez de referencia</h3>
           <div class="fila" style="margin-top:9px;gap:6px">${ESTRATEGIA.liquidez.map(p => `<span class="pill">${h(p)}</span>`).join('')}</div></div>
       </div>
       <div class="card" style="margin-top:14px"><h3>Errores que la app te va a contar</h3>
@@ -583,7 +583,7 @@
       <h2 style="margin:3px 0 14px">Perfil, tema, alertas y topes</h2>
 
       <div class="grid g2" style="margin-bottom:12px">
-        <div class="card"><h3>Perfil</h3><div class="sub">Quién opera esta mesa</div>
+        <div class="card"><h3>Perfil</h3>
           <div class="fila" style="margin-top:12px;gap:12px;align-items:flex-start">
             <div class="perfil" style="margin:0;cursor:default"><div class="av">${P.foto ? `<img src="${P.foto}">` : h(P.iniciales)}</div><div><div class="pn">${h(P.nombre)}</div><div class="pf">${h(P.frase)}</div></div></div>
             <button class="btn chico" data-acc="perfilFoto">Foto</button><button class="btn chico fantasma" data-acc="perfilSinFoto">Quitar</button></div>
@@ -593,7 +593,7 @@
             <label class="campo"><span>Ciudad</span><input data-perfil="ciudad" value="${h(P.ciudad)}"></label>
             <label class="campo"><span>Frase</span><input data-perfil="frase" value="${h(P.frase)}"></label>
           </div></div>
-        <div class="card"><h3>Tema</h3><div class="sub">Nueve pieles, mismos datos · las Tron traen rejilla viva y neón</div>
+        <div class="card"><h3>Tema</h3>
           <div class="temas" style="margin-top:12px">${Tema.TEMAS.map(t => `<div class="tema ${(A.tema||'acido')===t.id?'on':''}" data-acc="tema" data-id="${t.id}" data-theme-preview="${t.id}">
             <div class="sw">${t.sw ? `<i style="background:${t.sw[0]}"></i><i style="background:${t.sw[1]};box-shadow:0 0 10px ${t.sw[1]}"></i>` : t.id==='acido'?'<i style="background:#050506"></i><i style="background:#C6FF3D"></i>':t.id==='blanco'?'<i style="background:#050506"></i><i style="background:#F4F4F4"></i>':t.id==='oro'?'<i style="background:#050506"></i><i style="background:#C9A24A"></i>':t.id==='papel'?'<i style="background:#F3F2ED;border:1px solid #ccc"></i><i style="background:#15161A"></i>':'<i style="background:#050914"></i><i style="background:#9FD3FF"></i>'}</div>
             <b>${h(t.n)}</b><small>${h(t.d)}</small></div>`).join('')}</div></div>
@@ -601,7 +601,7 @@
 
       <div class="card" style="margin-bottom:12px"><div class="fila"><h3>Alertas de TradingView y avisos al teléfono</h3><div class="crece"></div>
           ${Alertas.est.conectado ? '<span class="chip up"><span class="latido"></span>ESCUCHANDO</span>' : AL.tema ? '<span class="chip down"><b></b>SIN CONEXIÓN</span>' : '<span class="chip">APAGADO</span>'}</div>
-        <div class="sub">Puente ntfy.sh · sin servidor · el indicador NP JOURNAL manda la alerta y aquí llega en segundos</div>
+        
         <div class="grid g3" style="gap:8px;margin-top:12px">
           <label class="campo"><span>Tu tema (secreto, tipo contraseña)</span><input data-alerta="tema" value="${h(AL.tema)}" placeholder="np-andre-8f3k2"></label>
           <label class="campo"><span>Servidor</span><input data-alerta="servidor" value="${h(AL.servidor)}"></label>
@@ -613,20 +613,20 @@
           <button class="btn chico fantasma" data-acc="alertasDesconectar">Apagar</button>
           ${AL.tema ? `<span class="mono mini tenue">webhook: ${h(Alertas.url())}</span>` : ''}</div>
         ${Alertas.est.error ? `<div class="down mini" style="margin-top:6px">${h(Alertas.est.error)}</div>` : ''}
-        <div class="mini dim" style="margin-top:10px;line-height:1.6"><b>Cómo:</b> 1) inventa un tema difícil de adivinar y escríbelo arriba → Conectar. 2) En TradingView pon el indicador <b>NP JOURNAL</b> (~/claude/tradingview/np-journal.pine), crea UNA alerta con «Any alert() function call» y en Webhook URL pega la dirección de arriba. 3) En el teléfono instala <b>ntfy</b> y suscríbete al mismo tema: ahí llegan las alertas del setup y los avisos del journal (meta hecha, 2 pérdidas, apertura de NY).</div>
+        
         ${alertas.length ? `<table style="margin-top:10px"><tbody>${alertas.map(a => `<tr><td class="mono tenue" style="width:130px">${new Date(a.t).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${h(a.datos ? Alertas.resumen(a.datos) : (a.titulo + ' · ' + a.texto))}</td>
           <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar trade</button>` : ''}</td></tr>`).join('')}</tbody></table>` : ''}
       </div>
 
-      <div class="card" style="margin-bottom:12px"><h3>Risk management</h3><div class="sub">Las cuatro reglas de tamaño · mandan sobre todo lo demás</div>
+      <div class="card" style="margin-bottom:12px"><h3>Risk management</h3>
         <div class="grid g4" style="gap:8px;margin-top:10px">
           <label class="campo"><span>Trades por día (máx)</span><input type="number" step="1" min="1" data-ajuste="maxTradesDia" value="${A.maxTradesDia}"></label>
           <label class="campo"><span>If W → get off the charts</span><select data-ajuste="pararTrasGanada">${opciones([{v:'1',t:'Sí · un ganador y cierro'},{v:'0',t:'No'}], A.pararTrasGanada === false ? '0' : '1')}</select></label>
           <label class="campo"><span>Riesgo máx por trade (% de la cuenta)</span><input type="number" step="0.25" min="0.25" max="5" data-ajuste="riesgoPctCuentaPct" value="${((A.riesgoPctCuenta ?? 0.01)*100).toFixed(2)}"></label>
           <label class="campo"><span>Contratos máx (1 mini)</span><input type="number" step="1" min="1" data-ajuste="maxContratos" value="${A.maxContratos ?? 1}"></label>
         </div>
-        <div class="mini tenue" style="margin-top:8px">1–2 trades por día · si ganas, te sales · nunca más del 1% por trade ($500 en 50k) · máximo 1 mini. El semáforo, el cargador y el tamaño sugerido obedecen esto.</div></div>
-      <div class="card" style="margin-bottom:12px"><h3>Target y daily loss por fase</h3><div class="sub">Cada cuenta va en su fase · esto pinta el calendario y el plan del día</div>
+        </div>
+      <div class="card" style="margin-bottom:12px"><h3>Target y daily loss por fase</h3>
         <div class="grid g3" style="gap:8px;margin-top:10px">
           <label class="campo"><span>EVAL · target/día ($)</span><input type="number" step="50" data-fase="eval.target" value="${Store.fases().eval.target}"></label>
           <label class="campo"><span>EVAL · daily loss ($)</span><input type="number" step="50" data-fase="eval.loss" value="${Store.fases().eval.loss}"></label>
@@ -635,12 +635,12 @@
           <label class="campo"><span>FUNDED · daily loss ($)</span><input type="number" step="25" data-fase="fond.loss" value="${Store.fases().fond.loss}"></label>
           <label class="campo"><span>FUNDED · consistencia (0–1)</span><input type="number" step="0.05" min="0" max="1" data-fase="fond.consistencia" value="${Store.fases().fond.consistencia}"></label>
         </div>
-        <div class="mini tenue" style="margin-top:8px">En evaluación el chiste es pasarla en 3 días de trading: $1,000 por día arriesgando el drawdown ($2,000); ya fondeado, +$200 al día y nunca más de −$500. La consistencia topa el mejor día (eval: % del objetivo → con 40% sobre $3,000 ningún día más de $1,200; funded: % de la ganancia al pedir el retiro). Si el contrato de la cuenta trae su propia consistencia, manda la del contrato.</div></div>
-      <div class="card" style="margin-bottom:12px"><h3>Copiador (Tradesyncer / group trading)</h3><div class="sub">Un CSV, todas las cuentas</div>
+        </div>
+      <div class="card" style="margin-bottom:12px"><h3>Copiador (Tradesyncer / group trading)</h3>
         <label class="check ${A.copiador ? 'on' : ''}" style="margin-top:10px;display:inline-flex"><input type="checkbox" data-ajuste="copiador" ${A.copiador ? 'checked' : ''}> Al importar, meter cada trade en <b>todas las cuentas seleccionadas</b> arriba</label>
-        <div class="mini tenue" style="margin-top:8px">Con Tradesyncer el trade es el mismo en la maestra y en las seguidoras: exportas el CSV de la maestra en Tradovate, seleccionas las 5 cuentas arriba y entra en las 5. Si el tamaño difiere por cuenta, ajusta contratos en el trade.</div></div>
+        </div>
       <div class="card" style="margin-bottom:12px">
-        <h3>Riesgo y ejecución</h3><div class="sub">Con esto se calculan contratos, riesgo del día y semáforo</div>
+        <h3>Riesgo y ejecución</h3>
         <div class="grid g3" style="margin-top:11px">
           <label class="campo"><span>Instrumento</span><select data-ajuste="instrumento">
             ${opciones(Object.keys(INSTRUMENTOS).map(k => ({v:k, t:k + ' · ' + INSTRUMENTOS[k].nombre + ' ($' + INSTRUMENTOS[k].puntoUSD + '/pt)'})), A.instrumento)}</select></label>
@@ -658,10 +658,10 @@
           <label class="campo"><span>Colchón mínimo (en stops)</span><input type="number" step="1" min="1" data-ajuste="stopsMinimos" value="${A.stopsMinimos ?? 3}"></label>
         </div>
       </div>
-      <div class="card" style="margin-bottom:12px"><h3>Estrategias</h3><div class="sub">Una por línea · el rendimiento de cada una sale en el Panel</div>
+      <div class="card" style="margin-bottom:12px"><h3>Estrategias</h3>
         <textarea data-ajuste="estrategiasTxt" style="margin-top:10px;min-height:70px">${h((A.estrategias||[]).join('\n'))}</textarea></div>
       <div class="card" style="margin-bottom:12px"><h3>Tus datos</h3>
-        <div class="sub">Todo vive en este navegador. Exporta seguido.</div>
+        
         <div class="fila" style="margin-top:11px">
           <button class="btn acc" data-acc="exportarCompleto">Respaldo completo con screenshots</button>
           <button class="btn" data-acc="importar">Importar respaldo</button>

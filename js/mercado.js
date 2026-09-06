@@ -202,7 +202,7 @@
     const d0 = datos[0];
     const fechaD = new Date(d0.D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
     const estadoNY = d0.pasada ? 'Mercado cerrado · última noche: ' + fechaD : d0.abrioNY ? 'NY ya abrió · los niveles vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm' : 'Noche en curso';
-    A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>La noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div><span class="mini dim">Asia · Londres · Pre-NY · hora de NY · nivel tachado = ya tomado</span></div>
+    A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>La noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div></div>
       <div class="grid g2" style="margin-top:10px;gap:12px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
   }
 
@@ -223,8 +223,8 @@
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi('NQ · Nasdaq','…','futuro')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
-    <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="mini dim">alto</span><span class="ffi medio" style="margin-left:8px"></span><span class="mini dim">medio</span></div>
-      <div class="sub">Forex Factory · hora de Morelia · datos USD que mueven ES · NQ · BTC · clic en una noticia para ver cómo pega</div>
+    <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
+      
       <div id="mkTabla" style="margin-top:10px">${vacio('Cargando Forex Factory…')}</div></div>`;
   };
 

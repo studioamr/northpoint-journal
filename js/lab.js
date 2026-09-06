@@ -188,15 +188,15 @@
         Truena en <b class="down">${pct(mc.pTruena,0)}</b>. ${mc.diasMediana ? 'Mediana para pasar: <b>' + Math.round(mc.diasMediana) + ' días</b> (90%: ' + Math.round(mc.diasP90) + ').' : ''}</div>
         <div class="fila" style="margin-top:12px;gap:8px"><span class="eti">tamaño ×</span>
           <div class="seg" data-seg="labEscala">${[0.5,1,1.5,2].map(v => `<button data-v="${v}" class="${cfg.escala===v?'on':''}">${v}×</button>`).join('')}</div>
-          <span class="mini tenue">multiplica cada P&L de tu muestra: así se ve qué pasa si subes o bajas contratos</span></div>
+          </div>
       </div>
     </div>
 
     <div class="grid" style="grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="card"><h3>Abanico de futuros</h3><div class="sub">Balance día a día · banda 5–95 y 25–75 · mediana</div>
+      <div class="card"><h3>Abanico de futuros</h3>
         <div style="margin-top:10px">${abanico(mc.abanico, {objetivo: mc.objetivo, piso: mc.piso0})}</div>
         <div class="fila mini tenue mono" style="margin-top:8px"><span>día 60 · p5 ${fmt(mc.finalP5)}</span><span>· mediana ${fmt(mc.finalP50)}</span><span>· p95 ${fmt(mc.finalP95)}</span></div></div>
-      <div class="card"><h3>Kelly</h3><div class="sub">Cuánto de tu colchón arriesgar por trade según tu edge</div>
+      <div class="card"><h3>Kelly</h3>
         ${k ? `<div class="grid g2" style="gap:8px;margin-top:10px">
           ${kpi('Kelly completo', pct(Math.max(0,k.f),1), 'del colchón · ' + fmt(Math.max(0,k.f)*colchon), 'mini')}
           ${kpi('Medio Kelly', pct(Math.max(0,k.medio),1), fmt(Math.max(0,k.medio)*colchon) + ' por trade', 'mini')}
@@ -220,18 +220,18 @@
     </div>
 
     <div class="grid g2" style="margin-bottom:12px">
-      <div class="card"><h3>Mapa de calor</h3><div class="sub">Expectativa por hora × día · verde gana, rojo pierde</div>
+      <div class="card"><h3>Mapa de calor</h3>
         <div class="calor" style="margin-top:10px;grid-template-columns:44px repeat(${cal.horas.length},1fr)">
           <div></div>${cal.horas.map(hh => `<div class="ch">${hh}h</div>`).join('')}
           ${cal.dias.map(d => `<div class="ch">${d}</div>` + cal.horas.map(hh => { const v = cal.celdas[d+'|'+hh]; if(!v) return '<div class="cc"></div>';
             const e = v.reduce((a,b) => a+b,0)/v.length; const mx = Math.max(...Object.values(cal.celdas).map(x => Math.abs(x.reduce((a,b)=>a+b,0)/x.length)))||1;
             return `<div class="cc" style="background:${e>=0?'rgba(198,255,61,'+(0.15+0.75*Math.abs(e)/mx).toFixed(2)+')':'rgba(255,77,90,'+(0.15+0.75*Math.abs(e)/mx).toFixed(2)+')'}" title="${d} ${hh}h · ${v.length} trades · ${fmt(e)}"><span>${v.length}</span></div>`; }).join('')).join('')}
         </div></div>
-      <div class="card"><h3>Contrafactuales</h3><div class="sub">Qué habría pasado con la misma muestra y una regla más</div>
+      <div class="card"><h3>Contrafactuales</h3>
         <table style="margin-top:8px"><thead><tr><th>Si hubieras…</th><th class="num">n</th><th class="num">win</th><th class="num">P&L</th><th class="num">Δ vs real</th></tr></thead><tbody>
         ${cf.map(x => `<tr><td>${h(x.nombre)}</td><td class="num tenue">${x.n}</td><td class="num">${pct(x.m.winRate,0)} <span class="${signo(x.dWin)} mini">(${x.dWin>=0?'+':''}${(x.dWin*100).toFixed(0)})</span></td>
           <td class="num ${signo(x.m.pnl)}">${masMenos(x.m.pnl)}</td><td class="num ${signo(x.delta)}"><b>${masMenos(x.delta)}</b></td></tr>`).join('')}</tbody></table>
-        <div class="mini tenue" style="margin-top:8px">Un Δ positivo con menos trades = esa regla te sobra en la práctica.</div></div>
+        </div>
     </div>
     ${aviso('Bootstrap asume que tus trades futuros se parecen a los pasados y son independientes. Con ' + t.length + ' trades' + (t.length < 50 ? ' <b>la muestra es chica</b>: las probabilidades son orientativas, no promesas.' : ' la estimación empieza a ser decente.'), 'acc')}`;
   };

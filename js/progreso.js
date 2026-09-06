@@ -94,7 +94,7 @@
       <td class="num down">-${fmt(rsk)}</td><td class="num down">-${fmt(rsk * P.cuentas)}</td></tr>`;
     return `<div class="card" style="margin-bottom:12px">
       <div class="fila" style="gap:14px">
-        <div><h3>Plan de riesgo</h3><div class="sub">Mínimo por día por cuenta → semana → mes → retiro · copiador: el mismo trade en todas</div></div>
+        <div><h3>Plan de riesgo</h3></div>
         <div class="crece"></div>
         <div class="fila" style="gap:6px"><span class="eti">Cuentas</span>
           <button class="btn chico" data-acc="plan5menos">−</button><span class="mono" style="font-size:20px;min-width:28px;text-align:center" id="p5n">${P.cuentas}</span><button class="btn chico" data-acc="plan5mas">+</button></div>

@@ -66,7 +66,7 @@
     <div class="grid g2">
       <div class="card">
         <h3>La condición de hoy</h3>
-        <div class="sub">Regla 1 · si esto → entonces aquello. Con precios.</div>
+        
         <div style="margin-top:11px;display:flex;flex-direction:column;gap:9px">
           <label class="campo"><span>PDA sobre la que decides</span>
             <select data-dia="condicionPDA">${opciones(['— elige —', ...ESTRATEGIA.pdas], dia.condicionPDA)}</select></label>
@@ -82,7 +82,7 @@
               ${['—','A','B'].map(v => `<button data-v="${v}" class="${(dia.activada||'—') === v ? 'on' : ''}">${v}</button>`).join('')}
             </div>
             <div class="crece"></div>
-            <span class="mini tenue">se guarda solo</span>
+            
           </div>
         </div>
       </div>
@@ -90,12 +90,12 @@
       <div style="display:flex;flex-direction:column;gap:12px">
         <div class="card">
           <h3>Rutina</h3>
-          <div class="sub">Horas de Morelia · la apertura se ajusta al horario de NY</div>
+          
           <div class="rutina" style="margin-top:10px">${pasos}</div>
         </div>
         <div class="card">
           <h3>Las cuatro reglas</h3>
-          <div class="sub">Cada trade se califica contra esto</div>
+          
           <div style="margin-top:9px;display:flex;flex-direction:column;gap:6px">
             ${ESTRATEGIA.reglas.map((r,i) => `<div class="fila" style="gap:8px">
               <span class="mono acc" style="font-size:10px">0${i+1}</span>
@@ -131,7 +131,7 @@
         <div class="pb-c"><div class="fila"><b class="pb-t">${h(p.t)}</b>${p.ok ? '<span class="pill ok">LISTO</span>' : ''}<div class="crece"></div>
           <button class="btn chico ${p.ok ? 'fantasma' : 'acc'}" ${p.acc ? `data-acc="${p.acc}"` : `data-ir="${p.ir}"`}>${h(p.b)}</button></div>
           <div class="mini dim" style="margin-top:4px">${h(p.s)}</div></div></div>`).join('')}</div>
-      <div class="card" style="margin-top:14px"><h3>${h(ESTRATEGIA.nombre)}</h3><div class="sub">La estrategia que la app vigila</div>
+      <div class="card" style="margin-top:14px"><h3>${h(ESTRATEGIA.nombre)}</h3>
         <p class="dim" style="margin:9px 0 0;font-size:12.5px">${h(ESTRATEGIA.premisa)}</p></div></div>`;
   }
 
@@ -162,7 +162,7 @@
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
 
-    ${sec('Resumen', Tema.voz('resumen.sub','los cinco números del día a día'), `<div class="grid g5">
+    ${sec('Resumen', '', `<div class="grid g5">
       ${kpi('Balance', fmt(balanceTotal), `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
       ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
       ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
@@ -170,7 +170,7 @@
       ${kpi('Prom. gana / pierde', `${fmt(m.avgWin)} <span class="tenue">/</span> ${fmt(m.avgLoss)}`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
     </div>`)}
 
-    ${sec('Cuenta', varias ? 'suma de ' + sel.length + ' cuentas' : 'balance, objetivo y drawdown', `<div class="grid" style="grid-template-columns:1fr 320px">
+    ${sec('Cuenta', varias ? sel.length + ' cuentas' : '', `<div class="grid" style="grid-template-columns:1fr 320px">
       <div class="card">
         <div class="fila"><h3>Curva de balance</h3><div class="crece"></div>
           <span class="mini tenue mono">${varias ? 'suma de ' + sel.length + ' cuentas' : 'piso ' + fmt(est.piso) + ' · pico ' + fmt(est.pico)}</span></div>
@@ -193,25 +193,25 @@
       </div>
       <div class="card">
         <div class="fila"><h3>Puntaje NP</h3><div class="crece"></div><span class="mono acc" style="font-size:19px">${pt.total}</span></div>
-        <div class="sub">Salud del proceso, no del P&L</div>
+        
         ${Stats.radar(pt.ejes)}
         <div class="mini tenue" style="text-align:center;margin-top:4px">Disciplina: ${m.adherencia.toFixed(0)}/100 de adherencia a las 4 reglas</div>
       </div>
     </div>`)}
 
-    ${sec('Rendimiento', 'por día y por estrategia', `<div class="grid g2">
-      <div class="card"><h3>P&L por día</h3><div class="sub">Días ganadores apilados > días grandes</div>
+    ${sec('Rendimiento', '', `<div class="grid g2">
+      <div class="card"><h3>P&L por día</h3>
         <div style="margin-top:10px">${Stats.barras(m.serieDias.map(d => ({k:d.fecha, v:d.pnl})))}</div></div>
       <div class="card"><div class="fila"><h3>Estrategias</h3><div class="crece"></div><button class="btn chico fantasma" data-acc="nuevaEstrategia">+ estrategia</button></div>
-        <div class="sub">Rendimiento de cada una · se asigna al registrar el trade</div>
+        
         <div style="margin-top:10px">${rendimientoEstrategias(t)}</div></div>
     </div>`)}
 
-    ${(Store.estado.alertas||[]).length ? sec('Alertas', 'NP JOURNAL · TradingView', `<div class="card"><div class="fila"><h3>Últimas alertas</h3>${Vistas._latidoAlertas()}<div class="crece"></div><button class="btn chico fantasma" data-ir="ajustes">Configurar</button></div>
+    ${(Store.estado.alertas||[]).length ? sec('Alertas', '', `<div class="card"><div class="fila"><h3>Últimas alertas</h3>${Vistas._latidoAlertas()}<div class="crece"></div><button class="btn chico fantasma" data-ir="ajustes">Configurar</button></div>
       <table style="margin-top:8px"><tbody>${(Store.estado.alertas||[]).slice(0,5).map(a => `<tr><td class="mono tenue" style="width:120px">${new Date(a.t).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${h(a.datos ? Alertas.resumen(a.datos) : (a.titulo + ' · ' + a.texto))}</td>
         <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`) : ''}
 
-    ${sec('Últimos trades', 'los ocho más recientes', `<div class="card"><div class="fila"><h3>Trades</h3><div class="crece"></div>
+    ${sec('Últimos trades', '', `<div class="card"><div class="fila"><h3>Trades</h3><div class="crece"></div>
       <button class="btn chico fantasma" data-ir="diario">Ver todos</button></div>
       <div class="tabla-scroll" style="margin-top:8px">${tablaTrades(t.slice(-8).reverse())}</div></div>`)}`;
   };
