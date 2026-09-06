@@ -59,6 +59,7 @@
     if(!S.creado){ S.creado = new Date().toISOString(); }
     // migración única: risk management dictado (1–2 trades/día)
     if(!S.ajustes._rm1){ if(S.ajustes.maxTradesDia > 2) S.ajustes.maxTradesDia = 2; S.ajustes._rm1 = true; }
+    if(!S.ajustes._tp1100){ if(S.ajustes.fases && S.ajustes.fases.eval && S.ajustes.fases.eval.target === 1000) S.ajustes.fases.eval.target = 1100; S.ajustes._tp1100 = true; }   // 6-sep-2026: eval = riesgo 2,000 para 1,100 de TP
     return S;
   }
 
