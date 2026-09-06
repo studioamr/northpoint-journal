@@ -123,8 +123,8 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             cv.addSubview(web, positioned: .above, relativeTo: webView); platWeb = web
         }
         if platURL != url.absoluteString { platURL = url.absoluteString; platWeb?.load(URLRequest(url: url)) }
-        let H = cv.bounds.height
-        platWeb?.frame = NSRect(x: x, y: H - y - h, width: w, height: h)
+        // el contentView ES el WKWebView principal y está "flipped": el origen va arriba, igual que en CSS
+        platWeb?.frame = NSRect(x: x, y: y, width: w, height: h)
         platWeb?.isHidden = false
     }
 

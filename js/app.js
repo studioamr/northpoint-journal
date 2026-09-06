@@ -88,7 +88,8 @@
     const w = document.getElementById('tvWrap'); const url = w && w.dataset.url;
     if(!w || !url || document.querySelector('.velo') || document.getElementById('acceso') && !document.getElementById('acceso').hidden){ np({cmd:'plataformaOcultar'}); return; }
     const r = w.getBoundingClientRect();
-    np({cmd:'plataforma', url, x:r.left, y:r.top, w:r.width, h:r.height, ratio: window.devicePixelRatio || 1});
+    // se manda la distancia al borde INFERIOR: en AppKit el origen está abajo y así no importa si el alto del viewport y el de la vista difieren
+    np({cmd:'plataforma', url, x:r.left, y:r.top, w:r.width, h:r.height, abajo: window.innerHeight - (r.top + r.height), ratio: window.devicePixelRatio || 1});
   }
   document.addEventListener('mesa:pintado', () => setTimeout(colocaPlataforma, 30));
   addEventListener('resize', colocaPlataforma); addEventListener('scroll', colocaPlataforma, true);
