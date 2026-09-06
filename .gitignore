@@ -1,0 +1,10 @@
+desktop-app/*.app
+desktop-app/NORTHPOINT
+desktop-app/np_arm
+desktop-app/np_x86
+desktop-app/np.iconset
+desktop-app/make-icon
+desktop-app/dmg-stage
+desktop-app/logo-raw.png
+.claude/
+.DS_Store
