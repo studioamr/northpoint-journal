@@ -60,7 +60,7 @@
       nodo(d+1, 2*i, bal + cfg.tp); nodo(d+1, 2*i + 1, Math.max(piso, bal - cfg.dl));   // nadie baja de inicial − 2k: ahí se quema
     };
     nodo(0, 0, cfg.bal0);
-    return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W}px;max-width:none;height:auto;display:block"></svg></div>`.replace('></svg>', '>' + g + '</svg>');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>`;   // completo a lo ancho de la tarjeta, raíz al centro
   }
 
   let ultima = null, lote = null;   // la última canica y el último lote (viven mientras la vista esté abierta)
