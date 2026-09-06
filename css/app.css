@@ -342,7 +342,8 @@ html .cal .d.f-eval{background:linear-gradient(180deg,rgba(79,140,255,.22),rgba(
 html .cal .d.f-buffer{background:linear-gradient(180deg,rgba(255,77,90,.2),rgba(255,77,90,.05));border-color:rgba(255,77,90,.5)}
 html .cal .d.f-payouts{background:linear-gradient(180deg,rgba(255,213,74,.2),rgba(255,213,74,.05));border-color:rgba(255,213,74,.55)}
 .pill.et-eval{background:rgba(79,140,255,.2);color:var(--etEval);border:1px solid rgba(79,140,255,.5)} .pill.et-buffer{background:rgba(255,77,90,.18);color:var(--etBuffer);border:1px solid rgba(255,77,90,.5)} .pill.et-payouts{background:rgba(255,213,74,.18);color:var(--etPay);border:1px solid rgba(255,213,74,.5)}
-.fdot.et-eval{background:var(--etEval)} .fdot.et-buffer{background:var(--etBuffer)} .fdot.et-payouts{background:var(--etPay)}
+.fdot.et-eval{background:var(--etEval)}
+html .cal .d.p-eval{box-shadow:inset 0 0 0 1.5px var(--etEval),0 0 22px -8px var(--etEval);border-color:var(--etEval)} .fdot.et-buffer{background:var(--etBuffer)} .fdot.et-payouts{background:var(--etPay)}
 .cal .nds{display:inline-flex;align-items:center;gap:3px;margin-top:6px} .cal .nd{width:5px;height:5px;border-radius:50%;background:var(--oro)} .cal .nd.alto{background:var(--down)} .cal .nds b{font-family:var(--mono);font-size:9px;color:var(--tenue);font-weight:500;margin-left:3px;letter-spacing:.04em}
 .cal .dow{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--tenue);text-align:center;padding:4px 0;text-transform:uppercase}
 .cal .d{background:var(--panel);border:1px solid var(--linea);min-height:104px;padding:10px 12px;cursor:pointer;position:relative;transition:.18s;border-radius:14px}
