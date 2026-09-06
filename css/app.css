@@ -642,3 +642,4 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 
 .po3 .pill{font-size:10px;letter-spacing:.1em}
 .pasos-hechos{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap} .pasos-hechos .ph{font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid var(--linea);border-radius:999px;color:var(--tenue)} .pasos-hechos .ph.ok{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,transparent);background:var(--upSuave)} .pasos-hechos .ph.activo{color:var(--acc);border-color:var(--acc)}
+.oro{color:var(--oro)}
