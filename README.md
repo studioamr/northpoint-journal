@@ -73,17 +73,19 @@ muestra un chip por cuenta; Trades, Calendario, Reportes y Lab filtran igual).
   revises antes de gastar otra. Tocas la siguiente celda y sale el formulario rápido: dirección, P&L (o entrada/salida y se calcula), **las 4 reglas como cuatro botones**,
   **screenshot** (pega con ⌘V, arrastra o clic; se guarda comprimido en IndexedDB) y notas. Lo demás plegado en «Más detalles».
 - **Trades** — todos los trades, filtrables por resultado y por disciplina (4/4 reglas vs reglas rotas). Exporta CSV.
-  Al registrar un trade (o al abrir uno) lo primero que ves es su **ficha**, generada sola con los datos del trade
+  Al abrir un trade sale **el formulario de siempre** (la ficha-primero se probó y se quitó: «déjalo como el panel de log trade»);
+  en su pie hay **⤓ PDF**: un reporte A4 del trade hecho sin librerías (`js/pdf.js`: Helvetica, tabla de 12 datos, las 4 reglas,
+  condición, PDA, errores, notas y el screenshot como JPEG; en la app nativa se guarda con NSSavePanel vía `cmd:'guardar'`, en
+  navegador se descarga). La ficha PNG sigue disponible por código (`Ficha.dibujaTrade`), generada sola con los datos del trade
   (`Ficha.dibujaTrade`, PNG 1080×1350) con **toda la información del trade**: cuenta y fase, pills (LARGO/CORTO, instrumento
   × contratos, estrategia, real/backtest), P&L en grande + balance después + % de la cuenta + R, rejilla de 12 datos (entrada,
   salida, stop, take profit, puntos, riesgo $, comisión, bruto, sesión, tipo, TP a liquidez interna/externa, confluencias), las 4
   reglas con ✓/✗ y la disciplina, condición + PDA + objetivo, errores, el screenshot si lo pegaste y las notas. Desde la ficha:
   **Editar** (abre el formulario), **PNG** y **Compartir**.
-- **Calendario** — limpio para pantalla completa: solo el mes en grande, el P&L del mes, la leyenda de fases (EVAL +$1,000 / −$2,000 ·
-  FUNDED +$200 / −$500) y la cuenta. Los días futuros llevan un punto y un filo de color según la fase (azul eval, verde funded),
-  los hitos como píldoras cortas (✓ PASAS LA EVAL · → PIDE LA FONDEADA · ◆ BUFFER · $ 1,080 · ■ CONCLUYE) y las noticias USD como
-  puntitos (rojo alto, ámbar medio) con la sigla del dato; el detalle (target, daily loss, escenarios) va en el tooltip y en el modal
-  del día. Se quitaron el balance grande de arriba, la línea «Calendario · cuenta · fase → target…» y el texto de ayuda de abajo.
+- **Calendario** — cabecera limpia para pantalla completa: solo el mes en grande, el P&L del mes, la leyenda de fases (EVAL +$1,000 /
+  −$2,000 · FUNDED +$200 / −$500) y la cuenta; se quitaron el balance grande de arriba, la línea «Calendario · cuenta · fase →
+  target…» y el texto de ayuda de abajo. Los días futuros sí muestran (él lo pidió de vuelta) la píldora EVAL/FUNDED, «target +$ ·
+  daily loss −$», los hitos y las noticias USD con su escenario (alto → cortos · bajo → largos).
   Antes: la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia
   objetivo/buffer); debajo el mes con el P&L de cada día. Clic en un **día pasado**: la **ficha oficial del día** (`js/ficha.js`, PNG
   1080×1350 dibujado en canvas: NORTHPOINT, fecha, P&L grande, win/PF/disciplina, condición, trades, hasta dos screenshots, notas)

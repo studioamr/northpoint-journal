@@ -91,6 +91,12 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
             let p = NSSavePanel(); p.nameFieldStringValue = d["nombre"] as? String ?? "northpoint.png"; p.allowedFileTypes = ["png"]
             p.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
             p.begin { r in if r == .OK, let u = p.url { try? data.write(to: u) } }
+        case "guardar":
+            guard let b64 = d["b64"] as? String, let data = Data(base64Encoded: b64) else { return }
+            let ext = d["ext"] as? String ?? "pdf"
+            let p = NSSavePanel(); p.nameFieldStringValue = d["nombre"] as? String ?? "northpoint.\(ext)"; p.allowedFileTypes = [ext]
+            p.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            p.begin { r in if r == .OK, let u = p.url { try? data.write(to: u) } }
         case "trading": abrirTrading()
         case "plataforma":
             guard let u = d["url"] as? String, let url = URL(string: u) else { return }

@@ -137,15 +137,17 @@
 
     if(!e.target.closest('.selcta') && selAbierto){ selAbierto = false; const p = document.querySelector('.selpanel'); if(p) p.hidden = true; }
     const b = e.target.closest('[data-acc]');
-    if(!b){ const fila = e.target.closest('tr[data-trade]'); if(fila) modalFichaTrade(fila.dataset.trade); return; }
+    if(!b){ const fila = e.target.closest('tr[data-trade]'); if(fila) modalTrade(Store.estado.trades.find(t => t.id === fila.dataset.trade)); return; }
     const acc = b.dataset.acc, id = b.dataset.id;
     const F = {
       nuevoTrade: () => modalCargador(),
       dispara: () => { cerrar(); modalTrade(null); },
       tradeBacktest: () => modalTrade(null, {modo:'backtest'}),
       tradeSesion: () => modalTrade(null, {modo:'backtest', sesionId:id}),
-      editaTrade: () => modalFichaTrade(id),
+      editaTrade: () => modalTrade(Store.estado.trades.find(t => t.id === id)),
       editaTradeForm: () => { cerrar(); modalTrade(Store.estado.trades.find(t => t.id === id)); },
+      fichaTrade: () => modalFichaTrade(id),
+      pdfTrade: () => PDF.descargaTrade(id).then(() => toast('PDF listo')),
       fichaTradeDescarga: () => Ficha.descargaTrade(id).then(() => toast('Ficha guardada')),
       fichaTradeComparte: () => Ficha.comparteTrade(id).then(ok => { if(!ok){ Ficha.descargaTrade(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       nuevaCuenta: () => modalCuenta(null),
@@ -361,7 +363,7 @@
         </div></details>
       </div>`;
 
-    const pie = `${t ? '<button class="btn mal chico" id="btnBorra">Borrar</button>' : ''}
+    const pie = `${t ? '<button class="btn mal chico" id="btnBorra">Borrar</button><button class="btn chico" data-acc="pdfTrade" data-id="' + t.id + '">⤓ PDF</button>' : ''}
       <div class="crece"></div><button class="btn" data-cerrar>Cancelar</button>
       <button class="btn acc" id="btnGuarda">${nuevo ? 'Registrar' : 'Guardar'}</button>`;
 
@@ -447,7 +449,6 @@
       else if(imgQuitar && t){ await Img.del(t.id); Store.editaTrade(t.id, {img: null}); }
       document.removeEventListener('paste', onPaste);
       cerrar(); toast(t ? 'Trade actualizado' : Tema.voz(n > 0 ? 'trade.win' : n < 0 ? 'trade.loss' : 'trade.be', 'Registrado · ' + masMenos(n), masMenos(n)));
-      modalFichaTrade(guardado.id);
     });
     if(t) q('#btnBorra').addEventListener('click', () => { if(confirm('¿Borrar este trade?')){ Img.del(t.id); Store.borraTrade(t.id); document.removeEventListener('paste', onPaste); cerrar(); } });
   }

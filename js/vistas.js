@@ -397,8 +397,7 @@
       const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
       celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + pr.fase : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
-        <div class="n">${f.getDate()}${futuro && pr ? `<i class="fdot ${pr.fase}"></i>` : ''}</div>
-        ${futuro && pr && pr.hitos.length ? pr.hitos.map(x => `<div class="hito-cal ${x.tono}">${h(hitoCorto(x))}</div>`).join('') : ''}
+        <div class="n">${f.getDate()}${futuro && pr ? ` <span class="pill ${pr.fase === 'eval' ? 'acc' : 'ok'}" style="font-size:8px;padding:1px 4px">${pr.fase === 'eval' ? 'EVAL' : 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-cal ${x.tono}">${h(x.t)}<i>${h(x.c)}</i></div>`).join('')}</div>` : ''}
         ${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
@@ -438,10 +437,8 @@
       const dentro = semana && new Date(iso + 'T12:00').getTime() <= semana.max + 86400000;
       if(!dentro){ c.innerHTML = ''; return; }
       if(!ns.length){ c.innerHTML = ''; return; }
-      const alto = ns.find(n => n.impacto === 'High') || ns[0];
-      const corto = alto.titulo.replace(/ m\/m| y\/y| q\/q/g, '').replace(/^(Core |Unemployment |Average |Advance |Prelim |Final |Flash )/,'').split(' ').slice(0,2).join(' ');
-      const titulo = ns.map(n => Mercado.horaLocal(n.t) + ' ' + n.titulo + ' · ' + Mercado.escenario(n).corto).join('\n');
-      c.innerHTML = `<span class="nds" title="${h(titulo)}">${ns.slice(0,4).map(n => `<i class="nd ${n.impacto === 'High' ? 'alto' : ''}"></i>`).join('')}<b>${h(corto)}</b></span>`;
+      c.innerHTML = ns.slice(0,3).map(n => { const e = Mercado.escenario(n);
+        return `<div class="ev ${n.impacto === 'High' ? 'alto' : ''}"><b>${Mercado.horaLocal(n.t)}</b> ${h(n.titulo.replace(/ m\/m| y\/y/g, ''))}<div class="tenue">${h(e.corto)}</div></div>`; }).join('') + (ns.length > 3 ? `<div class="tenue">+${ns.length-3} más</div>` : '');
     });
   });
 })();
