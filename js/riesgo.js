@@ -41,25 +41,29 @@
      EVAL: cada día perdido es el drawdown completo → X. BUFFER: −loss por día, se quema en inicial − 2k (4 malos días).
      PAYOUTS: −payLoss por día, se quema en buffer − 2k (8 malos días); cobras al tocar buffer + tope. */
   function piramide(P, etapa){
-    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', piso: P.inicial - P.quema, prof: P.prof || 4, todoX: true}
-      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', piso: P.inicial - P.quema, prof: P.prof || 4}
-      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.payLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', piso: P.inicial + P.buffer - P.quema, prof: P.prof || 4};
-    const hojas = Math.pow(2, cfg.prof), colW = 66, W = Math.max(600, hojas * colW + 40), dy = 78, T = 34, H = T + cfg.prof * dy + 40;
+    /* EVAL: drawdown TRAILING de `quema` desde el pico → con riesgo 2,000 un mal día quema; con 1,000, dos; etc.
+       BUFFER: −loss por día, piso fijo en inicial − quema.  PAYOUTS: −payLoss por día, piso fijo en buffer − quema. */
+    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', trailing: true}
+      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', piso: P.inicial - P.quema}
+      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.payLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', piso: P.inicial + P.buffer - P.quema};
+    const prof = P.prof || 4; const hojas = Math.pow(2, prof), colW = 66, W = Math.max(600, hojas * colW + 40), dy = 78, T = 34, H = T + prof * dy + 40;
     let g = '';
-    const nodo = (d, i, bal, quemado) => {
-      const x = 20 + (i + 0.5) * (W - 40) / Math.pow(2, d), y = T + d * dy; const term = quemado || bal <= cfg.piso ? 'quema' : bal >= cfg.fin ? 'fin' : null;
+    const nodo = (d, i, bal, pico, quemado) => {
+      const piso = cfg.trailing ? pico - P.quema : cfg.piso;
+      const x = 20 + (i + 0.5) * (W - 40) / Math.pow(2, d), y = T + d * dy; const term = quemado || bal <= piso ? 'quema' : bal >= cfg.fin ? 'fin' : null;
       const col = term === 'fin' ? UP : term === 'quema' ? DOWN : d === 0 ? TXT : 'var(--dim)';
-      const w = Math.min(150, (W - 40) / Math.pow(2, d) - 8); const txt = term === 'fin' ? cfg.finTxt + ' ' + Math.round(bal).toLocaleString('en-US') : term === 'quema' ? 'X ' + Math.round(Math.max(cfg.piso, bal)).toLocaleString('en-US') : Math.round(bal).toLocaleString('en-US');
+      const w = Math.min(150, (W - 40) / Math.pow(2, d) - 8); const txt = term === 'fin' ? cfg.finTxt + ' ' + Math.round(bal).toLocaleString('en-US') : term === 'quema' ? 'X ' + Math.round(Math.max(piso, bal)).toLocaleString('en-US') : Math.round(bal).toLocaleString('en-US');
       g += `<rect x="${x - w/2}" y="${y - 10}" width="${w}" height="20" rx="10" fill="${term === 'fin' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : 'rgba(255,255,255,.05)'}" stroke="${col}" stroke-opacity="${term || d === 0 ? .95 : .4}"/>`;
       g += `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${w < 60 ? 8 : 9.5}" font-weight="${term || d === 0 ? 700 : 400}" fill="${col}" font-family="JetBrains Mono, monospace">${txt}</text>`;
-      if(term || d >= cfg.prof) return;
+      if(term || d >= prof) return;
       const xl = 20 + (2*i + 0.5) * (W - 40) / Math.pow(2, d+1), xr = 20 + (2*i + 1.5) * (W - 40) / Math.pow(2, d+1), y2 = y + dy;
       g += `<line x1="${x}" y1="${y + 10}" x2="${xl}" y2="${y2 - 10}" stroke="${UP}" stroke-opacity=".6" stroke-width="1.2"/><line x1="${x}" y1="${y + 10}" x2="${xr}" y2="${y2 - 10}" stroke="${DOWN}" stroke-opacity=".6" stroke-width="1.2"/>`;
       if(d === 0) g += `<text x="${(x + xl)/2 - 12}" y="${(y + y2)/2}" text-anchor="end" font-size="9" fill="${UP}" font-family="JetBrains Mono, monospace">WIN +${num(cfg.tp)}</text><text x="${(x + xr)/2 + 12}" y="${(y + y2)/2}" font-size="9" fill="${DOWN}" font-family="JetBrains Mono, monospace">LOSS -${num(cfg.dl)}</text>`;
-      nodo(d+1, 2*i, bal + cfg.tp, false); nodo(d+1, 2*i + 1, cfg.todoX ? cfg.piso : Math.max(cfg.piso, bal - cfg.dl), !!cfg.todoX);
+      const bw = bal + cfg.tp, bl = bal - cfg.dl;
+      nodo(d+1, 2*i, bw, Math.max(pico, bw), false); nodo(d+1, 2*i + 1, Math.max(piso, bl), pico, bl <= piso);
     };
-    nodo(0, 0, cfg.bal0, false);
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>`;
+    nodo(0, 0, cfg.bal0, cfg.bal0, false);
+    return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:${Math.min(W, Math.round(W * 0.55))}px;height:auto;display:block">${g}</svg></div>`;
   }
 
   let ultima = null, lote = null;   // la última canica y el último lote (viven mientras la vista esté abierta)
@@ -77,7 +81,7 @@
       ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}
       ${kpi('Contratos', contratos + ' ' + A.instrumento, 'stop ' + (A.slPuntos||20) + ' pts = ' + fmt(stopUSD) + ' c/u · máx ' + (A.maxContratos||1) + ' mini')}
       ${kpi('Trades por día', '1–' + (A.maxTradesDia||2), 'if W → fuera · ' + (A.pararTrasPerdidas||2) + ' pérdidas → fuera')}
-      ${kpi('Eval', '+' + fmt(P.evalTP) + ' / -' + fmt(P.evalLoss), 'por día · 1 mal día y pierdes')}
+      ${kpi('Eval', '+' + fmt(P.evalTP) + ' / -' + fmt(P.evalLoss), 'por día · ' + Math.max(1, Math.round(P.quema / P.evalLoss)) + (Math.round(P.quema / P.evalLoss) > 1 ? ' malos días y pierdes' : ' mal día y pierdes'))}
       ${kpi('Fondeada', '+' + fmt(P.fondTP) + ' / -' + fmt(P.fondLoss) + ' · -' + fmt(P.payLoss), 'buffer ' + Math.round(P.quema / P.fondLoss) + ' malos días · payouts ' + Math.round(P.quema / P.payLoss))}
     </div>
     <div class="card" style="margin-bottom:14px"><h3>Mi gestión</h3>
@@ -88,7 +92,7 @@
         <div><b>4 · TP interno.</b> Mi pedazo del pastel: la liquidez interna, no la externa.</div>
         <div><b>5 · 1% y un mini.</b> Nunca más del 1% de la cuenta por trade; los contratos salen del stop, no de las ganas.</div>
         <div><b>6 · 1–2 trades y fuera.</b> Si gano, cierro la plataforma. Dos pérdidas seguidas o el daily loss, y el día se acabó.</div>
-        <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo ${fmt(P.evalLoss)} para ${fmt(P.evalTP)}: un mal día y pierdo, paso en 3. En buffer, +${fmt(P.fondTP)} al día y -${fmt(P.fondLoss)} máximo: tengo ${Math.round(P.quema / P.fondLoss)} malos días. En payouts, -${fmt(P.payLoss)} máximo: tengo ${Math.round(P.quema / P.payLoss)}, y cobro en cuanto toco el tope.</div>
+        <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo ${fmt(P.evalLoss)} para ${fmt(P.evalTP)}: ${Math.max(1, Math.round(P.quema / P.evalLoss))} ${Math.round(P.quema / P.evalLoss) > 1 ? 'malos días' : 'mal día'} y pierdo, paso en ${Math.ceil(P.objetivo / P.evalTP)}. En buffer, +${fmt(P.fondTP)} al día y -${fmt(P.fondLoss)} máximo: tengo ${Math.round(P.quema / P.fondLoss)} malos días. En payouts, -${fmt(P.payLoss)} máximo: tengo ${Math.round(P.quema / P.payLoss)}, y cobro en cuanto toco el tope.</div>
       </div></div>
     <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y los tres árboles se recalculan</span><div class="crece"></div><span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
       <div class="grid g6" style="margin-top:10px">
@@ -96,7 +100,7 @@
         ${campo('evalTP', 'Eval · TP por día ($)', 50)}${campo('evalLoss', 'Eval · riesgo por día ($)', 50)}${campo('fondTP', 'Funded · TP por día ($)', 50)}${campo('fondLoss', 'Buffer · riesgo por día ($)', 50)}${campo('payLoss', 'Payouts · riesgo por día ($)', 50)}${campo('split', 'Split (%)', 5)}
       </div></div>
     <div class="grid g3 arboles">
-      ${tarjeta('EVAL', 'WIN +' + num(P.evalTP) + ' izquierda · LOSS = X derecha · pasas en ' + num(P.inicial + P.objetivo), 'et-eval', 'eval')}
+      ${tarjeta('EVAL', 'WIN +' + num(P.evalTP) + ' izquierda · LOSS -' + num(P.evalLoss) + ' derecha · drawdown ' + num(P.quema) + ' desde el pico · pasas en ' + num(P.inicial + P.objetivo), 'et-eval', 'eval')}
       ${tarjeta('FUNDED · BUFFER', 'WIN +' + num(P.fondTP) + ' · LOSS -' + num(P.fondLoss) + ' · buffer en ' + num(P.inicial + P.buffer) + ' · se quema en ' + num(P.inicial - P.quema), 'et-buffer', 'buffer')}
       ${tarjeta('PAYOUTS', 'desde el buffer · WIN +' + num(P.fondTP) + ' · LOSS -' + num(P.payLoss) + ' · cobras en ' + num(P.inicial + P.buffer + P.tope) + ' · se quema en ' + num(P.inicial + P.buffer - P.quema), 'et-payouts', 'payouts')}
     </div>`;
