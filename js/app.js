@@ -16,7 +16,8 @@
     {g:'Cuenta'},
     {id:'cuentas',    t:'Cuentas',      i:'▣'},
     {id:'payouts',    t:'Payouts',      i:'$'},
-    {id:'progreso',   t:'Progreso',     i:'▲'}
+    {id:'progreso',   t:'Progreso',     i:'▲'},
+    {id:'riesgo',     t:'Riesgo',       i:'◈'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading'};
   let vista = location.hash.replace('#','') || 'panel';

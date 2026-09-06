@@ -647,3 +647,15 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 /* cabecera: fondo casi sólido para que nada se encime al hacer scroll (en el WKWebView el blur no basta) */
 [data-theme^="glass"] header.top{background:color-mix(in srgb,var(--fondo) 88%,transparent)}
 [data-rich] header.top{background:color-mix(in srgb,var(--fondo) 90%,transparent)}
+
+/* ==== GESTIÓN DE RIESGO · árboles de decisión ==== */
+.gestion{display:grid;gap:8px;margin-top:10px;font-size:13px;line-height:1.5;color:var(--dim)} .gestion b{color:var(--txt);font-weight:600}
+.arboles{align-items:start} .etapa{border-top:2px solid var(--linea)} .etapa.et-eval{border-top-color:var(--etEval)} .etapa.et-buffer{border-top-color:var(--etBuffer)} .etapa.et-payouts{border-top-color:var(--etPay)}
+.arbol{margin-top:12px} .arbol .preg{font-size:12.5px;font-weight:600;padding:8px 10px;border:1px solid var(--linea2);border-radius:10px;background:var(--panel2)}
+.arbol .hijos{margin:6px 0 0 12px;padding-left:12px;border-left:1px solid var(--linea2);display:grid;gap:8px}
+.arbol .hijo{position:relative} .arbol .hijo>i{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.14em;display:inline-block;margin-bottom:4px;padding:1px 6px;border-radius:999px}
+.arbol .hijo>i.si{color:var(--up);background:var(--upSuave)} .arbol .hijo>i.no{color:var(--down);background:var(--downSuave)}
+.arbol .hoja{padding:8px 10px;border-radius:10px;border:1px solid var(--linea);font-size:12px} .arbol .hoja b{display:block;font-family:var(--mono);letter-spacing:.1em;font-size:11px} .arbol .hoja span{display:block;color:var(--dim);margin-top:3px;font-size:11.5px}
+.arbol .hoja.ok{border-color:color-mix(in srgb,var(--up) 45%,transparent);background:var(--upSuave)} .arbol .hoja.ok b{color:var(--up)}
+.arbol .hoja.mal{border-color:color-mix(in srgb,var(--down) 45%,transparent);background:var(--downSuave)} .arbol .hoja.mal b{color:var(--down)}
+@media (max-width:1100px){.arboles{grid-template-columns:1fr}}

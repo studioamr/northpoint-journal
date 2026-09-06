@@ -56,7 +56,7 @@ valor del punto) y el trade queda marcado **por calificar**: en Trades aparece c
 ## El menú (+ selector de cuentas y Ajustes en la cabecera)
 
 Agrupado en **Operar** (Mercado, Dashboard, Trades, Calendario), **Analizar** (Reportes, Backtesting) y **Cuenta** (Cuentas,
-Payouts, Progreso). El Dashboard va por secciones: Resumen · Cuenta · Rendimiento · Alertas · Últimos trades.
+Payouts, Progreso, Riesgo). El Dashboard va por secciones: Resumen · Cuenta · Rendimiento · Alertas · Últimos trades.
 La vista Trading (Tradovate / TradingView embebidos) sigue existiendo en `#trading`, pero ya no está en el menú.
 
 En la cabecera eliges **qué cuentas ver**: una sola (para operar), varias o todas a la vez (el Dashboard suma balances y colchones y
@@ -193,6 +193,9 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   PLATINUM) y **Bitcoin** (`glass-btc`, monedas ₿, voz STACK SATS / HODL); los objetos se dibujan en `fondo.js` (`gema`, `lingote`,
   `billete`, `moneda`), **Océano** (#021024→#7DA0CA), **Noche** (navy + azul + ámbar), Blanco, Oro, Papel, Cobalto y los Aurora. Base del rediseño: tarjetas 22px,
   botones **liquid glass** en pastilla (brillo superior, sombra interior), anillos de progreso en los KPIs, Inter en todo.
+- **Riesgo** — su gestión explicada en siete puntos y tres árboles de decisión (sí/no) por etapa: EVAL, BUFFER y PAYOUTS, con los
+  números reales de Ajustes y de la cuenta activa (1% por trade, contratos por el stop, 1–2 trades, if W → fuera, daily loss por
+  fase, tope de retiro y último retiro).
 - **Trading** (`#trading`, fuera del menú): en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
   vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la
   vista). En navegador ninguno se deja embeber: botón para abrirlos en pestaña, o el «chart rápido» (widget gratis de TradingView).
