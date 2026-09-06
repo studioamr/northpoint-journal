@@ -43,7 +43,7 @@
   const nombreContrato = () => { const c = contrato(); const m2 = c.match(/^([A-Z]+)([HMUZ])(\d\d)$/); return m2 ? m2[1] + m2[2] + '20' + m2[3] : c; };
   const FUT = [{k:'NQ', get y(){ return SYM_NQ(); }, n:'Micro Nasdaq'}, {k:'ES', y:'ES=F', n:'S&P 500 · futuro'}, {k:'BTC', y:'BTC=F', n:'Bitcoin · futuro CME'}];
   async function yahoo(sym){
-    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=2d');
+    const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=5d');   // 5 días: para que Asia de la noche anterior siempre esté
     cache['velas_' + sym] = j;
     const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) throw new Error('sin datos');
     const me = r.meta || {};
@@ -148,8 +148,8 @@
      Asia (18:00–02:00 NY), Londres (02:00–08:30 NY) y pre-apertura (08:30–09:30 NY):
      high y low de cada sesión, si ya se tomaron, y dónde está el precio antes
      de que abra Nueva York a las 9:30. Sale de las velas de 5 min de Yahoo. */
-  /* killzones como él las opera: Asia 18:00–02:00 · Londres 02:00–08:30 · NY 09:30–16:00 (hora de NY) */
-  const SESIONES = [{k:'asia', n:'Asia', d:-1, ini:18*60, fin:24*60+2*60}, {k:'lon', n:'Londres', d:0, ini:2*60, fin:8*60+30}, {k:'ny', n:'NY', d:0, ini:9*60+30, fin:16*60}];
+  /* killzones tal cual las tiene en TradingView (UTC-4 = hora NY): ASIA 20:00–00:00 · LNDN 02:00–05:00 · NYAM 09:30–16:00 */
+  const SESIONES = [{k:'asia', n:'Asia', d:-1, ini:20*60, fin:24*60}, {k:'lon', n:'Londres', d:0, ini:2*60, fin:5*60}, {k:'ny', n:'NY', d:0, ini:9*60+30, fin:16*60}];
   const fmtNY = new Intl.DateTimeFormat('en-CA', {timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
   function ny(ts){ const p = {}; fmtNY.formatToParts(new Date(ts)).forEach(x => p[x.type] = x.value); return {ymd: p.year + '-' + p.month + '-' + p.day, min: (+p.hour)*60 + (+p.minute)}; }
   const diaMas = (ymd, d) => { const x = new Date(ymd + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + d); return x.toISOString().slice(0,10); };
@@ -159,14 +159,14 @@
     const ahora = ny(Date.now());
     const velas = ts.map((t, i) => ({t: t*1000, hi: hi[i], lo: lo[i], cl: cl[i]})).filter(v => v.hi != null && v.lo != null).map(v => Object.assign(v, ny(v.t)));
     let D = ahora.min >= 18*60 ? diaMas(ahora.ymd, 1) : ahora.ymd;            // día de trading: el de la apertura de NY que sigue (o la de hoy)
-    const enSesionDe = (v, s, dd) => { const dia = diaMas(dd, s.d); if(s.fin > 24*60) return (v.ymd === dia && v.min >= s.ini) || (v.ymd === dd && v.min < s.fin - 24*60); return v.ymd === dia && v.min >= s.ini && v.min < s.fin; };
+    const enSesionDe = (v, s, dd) => { const dia = diaMas(dd, s.d); if(s.fin > 24*60) return (v.ymd === dia && v.min >= s.ini) || (v.ymd === dd && v.min < s.fin - 24*60); return v.ymd === dia && v.min >= s.ini && v.min < Math.min(s.fin, 1440); };
     let pasada = false;
     if(!velas.some(v => SESIONES.some(s => enSesionDe(v, s, D))) && velas.length){       // fin de semana / feriado: enseña la última noche que sí hubo
       const u = velas[velas.length-1]; D = u.min >= 18*60 ? diaMas(u.ymd, 1) : u.ymd; pasada = true; }
     const enSesion = (v, s) => enSesionDe(v, s, D);
     const precio = (r.meta||{}).regularMarketPrice || (velas.length ? velas[velas.length-1].cl : null);
     const out = { sym, precio, D, pasada, abrioNY: !pasada && ahora.ymd === D && ahora.min >= 9*60+30, minParaNY: !pasada && ahora.ymd === D ? (9*60+30) - ahora.min : null, sesiones: [] };
-    const iniAsia = velas.findIndex(v => enSesionDe(v, SESIONES[0], D)); out.serie = iniAsia >= 0 ? velas.slice(iniAsia) : velas.slice(-120);
+    const iniAsia = velas.findIndex(v => SESIONES.some(s => enSesionDe(v, s, D))); out.serie = iniAsia >= 0 ? velas.slice(iniAsia) : velas.slice(-120);
     out.serie.forEach(v => { v.min2 = v.ymd === D ? v.min : v.min - 24*60; });     // minutos relativos a la medianoche NY del día D
     SESIONES.forEach(s => { const vs = velas.filter(v => enSesion(v, s)); if(!vs.length){ out.sesiones.push({k:s.k, n:s.n, vacia:true}); return; }
       const high = Math.max(...vs.map(v => v.hi)), low = Math.min(...vs.map(v => v.lo)); const fin = vs[vs.length-1].t;
@@ -270,58 +270,59 @@
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
   function graficaPo3(d){
-    const Wg = 1000, Hg = 340, L = 8, R = 150, T = 20, B = 26, VW = 44;   // R: hueco para la vela de 4H grande + etiquetas
+    const Wg = 1000, Hg = 360, L = 8, R = 200, T = 22, B = 28, VW = 40, GAP = 22;   // R: hueco para la vela grande + columna de etiquetas
     const c = d.cur, p = d.prev; const todas = d.velasTodas;
     const iFin = todas.length - 1; const iIni = Math.max(0, iFin - 143);            // últimas 12 h
     const vs = todas.slice(iIni); const iCur = Math.max(0, todas.indexOf(c.vs[0]) - iIni);
-    const nivelesVis = d.niveles.filter(nv => true);
-    const pMin = Math.min(...vs.map(v => v.lo), ...nivelesVis.map(n => n.v)), pMax = Math.max(...vs.map(v => v.hi), ...nivelesVis.map(n => n.v)); const pad = (pMax - pMin) * 0.06 || 1;
+    const nivelesVis = d.niveles;
+    const pMin = Math.min(...vs.map(v => v.lo), ...nivelesVis.map(n => n.v)), pMax = Math.max(...vs.map(v => v.hi), ...nivelesVis.map(n => n.v)); const pad = (pMax - pMin) * 0.07 || 1;
     const lo0 = pMin - pad, hi0 = pMax + pad;
     const n = vs.length, plotR = Wg - R, paso = (plotR - L) / n, cw = Math.max(1.5, paso * 0.6);
     const X = i => L + i * paso + paso / 2, Y = v => T + (1 - (v - lo0) / (hi0 - lo0)) * (Hg - T - B);
+    const xv = plotR + GAP + VW/2, xLbl = plotR + GAP + VW + 14;                     // vela grande · columna de etiquetas
     const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hora = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
-    // eje de hora cada 60 min · cortes de 4H
-    let ejeT = ''; vs.forEach((v, i) => { if(v.min % 60 === 0) ejeT += `<text x="${X(i)}" y="${Hg - 8}" text-anchor="middle">${hora(v.min)}</text>`; if((v.min - 18*60 + 1440) % 240 === 0) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="var(--linea2)" stroke-dasharray="2 4"/>`; });
-    // killzones: línea desde donde se formó hasta la derecha, etiqueta al final; tachada si ya se tomó
+    let ejeT = ''; vs.forEach((v, i) => { if(v.min % 60 === 0) ejeT += `<text x="${X(i)}" y="${Hg - 9}" text-anchor="middle">${hora(v.min)}</text>`; if((v.min - 18*60 + 1440) % 240 === 0) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="var(--linea2)" stroke-dasharray="2 4"/>`; });
     const xDe = t => { const idx = vs.findIndex(v => d.rel(v) >= t); return idx < 0 ? plotR - 4 : X(idx); };
-    const etiq = []; nivelesVis.forEach(nv => etiq.push({y: Y(nv.v), nv})); etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 10 ? last + 10 : e.y; last = e.ty; });
-    const kz = etiq.map(e => { const nv = e.nv; const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)';
-      const xFin = nv.tomado ? xDe(nv.tFin) : plotR - 2;   // tomado → la línea se corta ahí
-      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${e.y}" y2="${e.y}" stroke="${col}" stroke-opacity="${nv.tomado ? .6 : .85}"/>${nv.tomado ? `<circle cx="${xFin}" cy="${e.y}" r="2.5" fill="${col}"/>` : `<text class="ses" x="${plotR + VW + 10}" y="${e.ty + 3}" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)}</text>`}`; }).join('');
-    // rango de la 4H actual punteado + open
+    // etiquetas a la derecha sin encimarse (niveles vivos + open + ahora + objetivo)
+    const etiq = [];
+    nivelesVis.forEach(nv => { if(!nv.tomado) etiq.push({y: Y(nv.v), txt: nv.n.toUpperCase() + ' ' + num(nv.v), col: nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)', peso: 400}); });
+    etiq.push({y: Y(c.open), txt: 'OPEN ' + num(c.open), col: 'var(--txt)', peso: 600});
+    etiq.push({y: Y(d.precio), txt: 'AHORA ' + num(d.precio), col: d.arriba ? 'var(--up)' : 'var(--down)', peso: 700});
+    etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 12 ? last + 12 : e.y; last = e.ty; });
+    const etiquetas = etiq.map(e => `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
+    // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
+    const kz = nivelesVis.map(nv => { const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)'; const y = Y(nv.v);
+      const xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;
+      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-opacity="${nv.tomado ? .55 : .8}"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="2.5" fill="${col}"/>` : ''}`; }).join('');
+    // rango de la 4H actual (caja punteada) + open hasta la vela grande
     const x0 = X(iCur) - paso/2;
-    const caja = `<rect x="${x0}" y="${Y(c.high)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(c.low) - Y(c.high))}" fill="none" stroke="var(--txt)" stroke-opacity=".5" stroke-dasharray="3 3"/>
-      <line x1="${x0}" x2="${plotR + VW + 6}" y1="${Y(c.open)}" y2="${Y(c.open)}" stroke="var(--txt)" stroke-opacity=".6" stroke-dasharray="2 3"/>
-      <text class="ses" x="${x0 + 4}" y="${Y(c.high) - 5}" fill="var(--txt)">4H ${hora(c.ini)} NY · ${d.enCurso ? 'QUEDAN ' + Math.floor(d.restan/60) + 'H ' + (d.restan%60) + 'M' : 'CERRADA'}</text>`;
-    // velas de 5 min
+    const caja = `<rect x="${x0}" y="${Y(c.high)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(c.low) - Y(c.high))}" fill="none" stroke="var(--txt)" stroke-opacity=".4" stroke-dasharray="3 3"/>
+      <line x1="${x0}" x2="${xLbl - 6}" y1="${Y(c.open)}" y2="${Y(c.open)}" stroke="var(--txt)" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
     const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
       return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
-    // la vela de 4H en grande
-    const up4 = d.precio >= c.open, col4 = up4 ? 'var(--up)' : 'var(--down)'; const xv = plotR + 4 + VW/2;
+    // la vela de 4H en grande (sin texto encima: el precio va en la columna)
+    const up4 = d.precio >= c.open, col4 = up4 ? 'var(--up)' : 'var(--down)';
     const vela4 = `<line x1="${xv}" x2="${xv}" y1="${Y(c.high)}" y2="${Y(c.low)}" stroke="${col4}" stroke-width="2"/><rect x="${xv - VW/2}" y="${Y(Math.max(c.open, d.precio))}" width="${VW}" height="${Math.max(2, Math.abs(Y(c.open) - Y(d.precio)))}" fill="${col4}" fill-opacity=".9" stroke="${col4}"/>
-      <text class="ses" x="${xv}" y="${Hg - 8}" text-anchor="middle" fill="var(--txt)">4H</text>
-      <text class="lbl" x="${xv}" y="${Y(d.precio) + (up4 ? -6 : 12)}" text-anchor="middle" fill="${col4}">${num(d.precio)}</text>`;
-    // qué manipula: marcador en la vela que barrió el nivel
+      <text class="ses" x="${xv}" y="${Hg - 9}" text-anchor="middle" fill="var(--txt)">4H ${hora(c.ini)}</text>`;
+    // manipulación: puntito dorado + nombre corto debajo
     let marca = '';
-    if(d.manipula){ const nivel = d.manipula; const idx = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo < nivel.v : v.hi > nivel.v));
-      if(idx >= 0) marca = `<circle cx="${X(idx)}" cy="${Y(d.arriba ? vs[idx].lo : vs[idx].hi)}" r="5" fill="var(--oro)" stroke="#000"/><text class="lbl" x="${X(idx)}" y="${Y(d.arriba ? vs[idx].lo : vs[idx].hi) + (d.arriba ? 16 : -9)}" text-anchor="middle" fill="var(--oro)">MANIPULA ${nivel.n.toUpperCase()}</text>`; }
-    else if(d.manipAbajo || d.manipArriba){ const mv = d.arriba ? c.low : c.high; const idx = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo === mv : v.hi === mv)); if(idx >= 0) marca = `<circle cx="${X(idx)}" cy="${Y(mv)}" r="4" fill="var(--oro)"/><text class="lbl" x="${X(idx)}" y="${Y(mv) + (d.arriba ? 15 : -8)}" text-anchor="middle" fill="var(--oro)">MANIPULACIÓN</text>`; }
+    const mv = d.arriba ? c.low : c.high; const idxM = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo === mv : v.hi === mv));
+    if(idxM >= 0 && (d.manipAbajo || d.manipArriba)) marca = `<circle cx="${X(idxM)}" cy="${Y(mv)}" r="4.5" fill="var(--oro)" stroke="#000"/><text class="ses" x="${X(idxM)}" y="${Y(mv) + (d.arriba ? 15 : -8)}" text-anchor="middle" fill="var(--oro)">${d.manipula ? 'MANIPULA ' + d.manipula.n.toUpperCase() : 'MANIPULACIÓN'}</text>`;
     const fvg = d.fvg ? `<rect x="${X(iCur + d.fvg.i - 1)}" y="${Y(d.fvg.b)}" width="${plotR - 2 - X(iCur + d.fvg.i - 1)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".16" stroke="var(--azul)" stroke-opacity=".6"/>` : '';
-    // el objetivo: círculo fosforescente sobre la liquidez a la que va la distribución
+    // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
     let obj = '';
-    if(d.objetivo){ const yo = Y(d.objetivo.v), xo = plotR - 14; const col = d.dirObj ? '#39FF14' : '#FF2E63';
-      obj = `<line x1="${X(n-1)}" x2="${xo}" y1="${Y(d.precio)}" y2="${yo}" stroke="${col}" stroke-opacity=".45" stroke-dasharray="3 3"/>
-        <circle cx="${xo}" cy="${yo}" r="9" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-opacity=".9"><animate attributeName="r" values="7;12;7" dur="1.8s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".3;.05;.3" dur="1.8s" repeatCount="indefinite"/></circle>
-        <circle cx="${xo}" cy="${yo}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 6px ${col})"/>
-        <text class="lbl" x="${xo - 14}" y="${yo + (d.dirObj ? -10 : 16)}" text-anchor="end" fill="${col}" font-weight="700" style="filter:drop-shadow(0 0 4px ${col})">OBJETIVO ${d.objetivo.n.toUpperCase()} ${num(d.objetivo.v)}</text>`; }
-    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}</svg>`;
+    if(d.objetivo){ const yo = Y(d.objetivo.v), xo = xLbl - 6; const col = d.dirObj ? '#39FF14' : '#FF2E63';
+      obj = `<circle cx="${xo}" cy="${yo}" r="9" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-opacity=".9"><animate attributeName="r" values="7;12;7" dur="1.8s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".3;.05;.3" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="${xo}" cy="${yo}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 6px ${col})"/>`;
+      const e = etiq.find(x => Math.abs(x.y - yo) < 0.5); if(e) e.obj = true; }
+    const etiquetas2 = etiq.map(e => e.obj ? `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${d.dirObj ? '#39FF14' : '#FF2E63'}" font-weight="700" style="filter:drop-shadow(0 0 4px ${d.dirObj ? '#39FF14' : '#FF2E63'})">OBJETIVO · ${e.txt}</text>` : `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
+    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" style="aspect-ratio:${Wg}/${Hg}">${ejeT}${kz}${caja}${fvg}${velas}${vela4}${marca}${obj}${etiquetas2}</svg>`;
   }
   function po3Html(){
     const datos = [SYM_NQ()].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
-        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)} · ${num(d.precio)}</span></div>
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div><span class="mono dim">${d.enCurso ? 'quedan ' + Math.floor(d.restan/60) + 'h ' + (d.restan%60) + 'm' : 'cerrada'} · O ${num(d.cur.open)} · H ${num(d.cur.high)} · L ${num(d.cur.low)}</span></div>
         ${graficaPo3(d)}
         <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('');
   }
