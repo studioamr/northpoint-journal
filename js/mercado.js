@@ -170,9 +170,10 @@
     out.serie.forEach(v => { v.min2 = v.ymd === D ? v.min : v.min - 24*60; });     // minutos relativos a la medianoche NY del día D
     SESIONES.forEach(s => { const vs = velas.filter(v => enSesion(v, s)); if(!vs.length){ out.sesiones.push({k:s.k, n:s.n, vacia:true}); return; }
       const high = Math.max(...vs.map(v => v.hi)), low = Math.min(...vs.map(v => v.lo)); const fin = vs[vs.length-1].t;
+      const vHigh = vs.find(v => v.hi === high), vLow = vs.find(v => v.lo === low);   // la vela que hizo el high / el low: de ahí arranca su línea
       const despues = velas.filter(v => v.t > fin);
       const vh = despues.find(v => v.hi > high), vl = despues.find(v => v.lo < low);
-      out.sesiones.push({k:s.k, n:s.n, high, low, rango: high - low, highTomado: !!vh, lowTomado: !!vl, highEn: vh ? vh.min2 : null, lowEn: vl ? vl.min2 : null, velas: vs.length, t0: vs[0].min2, t1: vs[vs.length-1].min2 + 5}); });
+      out.sesiones.push({k:s.k, n:s.n, high, low, rango: high - low, highTomado: !!vh, lowTomado: !!vl, highEn: vh ? vh.min2 : null, lowEn: vl ? vl.min2 : null, velas: vs.length, t0: vs[0].min2, t1: vs[vs.length-1].min2 + 5, tHigh: vHigh.min2, tLow: vLow.min2}); });
     return out;
   }
   /* la noche dibujada: cajas por sesión (Asia · Londres · Pre-NY) del low al high, línea del precio y niveles vivos/tomados */
@@ -188,10 +189,10 @@
     const tono = {asia:'#FF4D5A', lon:'#4F8CFF', ny:'#39FF14'};   // Asia rojo · Londres azul · NY verde (como él lo pinta en el chart)
     const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".14" stroke="${tono[s.k]}" stroke-opacity=".7"/>
       <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}" fill="${tono[s.k]}">${s.n.toUpperCase()}</text>
-      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${tono[s.k]}" stroke-dasharray="${s.highTomado ? '2 4' : ''}" stroke-opacity="${s.highTomado ? .7 : .95}"/>
-      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="${tono[s.k]}" stroke-dasharray="${s.lowTomado ? '2 4' : ''}" stroke-opacity="${s.lowTomado ? .7 : .95}"/>`).join('');
+      <line x1="${X(s.tHigh != null ? s.tHigh + 2.5 : s.t1)}" x2="${s.highTomado ? X(s.highEn + 2.5) : Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${tono[s.k]}" stroke-opacity=".95"/>${s.highTomado ? `<circle cx="${X(s.highEn + 2.5)}" cy="${Y(s.high)}" r="2.5" fill="${tono[s.k]}"/>` : ''}
+      <line x1="${X(s.tLow != null ? s.tLow + 2.5 : s.t1)}" x2="${s.lowTomado ? X(s.lowEn + 2.5) : Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="${tono[s.k]}" stroke-opacity=".95"/>${s.lowTomado ? `<circle cx="${X(s.lowEn + 2.5)}" cy="${Y(s.low)}" r="2.5" fill="${tono[s.k]}"/>` : ''}`).join('');
     // etiquetas de niveles a la derecha, sin encimarse
-    const niveles = []; ses.forEach(s => { niveles.push({p:s.high, txt:s.n.slice(0,3).toUpperCase() + ' H ' + num(s.high), col: tono[s.k]}); niveles.push({p:s.low, txt:s.n.slice(0,3).toUpperCase() + ' L ' + num(s.low), col: tono[s.k]}); });
+    const niveles = []; ses.forEach(s => { if(!s.highTomado) niveles.push({p:s.high, txt:s.n.slice(0,3).toUpperCase() + ' H ' + num(s.high), col: tono[s.k]}); if(!s.lowTomado) niveles.push({p:s.low, txt:s.n.slice(0,3).toUpperCase() + ' L ' + num(s.low), col: tono[s.k]}); });
     if(d.precio != null) niveles.push({p:d.precio, txt:'AHORA ' + num(d.precio), col:'var(--txt)', ahora:true});
     niveles.sort((a,b) => b.p - a.p); let last = -99; niveles.forEach(n => { let y = Y(n.p); if(y - last < 11) y = last + 11; n.y = y; last = y; });
     const etiquetas = niveles.map(n => `<text class="lbl" x="${Wg - R + 8}" y="${n.y + 3.5}" fill="${n.col}" ${n.tomado ? 'text-decoration="line-through"' : ''} ${n.ahora ? 'font-weight="700"' : ''}>${n.txt}</text>`).join('');
@@ -248,11 +249,11 @@
     /* killzones del día (Asia · Londres · Pre-NY · NY AM): sus highs y lows son lo que la vela de 4H manipula */
     const N = noche(sym); const niveles = [];
     const D = N ? N.D : null; const rel = v => v.ymd === D ? v.min : v.min - 1440;
-    const sesiones = (N ? N.sesiones.filter(s => !s.vacia).map(s => ({k:s.k, n:{asia:'ASIA', lon:'LNDN', ny:'NY'}[s.k], high:s.high, low:s.low, t0:s.t0, t1:s.t1})) : []);
+    const sesiones = (N ? N.sesiones.filter(s => !s.vacia).map(s => ({k:s.k, n:{asia:'ASIA', lon:'LNDN', ny:'NY'}[s.k], high:s.high, low:s.low, t0:s.t0, t1:s.t1, tHigh:s.tHigh, tLow:s.tLow})) : []);
     const tomaEn = (desde, lado, v) => { const k = velas.find(x => rel(x) >= desde && (lado === 'high' ? x.hi > v : x.lo < v)); return k ? rel(k) : null; };
     sesiones.forEach(s => {
-      niveles.push({n: s.n + ' High', v: s.high, lado:'high', t: s.t1, tFin: tomaEn(s.t1, 'high', s.high)});
-      niveles.push({n: s.n + ' Low', v: s.low, lado:'low', t: s.t1, tFin: tomaEn(s.t1, 'low', s.low)}); });
+      niveles.push({n: s.n + ' High', v: s.high, lado:'high', t: s.tHigh != null ? s.tHigh : s.t1, tFin: tomaEn((s.tHigh != null ? s.tHigh : s.t1) + 5, 'high', s.high)});
+      niveles.push({n: s.n + ' Low', v: s.low, lado:'low', t: s.tLow != null ? s.tLow : s.t1, tFin: tomaEn((s.tLow != null ? s.tLow : s.t1) + 5, 'low', s.low)}); });
     if(prev){ const tp = rel(prev.vs[prev.vs.length-1]) + 5; niveles.push({n:'4H previa High', v: prev.high, lado:'high', t: tp, tFin: tomaEn(tp, 'high', prev.high)}); niveles.push({n:'4H previa Low', v: prev.low, lado:'low', t: tp, tFin: tomaEn(tp, 'low', prev.low)}); }
     niveles.forEach(nv => nv.tomado = nv.tFin != null);
     for(let i = niveles.length - 1; i >= 0; i--){ const a = niveles[i]; if(!a.n.startsWith('4H')) continue; if(niveles.some(b => b !== a && !b.n.startsWith('4H') && b.lado === a.lado && Math.abs(b.v - a.v) <= Math.max(2, a.v * 0.0001))) niveles.splice(i, 1); }
