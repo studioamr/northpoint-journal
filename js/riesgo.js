@@ -14,6 +14,27 @@
     const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
     const tp = e.tp, rk = e.riesgo;
     let out = '';
+    if(e.lattice){   // BUFFER: TODOS los caminos. Cada día: +TP (verde, sube) o -daily loss (rojo, baja). Termina en BUFFER o en CUENTA QUEMADA.
+      const bufBal = e.balance + e.hasta, quemaBal = e.balance - e.quema; const D = 24;
+      const nodos = new Map(), aristas = []; const key = (d, b) => d + '|' + b;
+      let frente = [e.balance]; nodos.set(key(0, e.balance), {d:0, b:e.balance});
+      for(let d = 0; d < D; d++){ const sig = new Set();
+        for(const b of frente){ if(b >= bufBal || b <= quemaBal) continue;
+          for(const [nb, win] of [[b + e.tp, true], [b - e.dl, false]]){ const k = key(d+1, nb); if(!nodos.has(k)) nodos.set(k, {d:d+1, b:nb}); aristas.push({d, b, nb, win}); sig.add(nb); } }
+        frente = [...sig]; if(!frente.length) break; }
+      const bals = [...new Set([...nodos.values()].map(n => n.b))]; const maxB = Math.max(...bals), minB = Math.min(...bals); const maxD = Math.max(...[...nodos.values()].map(n => n.d));
+      const colW = 76, rowPx = Math.max(13, Math.min(22, 720 / Math.max(1, (maxB - minB) / 100)));
+      const Wc = 120 + (maxD + 1) * colW + 60, Hc = 50 + (maxB - minB) / 100 * rowPx + 50;
+      const X = d => 70 + d * colW, Y = b => 40 + (maxB - b) / 100 * rowPx;
+      let g = '';
+      aristas.forEach(a => { g += `<line x1="${X(a.d) + 26}" x2="${X(a.d+1) - 26}" y1="${Y(a.b)}" y2="${Y(a.nb)}" stroke="${a.win ? UP : DOWN}" stroke-opacity=".55" stroke-width="1.2"/>`; });
+      nodos.forEach(n => { const term = n.b >= bufBal ? 'buf' : n.b <= quemaBal ? 'quema' : n.d === D ? 'sigue' : null; const col = term === 'buf' ? UP : term === 'quema' ? DOWN : n.d === 0 ? TXT : 'var(--dim)';
+        const w = term === 'buf' || term === 'quema' ? 96 : 56;
+        g += `<rect x="${X(n.d) - w/2}" y="${Y(n.b) - 8}" width="${w}" height="16" rx="8" fill="${term === 'buf' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : 'rgba(255,255,255,.06)'}" stroke="${col}" stroke-opacity="${term || n.d === 0 ? .9 : .35}"/><text x="${X(n.d)}" y="${Y(n.b) + 3.5}" text-anchor="middle" font-size="8.5" font-weight="${term || n.d === 0 ? 700 : 400}" fill="${col}" font-family="JetBrains Mono, monospace">${term === 'buf' ? 'BUFFER ' : term === 'quema' ? 'QUEMADA ' : ''}${num(n.b)}</text>`; });
+      for(let d = 0; d <= maxD; d++) g += `<text x="${X(d)}" y="${Hc - 14}" text-anchor="middle" font-size="9" fill="var(--tenue)" font-family="JetBrains Mono, monospace">${d === 0 ? 'HOY' : 'DÍA ' + d}</text>`;
+      g += `<text x="${X(0)}" y="18" font-size="9" fill="${UP}" font-family="JetBrains Mono, monospace">↗ WIN +${num(e.tp)}</text><text x="${X(0) + 110}" y="18" font-size="9" fill="${DOWN}" font-family="JetBrains Mono, monospace">↘ MAX LOSS -${num(e.dl)}</text>`;
+      return `<div style="overflow-x:auto"><svg viewBox="0 0 ${Wc} ${Hc}" style="width:${Math.max(100, Wc/9)}%;min-width:${Wc}px;height:auto;display:block">${g}</svg></div>`;
+    }
     if(e.escalera){   // BUFFER: cada día ganado sube +target por la rama verde hasta el buffer; cada día perdido baja -daily loss por la roja hasta quemar la cuenta
       const nW = Math.max(1, Math.ceil(e.hasta / e.tp)), nL = Math.max(1, Math.ceil(e.quema / e.dl)); const dy = 46; const Hc = 60 + Math.max(nW, nL) * dy + 30; const Wc = 700;
       const x0 = 350, y0 = 40; out += caja(x0, y0, 250, [e.balanceTxt + ' · riesgo ' + num(e.riesgo) + ' · TP ' + num(e.tp)], TXT);
@@ -57,10 +78,17 @@
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
     const E = {
       eval:  {cadena: true, objetivo: (cta && est && est.objetivo && cta.fase === 'eval') ? Math.max(F.eval.target, est.objetivo - cta.inicial) : 3000, tp: F.eval.target, riesgo: F.eval.loss, entrada: 'condición · continuación · EQ+FVG · TP interno'},
-      buffer:{escalera: true, balance: (cta && cta.fase !== 'eval' && est) ? est.balance : ini, balanceTxt: (cta && cta.fase !== 'eval' && est) ? fmt(est.balance) : fmt(ini), hasta: (est && est.buffer && cta && cta.fase !== 'eval') ? Math.max(F.fond.target, est.buffer - est.balance) : 2100, quema: (cta && cta.reglas && cta.reglas.maxDD) ? cta.reglas.maxDD : 2000, tp: F.fond.target, dl: F.fond.loss, riesgo: F.fond.loss},
+      buffer:{lattice: true, balance: (cta && cta.fase !== 'eval' && est) ? est.balance : ini, balanceTxt: (cta && cta.fase !== 'eval' && est) ? fmt(est.balance) : fmt(ini), hasta: (est && est.buffer && cta && cta.fase !== 'eval') ? Math.max(F.fond.target, est.buffer - est.balance) : 2100, quema: (cta && cta.reglas && cta.reglas.maxDD) ? cta.reglas.maxDD : 2000, tp: F.fond.target, dl: F.fond.loss, riesgo: F.fond.loss},
       pay:   {tp: F.fond.target, riesgo: F.fond.loss, entrada: 'condición · continuación · EQ+FVG · TP interno', winTitulo:'PARAS · ¿TOPE? COBRA', lossTitulo:'FUERA', lossNota:'no toques el buffer · mañana existe'}
     };
-    const tarjeta = (t, sub, col, e) => `<div class="card etapa ${col}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${arbolSVG(e)}</div></div>`;
+    /* probabilidad de llegar al buffer antes de quemar la cuenta, con su win rate real por día (o 60% si no hay datos) */
+    function probBuffer(e){ const bufBal = e.balance + e.hasta, quemaBal = e.balance - e.quema; const dias = Motor.porDia(Store.tradesReales ? Store.tradesReales((cta||{}).id) : []); const wr = dias.length >= 10 ? dias.filter(x => x.pnl > 0).length / dias.length : 0.6;
+      // iteración de valor sobre los balances (paso $100): V = wr·V(b+TP) + (1−wr)·V(b−DL); V(buffer)=1, V(quemada)=0
+      const paso = 100, n = Math.round((bufBal - quemaBal) / paso); const V = new Array(n + 1).fill(0.5); V[0] = 0; V[n] = 1;
+      const idx = b => Math.max(0, Math.min(n, Math.round((b - quemaBal) / paso)));
+      for(let it = 0; it < 2000; it++){ for(let k = 1; k < n; k++){ const b = quemaBal + k * paso; V[k] = wr * V[idx(b + e.tp)] + (1 - wr) * V[idx(b - e.dl)]; } }
+      return {p: V[idx(e.balance)], wr, dias: dias.length}; }
+    const tarjeta = (t, sub, col, e) => `<div class="card etapa ${col}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span>${e.lattice ? (() => { const q = probBuffer(e); return `<div class="crece"></div><span class="mono ${q.p >= 0.5 ? 'up' : 'down'}">${Math.round(q.p*100)}% de llegar al buffer antes de quemarla · win rate por día ${Math.round(q.wr*100)}%${q.dias >= 10 ? ' (tus ' + q.dias + ' días)' : ' (supuesto)'}</span>`; })() : ''}</div><div class="arbol">${arbolSVG(e)}</div></div>`;
     return `
     <div class="grid g5" style="margin-bottom:14px">
       ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}
@@ -81,7 +109,7 @@
       </div></div>
     <div class="grid g3 arboles">
       ${tarjeta('EVAL', 'riesgo ' + fmt(F.eval.loss) + ' para ' + fmt(F.eval.target) + ' de TP · si ganas sigues hasta el objetivo · si pierdes no hay trade 2', 'et-eval', E.eval)}
-      ${tarjeta('BUFFER', 'cada día ganado +' + fmt(F.fond.target) + ' sube al buffer · cada día perdido -' + fmt(F.fond.loss) + ' baja a quemar la cuenta', 'et-buffer', E.buffer)}
+      ${tarjeta('BUFFER', 'todos los caminos · +' + fmt(F.fond.target) + ' por día ganado · -' + fmt(F.fond.loss) + ' por día perdido', 'et-buffer', E.buffer)}
       ${tarjeta('PAYOUTS', 'cobra al tope · el balance vuelve al buffer', 'et-payouts', E.pay)}
     </div>`;
   };
