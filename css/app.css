@@ -639,3 +639,5 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 
 /* gráfica de la noche */
 .noche-g{width:100%;height:auto;display:block} .noche-g text{font-family:var(--mono);font-size:10px;fill:var(--dim)} .noche-g .lbl{font-size:10px;font-weight:600} .noche-g .ses{font-size:9px;letter-spacing:.12em;fill:var(--tenue)}
+
+.po3 .pill{font-size:10px;letter-spacing:.1em}

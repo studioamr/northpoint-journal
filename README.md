@@ -161,7 +161,10 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   teléfono con la app ntfy: meta hecha, 2 pérdidas, escribe la condición, apertura de NY, cierre de ventana.
 - **Mercado** (`js/mercado.js`): calendario de **Forex Factory** de la semana, **solo lo que mueve ES/NQ/BTC** (datos USD de impacto
   alto y medio, hora de Morelia, «HOY», próxima noticia fuerte con ventana de no-operar). Se muestra en **tabla estilo Forex Factory** (día, hora, divisa, cuadrito de impacto rojo/naranja, evento, real, pronóstico, previo) y
-  arriba del calendario va el **Resumen de la noche** (`Mercado.noche`): high y low de **Asia** (18:00–02:00 NY), **Londres**
+  arriba de todo va la **Vela de 4H · Open → Manipulación → Distribución** (`po3` en mercado.js, también en el Dashboard): las
+  velas de 5 min de la 4H previa y la actual (bloques 18·22·02·06·10·14 NY) con OPEN, MANIPULACIÓN, AHORA, el high/low previo,
+  la fase leída (OPEN / MANIPULACIÓN ? / DISTRIBUCIÓN ▲▼), si ya rompió el break y el FVG de 5m de la expansión con su estado;
+  debajo va el **Resumen de la noche** (`Mercado.noche`): high y low de **Asia** (18:00–02:00 NY), **Londres**
   (02:00–08:30 NY) y **Pre-NY** (08:30–09:30 NY) para NQ y ES, sacados de las velas de 5 min de Yahoo (`range=2d`), con «vivo» o
   «tomado» según lo que pasó después, el rango y dónde está el precio; en fin de semana enseña la última noche real. Se ve **en
   gráfica** (`graficaNoche`, SVG): la línea del precio desde que abre Asia, una caja por sesión del low al high, los niveles
