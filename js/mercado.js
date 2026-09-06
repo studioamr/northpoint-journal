@@ -318,7 +318,7 @@
   }
   function pintaPo3(P){
     const html = po3Html(); if(!html){ P.style.display = 'none'; return; }
-    P.style.display = ''; P.innerHTML = `<div class="fila"><h3>Vela de 4H · Open → Manipulación → Distribución</h3><div class="crece"></div></div><div style="display:grid;gap:18px;margin-top:10px">${html}</div>`;
+    P.style.display = ''; P.innerHTML = `<div class="fila"><h3>Vela de 4H · Open → Manipulación → Distribución</h3><div class="crece"></div><span class="mono mini dim">se mueve solo · ${new Date().toLocaleTimeString('es-MX')}</span></div><div style="display:grid;gap:18px;margin-top:10px">${html}</div>`;
   }
   /* para el Dashboard: baja precios si hace falta y devuelve el HTML */
   async function po3Dashboard(){ try{ await precios(); }catch(e){} return po3Html(); }
@@ -355,9 +355,9 @@
       <div id="mkTabla" style="margin-top:10px">${vacio('Cargando Forex Factory…')}</div></div>`;
   };
 
-  async function cargar(){
-    const P = document.getElementById('mkPrecios'), T = document.getElementById('mkTabla'), A = document.getElementById('mkAviso');
-    if(!P) return;
+  /* precios + vela de 4H + noche: se refrescan solos cada minuto mientras Mercado esté a la vista */
+  async function cargarPrecios(){
+    const P = document.getElementById('mkPrecios'), A = document.getElementById('mkAviso'); if(!P) return;
     try{
       const px = await precios();
       const num = (v, d) => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
@@ -372,6 +372,11 @@
       if(A) pintaNoche(A);
       const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
     }catch(e){}
+  }
+  setInterval(() => { if(document.getElementById('mkPrecios') && !document.hidden) cargarPrecios(); }, 60000);
+  async function cargar(){
+    const T = document.getElementById('mkTabla'); if(!T) return;
+    await cargarPrecios();
     try{
       const lista = await noticias();
       // solo lo que mueve ES/NQ/BTC: datos de EE.UU. de impacto alto o medio (FOMC, CPI, NFP, PCE, PIB, ISM, claims, Powell…)
