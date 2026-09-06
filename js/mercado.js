@@ -288,10 +288,10 @@
     /* CONDICIÓN (la del video): el FVG de 5m que el precio va a probar. Si lo respeta → va por la liquidez de ese lado;
        si lo invierte → va por la del otro. Eso dicta la dirección, no un sesgo diario. */
     const cerca = dir => niveles.filter(nv => !nv.tomado && (dir ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio))).sort((a, b) => dir ? a.v - b.v : b.v - a.v)[0] || null;
-    /* el FVG de la condición es el que dejan las velas de 5 min de 9:30 a 9:45 NY (se cierra en la de 9:40 o la de 9:45); queda marcado todo el día */
+    /* el FVG de la condición es el que deja la apertura de NY: se cierra en la vela de 9:35, 9:40 o 9:45; queda marcado todo el día */
     const ventana = velasD.filter(v => v.ymd === D); const cands = [];
     for(let i = 2; i < ventana.length; i++){
-      if(ventana[i].min < 9*60+40 || ventana[i].min > 9*60+45 || ventana[i-2].min < 9*60+30) continue;
+      if(ventana[i].min < 9*60+35 || ventana[i].min > 9*60+45) continue;   // el FVG que cierra en la vela de 9:35, 9:40 o 9:45
       const alc = ventana[i].lo > ventana[i-2].hi, baj = ventana[i].hi < ventana[i-2].lo; if(!alc && !baj) continue;
       const f = {i, alc, a: alc ? ventana[i-2].hi : ventana[i].hi, b: alc ? ventana[i].lo : ventana[i-2].lo, t: rel(ventana[i])};   // a = piso · b = techo
       const alto = f.b - f.a; if(alto < precio * 0.00015) continue;
