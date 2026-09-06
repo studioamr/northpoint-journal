@@ -290,7 +290,17 @@
     const vivos = niveles.filter(nv => !nv.tomado && (dirObj ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio)));
     const objetivo = vivos.length ? vivos.sort((a, b) => dirObj ? a.v - b.v : b.v - a.v)[0] : null;
     if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
-    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velasD, sesiones};
+    /* fibo del último impulso válido: en distribución, de la manipulación (extremo contrario) al extremo alcanzado desde entonces;
+       si aún no hay distribución, el impulso de la 4H previa. Niveles 0 · EQ 0.5 · 0.705 · 0.79 · 1 */
+    let fibo = null;
+    const legDe = (vsArr, alc) => { if(!vsArr.length) return null; const iA = alc ? vsArr.findIndex(v => v.lo === Math.min(...vsArr.map(x => x.lo))) : vsArr.findIndex(v => v.hi === Math.max(...vsArr.map(x => x.hi)));
+      const desp = vsArr.slice(iA); const A = alc ? vsArr[iA].lo : vsArr[iA].hi; const B = alc ? Math.max(...desp.map(x => x.hi)) : Math.min(...desp.map(x => x.lo)); const iB = iA + desp.findIndex(v => (alc ? v.hi : v.lo) === B);
+      if(Math.abs(B - A) < A * 0.0005) return null; return {A, B, alc, tA: rel(vsArr[iA]), tB: rel(vsArr[iB])}; };
+    fibo = legDe(cur.vs, dirObj) || (prev ? legDe(prev.vs.concat(cur.vs), dirObj) : null);   // el impulso hacia el objetivo: su retroceso es la entrada
+    if(fibo){ const r2 = Math.abs(fibo.B - fibo.A); fibo.nivel = k => fibo.alc ? fibo.B - k * r2 : fibo.B + k * r2; fibo.rango = r2;
+      fibo.entrada = fibo.nivel(0.705); fibo.stop = fibo.nivel(1) + (fibo.alc ? -1 : 1) * Math.max(2, r2 * 0.05);
+      if(objetivo){ const riesgo = Math.abs(fibo.entrada - fibo.stop), premio = Math.abs(objetivo.v - fibo.entrada); fibo.rr = riesgo > 0 ? premio / riesgo : null; } }
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velasD, sesiones, fibo};
   }
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
@@ -315,8 +325,9 @@
     // etiquetas a la derecha sin encimarse (niveles vivos + open + ahora + objetivo)
     const etiq = [];
     nivelesVis.forEach(nv => { if(!nv.tomado) etiq.push({y: Y(nv.v), txt: nv.n.toUpperCase() + ' ' + num(nv.v), col: nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)', peso: 400}); });
-    etiq.push({y: Y(c.open), txt: 'OPEN ' + num(c.open), col: 'var(--txt)', peso: 600});
     etiq.push({y: Y(d.precio), txt: 'AHORA ' + num(d.precio), col: d.arriba ? 'var(--up)' : 'var(--down)', peso: 700});
+    const FIB = [[0, '0'], [0.5, 'EQ 0.5'], [0.705, '0.705'], [0.79, '0.79'], [1, '1']];
+    if(d.fibo) FIB.forEach(([k, t]) => etiq.push({y: Y(d.fibo.nivel(k)), txt: (k === 0.705 ? 'ENTRADA ' : '') + t + ' ' + num(d.fibo.nivel(k)), col: k === 0.705 ? '#39FF14' : 'var(--acc)', peso: k === 0.5 || k === 0.705 || k === 0.79 ? 700 : 400}));
     etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 12 ? last + 12 : e.y; last = e.ty; });
     const etiquetas = etiq.map(e => `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
     // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
@@ -326,7 +337,13 @@
       return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2.2 : 1.4}" stroke-opacity="1"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="2.5" fill="${col}"/>` : ''}`; }).join('');
     // rango de la 4H actual (caja punteada) + open hasta la vela grande
     const x0 = X(iCur) - paso/2;
-    const caja = `<line x1="${x0}" x2="${xLbl - 6}" y1="${Y(c.open)}" y2="${Y(c.open)}" stroke="var(--txt)" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
+    const caja = '';
+    // fibo: líneas desde el extremo B hasta la columna; zona 0.5–0.79 sombreada
+    let fibG = '';
+    if(d.fibo){ const xB = xDe(d.fibo.tB), xA = xDe(d.fibo.tA);
+      fibG += `<line x1="${xA}" x2="${xB}" y1="${Y(d.fibo.A)}" y2="${Y(d.fibo.B)}" stroke="var(--acc)" stroke-opacity=".6" stroke-dasharray="3 3"/>`;
+      fibG += `<rect x="${xB}" y="${Y(Math.max(d.fibo.nivel(0.5), d.fibo.nivel(0.79)))}" width="${Math.max(2, xLbl - 6 - xB)}" height="${Math.max(2, Math.abs(Y(d.fibo.nivel(0.5)) - Y(d.fibo.nivel(0.79))))}" fill="var(--acc)" fill-opacity=".08"/>`;
+      FIB.forEach(([k]) => { const fuerte = k === 0.5 || k === 0.705 || k === 0.79; fibG += `<line x1="${xB}" x2="${xLbl - 6}" y1="${Y(d.fibo.nivel(k))}" y2="${Y(d.fibo.nivel(k))}" stroke="var(--acc)" stroke-opacity="${fuerte ? .9 : .45}" stroke-dasharray="${k === 0 || k === 1 ? '' : '4 3'}"/>`; }); }
     const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
       return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
     // la vela de 4H en grande (sin texto encima: el precio va en la columna)
@@ -334,7 +351,7 @@
     const vela4 = `<line x1="${xv}" x2="${xv}" y1="${Y(c.high)}" y2="${Y(c.low)}" stroke="${col4}" stroke-width="2"/><rect x="${xv - VW/2}" y="${Y(Math.max(c.open, d.precio))}" width="${VW}" height="${Math.max(2, Math.abs(Y(c.open) - Y(d.precio)))}" fill="${col4}" fill-opacity=".9" stroke="${col4}"/>
       <text class="ses" x="${xv}" y="${Hg - 9}" text-anchor="middle" fill="var(--txt)">4H ${hora(c.ini)}</text>`;
     const marca = '';
-    const fvg = d.fvg ? `<rect x="${X(iCur + d.fvg.i - 1)}" y="${Y(d.fvg.b)}" width="${plotR - 2 - X(iCur + d.fvg.i - 1)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".16" stroke="var(--azul)" stroke-opacity=".6"/>` : '';
+    const fvg = fibG;
     // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
     let obj = '';
     if(d.objetivo){ const yo = Y(d.objetivo.v), xo = xLbl - 6; const col = d.dirObj ? '#39FF14' : '#FF2E63';
@@ -349,7 +366,7 @@
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
         <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div></div>
         ${graficaPo3(d)}
-        <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fvg ? ' <b>FVG 5m</b> ' + num(d.fvg.a) + '–' + num(d.fvg.b) + ' · ' + d.fvg.estado + (d.fvg.estado === 'respetado' ? ' → la distribución lo defiende: entrada en el FVG a favor.' : d.fvg.estado === 'roto' ? ' → la distribución no lo respetó: cuidado.' : ' → si regresa y lo respeta, ahí está la entrada.') : ''}</div></div>`; }).join('');
+        <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}${d.fibo ? ' <b>Mejor entrada al objetivo:</b> retroceso del impulso ' + num(d.fibo.A) + ' → ' + num(d.fibo.B) + ' · EQ ' + num(d.fibo.nivel(0.5)) + ' · <b>0.705 ' + num(d.fibo.entrada) + '</b> · 0.79 ' + num(d.fibo.nivel(0.79)) + ' · stop ' + num(d.fibo.stop) + (d.fibo.rr != null ? ' · R:R ' + d.fibo.rr.toFixed(1) : '') + '.' : ''}</div></div>`; }).join('');
   }
   function pintaPo3(P){
     const html = po3Html(); if(!html){ P.style.display = 'none'; return; }
@@ -384,7 +401,6 @@
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi(nombreContrato() + ' · Micro Nasdaq','…','contrato')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
     <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
-    <div class="card" id="mkAviso" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
       
       <div id="mkTabla" style="margin-top:10px">${vacio('Cargando Forex Factory…')}</div></div>`;
@@ -404,7 +420,6 @@
         kpi('BTC', val(px.fut.BTC, 0), fila(px.fut.BTC, 0)) +
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
-      if(A) pintaNoche(A);
       const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
     }catch(e){}
   }
