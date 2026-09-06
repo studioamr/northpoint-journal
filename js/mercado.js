@@ -285,10 +285,36 @@
     const barridos = niveles.filter(nv => nv.t <= t0cur + 5 && (nv.tFin == null || nv.tFin >= t0cur) && (arriba ? (nv.lado === 'low' && cur.low < nv.v && nv.v <= cur.open) : (nv.lado === 'high' && cur.high > nv.v && nv.v >= cur.open)));
     const manipula = barridos.length ? barridos.sort((a, b) => arriba ? a.v - b.v : b.v - a.v)[0] : null;
     if(manipula) lectura = lectura.replace('(manipulación)', '(manipuló ' + manipula.n + ' ' + manipula.v.toFixed(2) + ')');
-    /* objetivo: la liquidez viva más cercana hacia donde va la distribución (si aún es manipulación, hacia el lado contrario) */
-    const dirObj = fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba);
-    const vivos = niveles.filter(nv => !nv.tomado && (dirObj ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio)));
-    const objetivo = vivos.length ? vivos.sort((a, b) => dirObj ? a.v - b.v : b.v - a.v)[0] : null;
+    /* CONDICIÓN (la del video): el FVG de 5m que el precio va a probar. Si lo respeta → va por la liquidez de ese lado;
+       si lo invierte → va por la del otro. Eso dicta la dirección, no un sesgo diario. */
+    const cerca = dir => niveles.filter(nv => !nv.tomado && (dir ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio))).sort((a, b) => dir ? a.v - b.v : b.v - a.v)[0] || null;
+    const ventana = velasD.slice(-96); const cands = [];
+    for(let i = 2; i < ventana.length; i++){
+      const alc = ventana[i].lo > ventana[i-2].hi, baj = ventana[i].hi < ventana[i-2].lo; if(!alc && !baj) continue;
+      const f = {i, alc, a: alc ? ventana[i-2].hi : ventana[i].hi, b: alc ? ventana[i].lo : ventana[i-2].lo, t: rel(ventana[i])};   // a = piso · b = techo
+      const alto = f.b - f.a; if(alto < precio * 0.00015) continue;
+      const desp = ventana.slice(i + 1);
+      const iT = desp.findIndex(v => v.lo <= f.b && v.hi >= f.a), iI = desp.findIndex(v => alc ? v.cl < f.a : v.cl > f.b);
+      f.estado = iI >= 0 ? 'invertido' : iT >= 0 ? (desp.slice(iT + 1).some(v => alc ? v.cl > f.b + alto : v.cl < f.a - alto) ? 'respetado' : 'probando') : 'sin probar';
+      f.tRes = iI >= 0 ? rel(desp[iI]) : iT >= 0 ? rel(desp[iT]) : null;
+      f.dist = precio > f.b ? precio - f.b : precio < f.a ? f.a - precio : 0;
+      cands.push(f);
+    }
+    const ahoraRel = ahora.ymd === D ? ahora.min : ahora.min - 1440;
+    let condicion = cands.filter(f => (f.estado === 'probando' || f.estado === 'sin probar') && f.dist <= precio * 0.004).sort((x, y) => x.dist - y.dist)[0]
+      || cands.filter(f => (f.estado === 'respetado' || f.estado === 'invertido') && f.tRes != null && (velasD[velasD.length-1] ? rel(velasD[velasD.length-1]) - f.tRes <= 180 : true)).sort((x, y) => y.tRes - x.tRes)[0] || null;
+    let dirCond = null;
+    if(condicion){ const c0 = condicion; c0.siRespeta = c0.alc ? cerca(true) : cerca(false); c0.siInvierte = c0.alc ? cerca(false) : cerca(true);
+      if(c0.estado === 'respetado') dirCond = c0.alc; else if(c0.estado === 'invertido') dirCond = !c0.alc; }
+    /* objetivo: si la condición ya se resolvió, ella manda la dirección; si no, la fase PO3 */
+    const dirObj = dirCond != null ? dirCond : (fase.startsWith('DISTRIBUCIÓN') ? arriba : (fase === 'OPEN' ? arriba : !arriba));
+    const objetivo = cerca(dirObj);
+    const numC = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const hC = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
+    if(condicion){ const c0 = condicion;
+      if(dirCond != null){ lectura = lectura.replace(/ · busca (largos|cortos) en el retroceso al equilibrio\./, '.'); if(dirCond !== arriba && fase.startsWith('DISTRIBUCIÓN')) lectura += ' La 4H va en contra de la condición: espera el retroceso a la zona 0.705–0.79 antes de entrar.'; }
+      lectura = `<b>Condición:</b> FVG 5m ${c0.alc ? 'alcista' : 'bajista'} ${numC(c0.a)}–${numC(c0.b)} (${hC(c0.t)}). Si lo <b>respeta</b> → ${c0.alc ? 'sube' : 'baja'} por ${c0.siRespeta ? c0.siRespeta.n + ' ' + numC(c0.siRespeta.v) : 'la liquidez ' + (c0.alc ? 'de arriba' : 'de abajo')}. Si lo <b>invierte</b> → ${c0.alc ? 'baja' : 'sube'} por ${c0.siInvierte ? c0.siInvierte.n + ' ' + numC(c0.siInvierte.v) : 'la liquidez ' + (c0.alc ? 'de abajo' : 'de arriba')}. `
+        + (c0.estado === 'respetado' ? `<b class="up">Respetado a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'alcista' : 'bajista'}: solo ${c0.alc ? 'largos' : 'cortos'}, continuación.` : c0.estado === 'invertido' ? `<b class="down">Invertido a las ${hC(c0.tRes)}</b> → dirección ${c0.alc ? 'bajista' : 'alcista'}: solo ${c0.alc ? 'cortos' : 'largos'}, continuación.` : c0.estado === 'probando' ? 'Lo está probando ahora: espera el cierre.' : 'Todavía no lo prueba.') + ' ' + lectura; }
     if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
     /* fibo del último impulso válido: en distribución, de la manipulación (extremo contrario) al extremo alcanzado desde entonces;
        si aún no hay distribución, el impulso de la 4H previa. Niveles 0 · EQ 0.5 · 0.705 · 0.79 · 1 */
@@ -300,7 +326,7 @@
     if(fibo){ const r2 = Math.abs(fibo.B - fibo.A); fibo.nivel = k => fibo.alc ? fibo.B - k * r2 : fibo.B + k * r2; fibo.rango = r2;
       fibo.entrada = fibo.nivel(0.705); fibo.stop = fibo.nivel(1) + (fibo.alc ? -1 : 1) * Math.max(2, r2 * 0.05);
       if(objetivo){ const riesgo = Math.abs(fibo.entrada - fibo.stop), premio = Math.abs(objetivo.v - fibo.entrada); fibo.rr = riesgo > 0 ? premio / riesgo : null; } }
-    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velasD, sesiones, fibo};
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velasD, sesiones, fibo, condicion, dirCond};
   }
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
@@ -351,7 +377,10 @@
     const vela4 = `<line x1="${xv}" x2="${xv}" y1="${Y(c.high)}" y2="${Y(c.low)}" stroke="${col4}" stroke-width="2"/><rect x="${xv - VW/2}" y="${Y(Math.max(c.open, d.precio))}" width="${VW}" height="${Math.max(2, Math.abs(Y(c.open) - Y(d.precio)))}" fill="${col4}" fill-opacity=".9" stroke="${col4}"/>
       <text class="ses" x="${xv}" y="${Hg - 9}" text-anchor="middle" fill="var(--txt)">4H ${hora(c.ini)}</text>`;
     const marca = '';
-    const fvg = fibG;
+    let condG = '';
+    if(d.condicion){ const c0 = d.condicion; const col = c0.alc ? '#39FF14' : '#FF2E63'; const xC = xDe(c0.t);
+      condG = `<rect x="${xC}" y="${Y(c0.b)}" width="${Math.max(2, xLbl - 6 - xC)}" height="${Math.max(2, Y(c0.a) - Y(c0.b))}" fill="${col}" fill-opacity=".14" stroke="${col}" stroke-opacity=".8" stroke-dasharray="${c0.estado === 'invertido' ? '3 3' : ''}"/><text class="ses" x="${xC + 4}" y="${clampY(Y(c0.b) - 4)}" fill="${col}">CONDICIÓN · ${c0.estado.toUpperCase()}</text>`; }
+    const fvg = fibG + condG;
     // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
     let obj = '';
     if(d.objetivo){ const yo = Y(d.objetivo.v), xo = xLbl - 6; const col = d.dirObj ? '#39FF14' : '#FF2E63';
@@ -364,7 +393,7 @@
     const datos = [SYM_NQ()].map(po3).filter(Boolean); if(!datos.length) return '';
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     return datos.map(d => { const dif = d.precio - d.cur.open; return `<div class="po3">
-        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span><span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div></div>
+        <div class="fila" style="margin-bottom:6px;gap:12px"><b style="font-size:16px">${nombreContrato()}</b><span class="pill ${d.fase.startsWith('DISTRIBUCIÓN') ? (d.arriba ? 'ok' : 'mal') : 'acc'}">${d.fase}</span><span class="mono ${dif >= 0 ? 'up' : 'down'}">${dif >= 0 ? '+' : ''}${num(dif)} vs open</span>${d.condicion ? `<span class="pill ${d.condicion.estado === 'respetado' ? 'ok' : d.condicion.estado === 'invertido' ? 'mal' : ''}">CONDICIÓN · ${d.condicion.estado.toUpperCase()}${d.dirCond != null ? (d.dirCond ? ' ▲' : ' ▼') : ''}</span>` : ''}<span class="mono dim">${d.manipula ? 'manipula <b class="oro">' + d.manipula.n + ' ' + num(d.manipula.v) + '</b>' : (d.manipAbajo || d.manipArriba) ? 'manipulación sin nivel de killzone' : 'sin manipulación todavía'}${d.objetivo ? ' · objetivo <b class="' + (d.dirObj ? 'up' : 'down') + '">' + d.objetivo.n + ' ' + num(d.objetivo.v) + '</b>' : ''}</span><div class="crece"></div></div>
         ${graficaPo3(d)}
         <div class="mini dim" style="margin-top:6px">${d.lectura}${d.bos ? ' <b>Break:</b> ' + d.bos + '.' : ''}</div></div>`; }).join('');
   }
