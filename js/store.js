@@ -91,7 +91,7 @@
       const a = S.cuentas.find(c => c.id === S.ajustes.cuentaActiva) || S.cuentas.find(c => c.estado === 'viva') || S.cuentas[0];
       return a ? [a] : [];
     },
-    cuentaCal(){ const S0 = API.estado; return S0.cuentas.find(c => c.id === S0.ajustes.calCuenta) || API.cuentaActiva(); },
+    cuentaCal(){ return API.cuentaActiva(); },   // el calendario sigue a la cuenta de la cabecera (el selector propio se quitó)
     tradesCal(){ const c = API.cuentaCal(); return c ? API.tradesReales(c.id) : []; },
     fases(){ const base = {eval:{target:1000, loss:2000, consistencia:0.40}, fond:{target:200, loss:500, consistencia:0.40}}; const a = API.ajustes.fases || {};
       const f = {eval: Object.assign({}, base.eval, a.eval || {}), fond: Object.assign({}, base.fond, a.fond || {})}; if(f.eval.target === 1100) f.eval.target = 1000; return f; },

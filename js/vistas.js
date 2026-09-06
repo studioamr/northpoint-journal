@@ -427,10 +427,8 @@
       <span class="mono ${signo(mesPnl)}" style="font-size:15px">${masMenos(mesPnl)}</span>
       <div class="crece"></div>
       <div class="cal-leg">${faseCta === 'eval' ? legEval + legFond : legFond}</div>
-      ${Store.estado.cuentas.length ? `<select data-acc="calCuenta" style="width:auto;max-width:220px">${opciones(Store.estado.cuentas.map(c => ({v:c.id, t:(c.alias || c.firma) + ' · ' + (c.tamano/1000) + 'k'})), cta ? cta.id : '')}</select>` : ''}
-      <button class="btn chico" data-acc="mes" data-v="-1">←</button>
-      <button class="btn chico" data-acc="mes" data-v="0">Hoy</button>
-      <button class="btn chico" data-acc="mes" data-v="1">→</button>
+      <button class="btn chico fantasma" data-acc="mes" data-v="-1">‹</button>
+      <button class="btn chico fantasma" data-acc="mes" data-v="1">›</button>
     </div>
     <div class="cal" style="margin-bottom:4px">${UI.DOW.map(d => `<div class="dow">${d}</div>`).join('')}</div>
     <div class="cal">${celdas.join('')}</div>`;

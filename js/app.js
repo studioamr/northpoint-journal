@@ -133,7 +133,7 @@
       Store.guardar(); return;
     }
     const dia = e.target.closest('.cal .d[data-dia]');
-    if(dia){ modalDia(dia.dataset.dia); return; }
+    if(dia){ const iso = dia.dataset.dia; if(iso <= Store.hoyISO()) modalTrade(null, {fecha: iso}); else modalDia(iso); return; }
 
     if(!e.target.closest('.selcta') && selAbierto){ selAbierto = false; const p = document.querySelector('.selpanel'); if(p) p.hidden = true; }
     const b = e.target.closest('[data-acc]');
@@ -617,7 +617,7 @@
                  congelaEnObjetivo: p.congelaEnObjetivo || false }
       });
       c.estado = 'pasada';
-      Store.ajustes.cuentaActiva = nueva.id;
+      Store.ajustes.cuentaActiva = nueva.id; Store.ajustes.calCuenta = nueva.id;   // el calendario se va con la fondeada
       Store.guardar(); cerrar(); toast('Fondeada creada · a construir el buffer');
     });
   }
