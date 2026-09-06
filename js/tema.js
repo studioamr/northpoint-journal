@@ -37,7 +37,10 @@
     window.__temaAcc = acc;
     document.dispatchEvent(new CustomEvent('mesa:tema', {detail:{id, acc}}));
   }
-  function perfil(){ return Object.assign({nombre:'André', alias:'', ciudad:'Morelia', frase:'Del examen al payout', foto:null, iniciales:'AM'}, Store.ajustes.perfil || {}); }
+  function perfilActivo(){ try{ const id = localStorage.getItem('np.perfilActivo'); const lista = JSON.parse(localStorage.getItem('np.perfiles') || '[]'); return lista.find(p => p.id === id) || null; }catch(e){ return null; } }
+  function iniciales(n){ return (n || '').trim().split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase() || 'NP'; }
+  function perfil(){ const pa = perfilActivo(); const nombre = pa ? pa.nombre : 'Trader';
+    return Object.assign({nombre, alias:'', ciudad:'', frase:'Del examen al payout', foto:null, iniciales: iniciales(nombre)}, Store.ajustes.perfil || {}); }
   function guardaPerfil(campos){ Store.ajustes.perfil = Object.assign(perfil(), campos); Store.guardar(); }
   /* Copy exagerado por tema RICH («rich diamonds», «gold», «cash»…). Fuera de esos temas cada texto vuelve al normal. */
   const VOCES = {
@@ -63,6 +66,6 @@
       default: return normal;
     }
   }
-  window.Tema = { TEMAS, RICH, aplicar, perfil, guardaPerfil, voz };
+  window.Tema = { TEMAS, RICH, aplicar, perfil, guardaPerfil, voz, perfilActivo, iniciales };
   aplicar((Store.ajustes && Store.ajustes.tema) || 'glass-oscuro');
 })();

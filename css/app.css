@@ -693,3 +693,11 @@ html .cal .d.p-eval{box-shadow:none}
 .px.tick-up{animation:tickUp .7s ease-out} .px.tick-down{animation:tickDown .7s ease-out}
 @keyframes tickUp{0%{transform:translateY(6px);text-shadow:0 0 22px var(--up);filter:brightness(1.6)}100%{transform:none;filter:none}}
 @keyframes tickDown{0%{transform:translateY(-6px);text-shadow:0 0 22px var(--down);filter:brightness(1.6)}100%{transform:none;filter:none}}
+
+/* perfiles en la entrada */
+.perfiles{display:grid;gap:8px;margin:6px 0 10px}
+.perfil-btn{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1px solid var(--linea2);background:rgba(255,255,255,.05);color:var(--txt);font:inherit;cursor:pointer;text-align:left}
+.perfil-btn:hover,.perfil-btn.on{border-color:var(--acc);background:var(--accSuave)}
+.perfil-btn .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:#000;font-weight:700;font-size:12px}
+.perfil-btn i{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--tenue)}
+#pinZona{display:grid;gap:8px;margin-bottom:6px} #pinZona[hidden]{display:none}

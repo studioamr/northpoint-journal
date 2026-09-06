@@ -586,7 +586,7 @@
         <div class="card"><h3>Perfil</h3>
           <div class="fila" style="margin-top:12px;gap:12px;align-items:flex-start">
             <div class="perfil" style="margin:0;cursor:default"><div class="av">${P.foto ? `<img src="${P.foto}">` : h(P.iniciales)}</div><div><div class="pn">${h(P.nombre)}</div><div class="pf">${h(P.frase)}</div></div></div>
-            <button class="btn chico" data-acc="perfilFoto">Foto</button><button class="btn chico fantasma" data-acc="perfilSinFoto">Quitar</button></div>
+            <button class="btn chico" data-acc="perfilFoto">Foto</button><button class="btn chico fantasma" data-acc="perfilSinFoto">Quitar</button><button class="btn chico fantasma" data-acc="perfilCambiar">Cambiar de perfil</button></div>
           <div class="grid g2" style="gap:8px;margin-top:12px">
             <label class="campo"><span>Nombre</span><input data-perfil="nombre" value="${h(P.nombre)}"></label>
             <label class="campo"><span>Iniciales</span><input data-perfil="iniciales" value="${h(P.iniciales)}" maxlength="3"></label>

@@ -148,6 +148,7 @@
       editaTradeForm: () => { cerrar(); modalTrade(Store.estado.trades.find(t => t.id === id)); },
       fichaTrade: () => modalFichaTrade(id),
       simReset: () => { Riesgo.reset(); pinta(); },
+      perfilCambiar: () => Acceso.salir(),
       simProf: () => { const P = Store.ajustes.simRiesgo || {}; const p = Math.max(2, Math.min(7, (P.prof || 4) + (+b.dataset.v))); Store.ajustes.simRiesgo = Object.assign({}, P, {prof: p}); Store.guardar(); pinta(); },
 
       pdfTrade: () => PDF.descargaTrade(id).then(() => toast('PDF listo')),

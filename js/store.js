@@ -4,7 +4,9 @@
    Exporta/importa a JSON para respaldo y para pasar de un dispositivo a otro.
    ========================================================================= */
 (function(){
-  const LLAVE = 'mesa.v1';
+  /* cada perfil guarda lo suyo en su propia llave: mesa.v1.<perfilId> (el perfil activo lo fija la pantalla de entrada) */
+  const PERFIL = (() => { try{ return localStorage.getItem('np.perfilActivo') || ''; }catch(e){ return ''; } })();
+  const LLAVE = PERFIL ? 'mesa.v1.' + PERFIL : 'mesa.v1';
 
   const VACIO = {
     v: 1,
@@ -213,6 +215,6 @@
     borraTodo(){ S = clona(VACIO); S.creado = new Date().toISOString(); guardar(); }
   };
 
-  window.Store = API;
+  window.Store = API; API.LLAVE = LLAVE; API.PERFIL = PERFIL;
   cargar();
 })();
