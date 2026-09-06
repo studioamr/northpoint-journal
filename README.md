@@ -16,6 +16,12 @@ Todo vive en el `localStorage` del navegador. Nada sale de tu máquina. Respaldo
 - Mac: https://studioamr.github.io/northpoint-journal/download/NORTHPOINT.dmg (arrastrar a Aplicaciones; la 1ª vez clic derecho → Abrir)
 - Web: https://studioamr.github.io/northpoint-journal/ (los datos viven en el navegador de cada quien)
 
+## Entrada
+
+Al abrir: **NORTHPOINT** flotando y abajo el log in. La primera vez creas tu acceso (nombre + PIN de 4 dígitos opcional,
+guardado como hash local); después inicias sesión cada vez o marcas «Recordarme en esta Mac». ⎋ en la cabecera cierra sesión.
+Sin cuentas: la pantalla de arranque es la lista de cosas por hacer (cuenta, risk management, alertas, carpeta, primer trade).
+
 ## La estrategia que vigila (`js/reglas.js` → `ESTRATEGIA`)
 
 | # | Regla | Qué mide la app |
@@ -89,9 +95,7 @@ muestra un chip por cuenta; Diario, Calendario, Reportes y Lab filtran igual).
 - **Cuentas** — la flota. Balance, colchón contra el piso, días válidos, consistencia, y el botón
   **Pasar a fondeada** cuando pasas la evaluación (crea la cuenta nueva con las reglas del plan fondeado y archiva la eval).
 - **Payouts** — buffer, cuánto puedes pedir hoy, qué te falta para poder cobrar, el contador de retiros para las cuentas que
-  mueren al quinto, la **estrategia de retiros en orden** (proyecta todas las cuentas vivas con los targets por fase: qué cuenta
-  cobra primero y cuándo, cuánto va a BTC / a evals nuevas / a tu bolsillo, el acumulado del mes contra la meta en MXN y cuántas
-  fondeadas hacen falta rotando) y el **progreso de cada cuenta** en tres tramos: EVALUACIÓN → BUFFER → PAYOUTS.
+  mueren al quinto, y el **progreso de cada cuenta** en tres tramos: EVALUACIÓN → BUFFER → PAYOUTS.
 - **Playbook / Ajustes** — la estrategia escrita, y tus topes (instrumento, stop típico, meta diaria,
   máximo de trades, parar tras N pérdidas, % del colchón que arriesgas en eval y ya fondeado).
 
