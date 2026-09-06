@@ -57,6 +57,8 @@
       S = clona(VACIO);
     }
     if(!S.creado){ S.creado = new Date().toISOString(); }
+    // migración única: risk management dictado (1–2 trades/día)
+    if(!S.ajustes._rm1){ if(S.ajustes.maxTradesDia > 2) S.ajustes.maxTradesDia = 2; S.ajustes._rm1 = true; }
     return S;
   }
 

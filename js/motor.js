@@ -168,6 +168,8 @@
     if(topePct > 0 && riesgoTrade > topePct){ riesgoTrade = topePct; riesgoDia = Math.min(riesgoDia, riesgoTrade * Math.max(1, A.pararTrasPerdidas)); }
     if(A.maxContratos) contratos = Math.min(contratos, A.maxContratos);
     contratos = Math.min(contratos, Math.max(0, Math.floor(riesgoTrade / stopUSD)));
+    // un mini con tu stop cabe dentro del 1% y del daily loss → se permite 1 aunque el reparto por trade dé menos
+    if(contratos === 0 && stopUSD <= (topePct || Infinity) && stopUSD <= riesgoDia){ contratos = 1; riesgoTrade = stopUSD; }
     if(est.consist && est.consist.maxHoy > 0 && meta > est.consist.maxHoy){
       meta = est.consist.maxHoy;
       metaTxt = 'La consistencia manda: hoy no puedes ganar más de ' + fmt(est.consist.maxHoy) + ' sin romper el ' + (est.consist.limite*100) + '%.';

@@ -122,6 +122,9 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
 - **Riesgo del día**: fracción del colchón según la fase, topada por el límite diario, dividida entre el
   número de pérdidas que te permites. De ahí salen los contratos.
 - **Fases**: `EVALUACIÓN` → `BUFFER` (fondeada construyendo colchón) → `PAYOUTS`. El plan del día cambia con la fase.
+- **Risk management (Ajustes, manda sobre todo):** **1–2 trades por día · if W, get off the charts (un ganador y cierras) ·
+  nunca más del 1% de la cuenta por trade ($500 en 50k) · máximo 1 mini.** El semáforo lo aplica (GANASTE · FUERA DE LAS GRÁFICAS),
+  el cargador lo recuerda y el tamaño sugerido nunca lo pasa.
 - **Las reglas de riesgo de André (Ajustes):** fondeada = **pérdida máxima $500/día** (un día de -$1,000 es el que te
   quita la cuenta al siguiente), **meta $250, techo $500 y cierras**; después de perder, mitad de tamaño y es el último;
   2 pérdidas seguidas o 3 trades = se acabó el día. **Evaluación = full port**: contratos máximos de la firma, pasar lo
