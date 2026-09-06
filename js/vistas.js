@@ -433,7 +433,7 @@
   /* después de pintar: llenar los escenarios de los días futuros con Forex Factory */
   document.addEventListener('mesa:pintado', async () => {
     const celdas = [...document.querySelectorAll('.cal .esc')]; if(!celdas.length || !window.Mercado) return;
-    let lista = []; try{ lista = await Mercado.noticias(); }catch(e){ celdas.forEach(c => c.innerHTML = '<span class="tenue">sin calendario</span>'); return; }
+    let lista = []; try{ lista = await Mercado.noticias(); }catch(e){ celdas.forEach(c => c.innerHTML = ''); return; }
     const semana = lista.length ? {min: Math.min(...lista.map(n => n.t.getTime())), max: Math.max(...lista.map(n => n.t.getTime()))} : null;
     celdas.forEach(c => {
       const iso = c.dataset.esc;

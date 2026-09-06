@@ -25,9 +25,13 @@
     if(!r.ok) throw new Error('sin CORS: usa la app de escritorio');
     return r.json();
   }
+  /* En la web (GitHub Pages) el calendario llega por la API propia: data/ff_calendar_thisweek.json, que un workflow
+     de GitHub baja de Forex Factory cada hora (sin CORS porque es el mismo origen). En la app nativa se lee directo. */
   async function noticias(){
     if(cache.ff && Date.now() - cache.ffT < 15*60000) return cache.ff;
-    const j = await fetchJSON(FF);
+    let j = null;
+    if(!window.__npNativo){ try{ const r = await fetch('data/ff_calendar_thisweek.json?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}); if(r.ok) j = await r.json(); }catch(e){} }
+    if(!j) j = await fetchJSON(FF);
     cache.ff = (j||[]).map(x => ({titulo:x.title, pais:x.country, t:new Date(x.date), impacto:x.impact, prev:x.previous, fc:x.forecast, actual:x.actual}));
     cache.ffT = Date.now(); return cache.ff;
   }

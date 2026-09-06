@@ -1,0 +1,22 @@
+name: noticias-forex-factory
+on:
+  schedule:
+    - cron: '7 * * * *'      # cada hora
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bajar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bajar el calendario de la semana
+        run: |
+          curl -sSL --retry 3 -A "Mozilla/5.0" -o data/ff_calendar_thisweek.json https://nfs.faireconomy.media/ff_calendar_thisweek.json
+          python3 -c "import json;json.load(open('data/ff_calendar_thisweek.json'))"
+      - name: Publicar si cambió
+        run: |
+          git config user.name "northpoint-bot"
+          git config user.email "bot@northpoint"
+          git add data/ff_calendar_thisweek.json
+          git diff --cached --quiet || (git commit -m "data: noticias Forex Factory $(date -u +%Y-%m-%dT%H:%MZ)" && git push)
