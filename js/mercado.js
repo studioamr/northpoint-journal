@@ -174,9 +174,9 @@
     const X = t => L + (t - tMin) / (tMax - tMin) * (Wg - L - R), Y = p => T + (1 - (p - (pMin - pad)) / ((pMax + pad) - (pMin - pad))) * (Hg - T - B);
     const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hora = t => { const mm = ((t % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
-    const tono = {asia:'var(--azul)', lon:'var(--acc)', pre:'var(--oro)'};
-    const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".10" stroke="${tono[s.k]}" stroke-opacity=".45"/>
-      <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}">${s.n.toUpperCase()}</text>
+    const tono = {asia:'#FF4D5A', lon:'#4F8CFF', pre:'#39FF14'};   // Asia rojo · Londres azul · NY verde (como él lo pinta en el chart)
+    const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".14" stroke="${tono[s.k]}" stroke-opacity=".7"/>
+      <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}" fill="${tono[s.k]}">${s.n.toUpperCase()}</text>
       <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${s.highTomado ? 'var(--tenue)' : 'var(--up)'}" stroke-dasharray="${s.highTomado ? '2 4' : '5 4'}" stroke-opacity=".8"/>
       <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="${s.lowTomado ? 'var(--tenue)' : 'var(--down)'}" stroke-dasharray="${s.lowTomado ? '2 4' : '5 4'}" stroke-opacity=".8"/>`).join('');
     // etiquetas de niveles a la derecha, sin encimarse
@@ -189,7 +189,7 @@
     const ny = X(9*60+30);
     return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" preserveAspectRatio="none" style="aspect-ratio:${Wg}/${Hg}">
       ${cajas}
-      <line x1="${ny}" x2="${ny}" y1="${T}" y2="${Hg - B}" stroke="var(--txt)" stroke-opacity=".35" stroke-dasharray="3 3"/><text class="ses" x="${ny + 4}" y="${T + 10}" fill="var(--txt)">NY 9:30</text>
+      <line x1="${ny}" x2="${ny}" y1="${T}" y2="${Hg - B}" stroke="#39FF14" stroke-opacity=".6" stroke-dasharray="3 3"/><text class="ses" x="${ny + 4}" y="${T + 10}" fill="#39FF14">NY 9:30</text>
       <path d="${linea}" fill="none" stroke="var(--txt)" stroke-width="1.6" stroke-linejoin="round"/>
       <circle cx="${X(ultimo.min2 + 2.5)}" cy="${Y(ultimo.cl != null ? ultimo.cl : (ultimo.hi+ultimo.lo)/2)}" r="3.5" fill="var(--txt)"/>
       ${etiquetas}
