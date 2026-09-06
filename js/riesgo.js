@@ -41,7 +41,7 @@
      EVAL: cada día perdido es el drawdown completo → X. BUFFER: −loss por día, se quema en inicial − 2k (4 malos días).
      PAYOUTS: −payLoss por día, se quema en buffer − 2k (8 malos días); cobras al tocar buffer + tope. */
   function piramide(P, etapa){
-    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', piso: P.inicial - P.quema, prof: Math.max(2, Math.min(5, Math.ceil(P.objetivo / P.evalTP))), todoX: true}
+    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', piso: P.inicial - P.quema, prof: P.prof || 4, todoX: true}
       : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', piso: P.inicial - P.quema, prof: P.prof || 4}
       : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.payLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', piso: P.inicial + P.buffer - P.quema, prof: P.prof || 4};
     const hojas = Math.pow(2, cfg.prof), colW = 66, W = Math.max(600, hojas * colW + 40), dy = 78, T = 34, H = T + cfg.prof * dy + 40;
@@ -71,7 +71,7 @@
     const rr = (a, b) => (a / b).toFixed(2);
     const campo = (k, t, step) => `<label class="campo"><span>${t}</span><input type="number" step="${step || 1}" data-sim="${k}" value="${P[k]}"></label>`;
     const prof = P.prof || 4;
-    const tarjeta = (t, sub, cls, etapa) => `<div class="card etapa ${cls}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span><div class="crece"></div>${etapa !== 'eval' ? `<span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button>` : ''}</div><div class="arbol">${piramide(P, etapa)}</div></div>`;
+    const tarjeta = (t, sub, cls, etapa) => `<div class="card etapa ${cls}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${piramide(P, etapa)}</div></div>`;
     return `
     <div class="grid g5" style="margin-bottom:14px">
       ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}
@@ -90,7 +90,7 @@
         <div><b>6 · 1–2 trades y fuera.</b> Si gano, cierro la plataforma. Dos pérdidas seguidas o el daily loss, y el día se acabó.</div>
         <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo ${fmt(P.evalLoss)} para ${fmt(P.evalTP)}: un mal día y pierdo, paso en 3. En buffer, +${fmt(P.fondTP)} al día y -${fmt(P.fondLoss)} máximo: tengo ${Math.round(P.quema / P.fondLoss)} malos días. En payouts, -${fmt(P.payLoss)} máximo: tengo ${Math.round(P.quema / P.payLoss)}, y cobro en cuanto toco el tope.</div>
       </div></div>
-    <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y los árboles se recalculan</span><div class="crece"></div><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
+    <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y los tres árboles se recalculan</span><div class="crece"></div><span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
       <div class="grid g6" style="margin-top:10px">
         ${campo('inicial', 'Cuenta inicial ($)', 1000)}${campo('objetivo', 'Objetivo eval ($)', 100)}${campo('buffer', 'Buffer ($)', 100)}${campo('tope', 'Tope por retiro ($)', 100)}${campo('quema', 'Drawdown ($)', 100)}${campo('maxPagos', 'Retiros máx', 1)}
         ${campo('evalTP', 'Eval · TP por día ($)', 50)}${campo('evalLoss', 'Eval · riesgo por día ($)', 50)}${campo('fondTP', 'Funded · TP por día ($)', 50)}${campo('fondLoss', 'Buffer · riesgo por día ($)', 50)}${campo('payLoss', 'Payouts · riesgo por día ($)', 50)}${campo('split', 'Split (%)', 5)}
