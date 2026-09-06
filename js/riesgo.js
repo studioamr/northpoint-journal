@@ -76,7 +76,7 @@
     const contratos = Math.max(1, Math.min((A.instrumento === 'MNQ' || A.instrumento === 'MES') ? (A.maxContratos||1)*10 : (A.maxContratos||1), Math.floor(riesgo / stopUSD)));
     const r = cta ? cta.reglas : {}; const cap = r.capPayout ? fmt(r.capPayout) : 'el tope de tu plan'; const maxP = r.maxPayouts || null;
     const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
-    const piso = ini - ((cta && cta.reglas && cta.reglas.maxDD) ? cta.reglas.maxDD : 2000);      // donde se quema la cuenta
+    const piso = ini - 2000;      // el stop de la cuenta siempre es el balance inicial − $2,000 (él lo fijó así)
     const balAct = (cta && est) ? est.balance : ini;
     const objetivoEval = (cta && est && est.objetivo && cta.fase === 'eval') ? est.objetivo : ini + 3000;
     const bufferBal = (est && est.buffer) ? est.buffer : ini + 2100;
