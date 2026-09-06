@@ -86,7 +86,7 @@
     }
 
     // ---- retiro
-    const buffer = (r.buffer != null) ? ini + r.buffer : (r.congelaEn != null ? ini + r.maxDD + r.congelaEn : ini);
+    const buffer = (r.buffer != null) ? ini + r.buffer : (r.congelaEn != null ? ini + r.maxDD + r.congelaEn : ini + 2100);   // sin regla del plan: su buffer de siempre, inicial + 2,100 (52,100 en 50k)
     const pagados = Store.payoutsDe(cuenta.id);
     const retirado = pagados.filter(p => p.estado === 'pagado').reduce((a,p) => a + (+p.monto||0), 0);
     const sobreBuffer = Math.max(0, balance - buffer);
