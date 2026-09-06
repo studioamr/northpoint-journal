@@ -328,8 +328,7 @@
     const etiq = [];
     nivelesVis.forEach(nv => { if(!nv.tomado) etiq.push({y: Y(nv.v), txt: nv.n.toUpperCase() + ' ' + num(nv.v), col: nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)', peso: 400}); });
     etiq.push({y: Y(d.precio), txt: 'AHORA ' + num(d.precio), col: d.arriba ? 'var(--up)' : 'var(--down)', peso: 700});
-    const FIB = [[0, '0'], [0.5, 'EQ 0.5'], [0.705, '0.705'], [0.79, '0.79'], [1, '1']];
-    if(d.fibo) FIB.forEach(([k]) => etiq.push({y: Y(d.fibo.nivel(k)), txt: num(d.fibo.nivel(k)), col: k === 0.705 ? '#39FF14' : 'var(--acc)', peso: 400, chico: true}));
+    const FIB = [[0.705, '0.705'], [0.79, '0.79']];   // solo estas dos, en rojo, sin números
     etiq.sort((a, b) => a.y - b.y); let last = -99; etiq.forEach(e => { e.ty = e.y - last < 12 ? last + 12 : e.y; last = e.ty; });
     const etiquetas = etiq.map(e => `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
     // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
@@ -342,10 +341,8 @@
     const caja = '';
     // fibo: líneas desde el extremo B hasta la columna; zona 0.5–0.79 sombreada
     let fibG = '';
-    if(d.fibo){ const xB = xDe(d.fibo.tB), xA = xDe(d.fibo.tA);
-      fibG += `<line x1="${xA}" x2="${xB}" y1="${Y(d.fibo.A)}" y2="${Y(d.fibo.B)}" stroke="var(--acc)" stroke-opacity=".6" stroke-dasharray="3 3"/>`;
-      fibG += `<rect x="${xB}" y="${Y(Math.max(d.fibo.nivel(0.5), d.fibo.nivel(0.79)))}" width="${Math.max(2, xLbl - 6 - xB)}" height="${Math.max(2, Math.abs(Y(d.fibo.nivel(0.5)) - Y(d.fibo.nivel(0.79))))}" fill="var(--acc)" fill-opacity=".08"/>`;
-      FIB.forEach(([k]) => { const fuerte = k === 0.5 || k === 0.705 || k === 0.79; fibG += `<line x1="${xB}" x2="${xLbl - 6}" y1="${Y(d.fibo.nivel(k))}" y2="${Y(d.fibo.nivel(k))}" stroke="var(--acc)" stroke-opacity="${fuerte ? .9 : .45}" stroke-dasharray="${k === 0 || k === 1 ? '' : '4 3'}"/>`; }); }
+    if(d.fibo){ const xB = xDe(d.fibo.tB);
+      FIB.forEach(([k]) => { fibG += `<line x1="${xB}" x2="${xLbl - 6}" y1="${Y(d.fibo.nivel(k))}" y2="${Y(d.fibo.nivel(k))}" stroke="#FF2E63" stroke-width="1.4" stroke-opacity=".95"/>`; }); }
     const velas = vs.map((v, i) => { const o = v.op != null ? v.op : v.cl; const up = v.cl >= o; const col = up ? 'var(--up)' : 'var(--down)';
       return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(v.hi)}" y2="${Y(v.lo)}" stroke="${col}"/><rect x="${X(i) - cw/2}" y="${Y(Math.max(o, v.cl))}" width="${cw}" height="${Math.max(1, Math.abs(Y(o) - Y(v.cl)))}" fill="${col}"/>`; }).join('');
     // la vela de 4H en grande (sin texto encima: el precio va en la columna)
