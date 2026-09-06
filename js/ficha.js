@@ -105,10 +105,10 @@
   async function dibujaTrade(id){
     const t = Store.estado.trades.find(x => x.id === id); if(!t) return null;
     const cta = Store.cuenta(t.cuentaId); const P = Tema.perfil(); const a = Motor.adherencia(t); const n = Motor.neto(t);
-    const esD = document.documentElement.getAttribute('data-theme') === 'glass-diamante';
-    const up = esD ? '#39FF14' : (color('--up') || '#6FCF97'), down = esD ? '#FF2E63' : (color('--down') || '#F07C8A'), acc = esD ? '#EAF4FF' : (color('--acc') || '#5B9BFF');
+    const esD = !!document.documentElement.getAttribute('data-rich');
+    const up = color('--up') || '#6FCF97', down = color('--down') || '#F07C8A', acc = color('--acc') || '#5B9BFF';
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
-    c.fillStyle = esD ? '#04050a' : '#0a0d14'; c.fillRect(0, 0, W, H);
+    c.fillStyle = esD ? (color('--fondo') || '#04050a') : '#0a0d14'; c.fillRect(0, 0, W, H);
     const g = c.createRadialGradient(W*0.85, 0, 40, W*0.85, 0, 760); g.addColorStop(0, (n >= 0 ? 'rgba(111,207,151,.16)' : 'rgba(240,124,138,.16)')); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0,0,W,H);
     const MONO = '"JetBrains Mono", monospace';
     /* --- datos derivados */
@@ -162,7 +162,7 @@
     c.fillStyle = '#8a8a86'; c.font = '500 12px ' + MONO; c.fillText('LAS 4 REGLAS', 64, y + 4); y += 18;
     const boxW = (W - 128 - 3*14) / 4;
     a.det.forEach((r, i) => { const x = 64 + i * (boxW + 14);
-      c.fillStyle = r.ok ? (esD ? 'rgba(57,255,20,.12)' : 'rgba(111,207,151,.14)') : (esD ? 'rgba(255,46,99,.12)' : 'rgba(240,124,138,.12)'); redondo(c, x, y, boxW, 92, 14); c.fill();
+      c.fillStyle = r.ok ? 'rgba(111,207,151,.14)' : 'rgba(240,124,138,.12)'; redondo(c, x, y, boxW, 92, 14); c.fill();
       c.strokeStyle = r.ok ? up : down; c.lineWidth = 1.5; redondo(c, x, y, boxW, 92, 14); c.stroke();
       c.fillStyle = r.ok ? up : down; c.font = '700 22px Inter, sans-serif'; c.fillText(r.ok ? '✓' : '✗', x+16, y+36);
       c.fillStyle = '#F4F4F4'; c.font = '600 14px Inter, sans-serif'; lineas(c, r.titulo, boxW-32, 2).forEach((l, j) => c.fillText(l, x+16, y+58+j*18)); });

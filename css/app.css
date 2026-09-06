@@ -331,13 +331,18 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
 .paso.pasado{opacity:.4}
 
 /* ------------------------------------------------------------- calendario */
-.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal-top{margin-bottom:14px;gap:12px} .cal-mes{margin:0;font-size:26px;font-weight:600;letter-spacing:-.02em;text-transform:capitalize} .cal-mes span{color:var(--tenue);font-weight:400}
+.cal-leg{display:flex;gap:14px;font-family:var(--mono);font-size:10px;color:var(--tenue);letter-spacing:.08em} .cal-leg .leg{display:inline-flex;align-items:center;gap:6px} .cal-leg b{font-weight:600}
+.fdot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;vertical-align:middle;background:var(--acc)} .fdot.fond{background:var(--up)}
+.cal .d.futuro{min-height:104px;border-top:2px solid transparent} .cal .d.f-eval{border-top-color:color-mix(in srgb,var(--acc) 55%,transparent)} .cal .d.f-fond{border-top-color:color-mix(in srgb,var(--up) 55%,transparent)}
+.cal .nds{display:inline-flex;align-items:center;gap:3px;margin-top:6px} .cal .nd{width:5px;height:5px;border-radius:50%;background:var(--oro)} .cal .nd.alto{background:var(--down)} .cal .nds b{font-family:var(--mono);font-size:9px;color:var(--tenue);font-weight:500;margin-left:3px;letter-spacing:.04em}
 .cal .dow{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--tenue);text-align:center;padding:4px 0;text-transform:uppercase}
-.cal .d{background:var(--panel);border:1px solid var(--linea);min-height:78px;padding:8px 10px;cursor:pointer;position:relative;transition:.18s;border-radius:16px}
+.cal .d{background:var(--panel);border:1px solid var(--linea);min-height:104px;padding:10px 12px;cursor:pointer;position:relative;transition:.18s;border-radius:14px}
 .cal .d:hover{border-color:var(--acc);transform:translateY(-2px)}
 .cal .d.fuera{opacity:.2;cursor:default;background:transparent}
-.cal .d .n{font-family:var(--mono);font-size:10px;color:var(--tenue)}
-.cal .d .p{font-family:var(--disp);font-size:15px;font-weight:800;margin-top:8px;letter-spacing:-.02em}
+.cal .d .n{font-family:var(--mono);font-size:11px;color:var(--tenue)}
+.cal .d .p{font-family:var(--disp);font-size:20px;font-weight:700;margin-top:14px;letter-spacing:-.03em}
 .cal .d .t{font-family:var(--mono);font-size:9px;color:var(--tenue);margin-top:1px}
 .cal .d.g{background:linear-gradient(180deg,rgba(198,255,61,.18),rgba(198,255,61,.04));border-color:rgba(198,255,61,.35)}
 .cal .d.p_{background:linear-gradient(180deg,rgba(255,77,90,.18),rgba(255,77,90,.04));border-color:rgba(255,77,90,.35)}
@@ -443,15 +448,14 @@ svg.radar{width:100%;max-width:250px;height:auto;margin:0 auto;display:block}
 .nbox.down{border-color:rgba(255,77,90,.4);background:var(--downSuave)} .nbox.up{border-color:rgba(198,255,61,.4);background:var(--upSuave)}
 
 /* ---------------------------------------------------- escenarios en calendario */
-.cal .d.futuro{min-height:96px}
-.cal .esc{margin-top:6px;font-size:10px;line-height:1.25;display:flex;flex-direction:column;gap:4px}
+.cal .esc{margin-top:2px;font-size:10px;line-height:1.25;display:flex;flex-direction:column;gap:4px}
 .cal .esc .ev{border-left:2px solid var(--oro);padding-left:6px}
 .cal .esc .ev.alto{border-left-color:var(--down)}
 .cal .esc .ev b{font-family:var(--mono);font-size:9.5px;color:var(--txt)}
 .cal .esc .ev .tenue{font-size:9px}
 
 .cal .py{margin-top:5px;font-family:var(--mono);font-size:9.5px;line-height:1.3}
-.hito-cal{margin-top:3px;font-family:var(--disp);font-size:8.5px;letter-spacing:.06em;padding:2px 5px;border:1px solid var(--linea2);display:block}
+.hito-cal{margin-top:8px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:3px 7px;border:1px solid var(--linea2);border-radius:999px;display:inline-block}
 .hito-cal i{display:block;font-style:normal;font-family:var(--mono);font-size:8px;color:var(--tenue);letter-spacing:0;text-transform:none}
 .hito-cal.up{border-color:var(--up);color:var(--up)} .hito-cal.acc{border-color:var(--acc);color:var(--acc);background:var(--accSuave)} .hito-cal.azul{border-color:var(--azul);color:var(--azul)} .hito-cal.down{border-color:var(--down);color:var(--down)}
 
@@ -549,14 +553,14 @@ table.ff tr.ffinfo .ninfo{padding:8px 0 4px}
 
 /* ==== DIAMANTE · dark liquid glass animado · cristales blancos · fosfo ==== */
 [data-theme="glass-diamante"]{--fondo:#04050a;--panel:rgba(255,255,255,.06);--panel2:rgba(255,255,255,.05);--panel3:rgba(255,255,255,.13);--linea:rgba(255,255,255,.14);--linea2:rgba(255,255,255,.34);
-  --txt:#FFFFFF;--dim:#B9C2D6;--tenue:#6E7891;--acc:#EAF4FF;--acc2:#C9E2FF;--accSuave:rgba(234,244,255,.14);--up:#39FF14;--upSuave:rgba(57,255,20,.14);--down:#FF2E63;--downSuave:rgba(255,46,99,.16);--azul:#7DF9FF;--azulSuave:rgba(125,249,255,.14);--oro:#FFE86B;--oroSuave:rgba(255,232,107,.14);--a2:#161c2e}
-[data-theme="glass-diamante"] body::after{content:'';position:fixed;inset:-12%;z-index:-3;pointer-events:none;background:
-  radial-gradient(38% 42% at 82% 8%,#1b2646 0%,transparent 70%),radial-gradient(34% 38% at 10% 58%,#111a33 0%,transparent 70%),
-  radial-gradient(30% 32% at 66% 94%,#0c1a2c 0%,transparent 70%),radial-gradient(20% 24% at 42% 28%,rgba(57,255,20,.09) 0%,transparent 70%),
-  radial-gradient(18% 20% at 70% 50%,rgba(125,249,255,.08) 0%,transparent 70%);filter:blur(36px);animation:diamLiquido 22s ease-in-out infinite alternate}
+  --txt:#FFFFFF;--dim:#B9C2D6;--tenue:#6E7891;--acc:#EAF4FF;--acc2:#C9E2FF;--accSuave:rgba(234,244,255,.14);--up:#39FF14;--upSuave:rgba(57,255,20,.14);--down:#FF2E63;--downSuave:rgba(255,46,99,.16);--azul:#7DF9FF;--azulSuave:rgba(125,249,255,.14);--oro:#FFE86B;--oroSuave:rgba(255,232,107,.14);--a2:#161c2e;--b1:#1b2646;--b2:#111a33;--b3:#0c1a2c;--b4:rgba(57,255,20,.09);--b5:rgba(125,249,255,.08);--glowUp:rgba(57,255,20,.55);--glowDown:rgba(255,46,99,.5);--gUp:rgba(57,255,20,.2);--gDown:rgba(255,46,99,.2)}
+[data-rich] body::after{content:'';position:fixed;inset:-12%;z-index:-3;pointer-events:none;background:
+  radial-gradient(38% 42% at 82% 8%,var(--b1) 0%,transparent 70%),radial-gradient(34% 38% at 10% 58%,var(--b2) 0%,transparent 70%),
+  radial-gradient(30% 32% at 66% 94%,var(--b3) 0%,transparent 70%),radial-gradient(20% 24% at 42% 28%,var(--b4) 0%,transparent 70%),
+  radial-gradient(18% 20% at 70% 50%,var(--b5) 0%,transparent 70%);filter:blur(36px);animation:diamLiquido 22s ease-in-out infinite alternate}
 @keyframes diamLiquido{0%{transform:translate3d(0,0,0) scale(1) rotate(0deg)}50%{transform:translate3d(-3%,2.5%,0) scale(1.09) rotate(2deg)}100%{transform:translate3d(3%,-2%,0) scale(1.04) rotate(-2deg)}}
 /* red de cristal + destello que barre + chispas */
-[data-theme="glass-diamante"] body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;mix-blend-mode:screen;background:
+[data-rich] body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;mix-blend-mode:screen;background:
   linear-gradient(115deg,transparent 42%,rgba(255,255,255,.05) 47%,rgba(255,255,255,.22) 50%,rgba(255,255,255,.05) 53%,transparent 58%),
   repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 84px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 84px),
   radial-gradient(1.5px 1.5px at 12% 22%,#fff 60%,transparent 62%),radial-gradient(1.5px 1.5px at 78% 14%,#fff 60%,transparent 62%),radial-gradient(1px 1px at 34% 76%,#fff 60%,transparent 62%),
@@ -564,35 +568,58 @@ table.ff tr.ffinfo .ninfo{padding:8px 0 4px}
   background-size:280% 280%,auto,auto,auto,auto,auto,auto,auto,auto;animation:diamBrillo 9s linear infinite,diamChispa 3.2s ease-in-out infinite alternate}
 @keyframes diamBrillo{0%{background-position:120% 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0}100%{background-position:-120% 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0}}
 @keyframes diamChispa{0%{opacity:.55}100%{opacity:1}}
-[data-theme="glass-diamante"] #fondo{display:block;z-index:-1;opacity:.85;mix-blend-mode:screen}
+[data-rich] #fondo{display:block;z-index:-1;opacity:.85;mix-blend-mode:screen}
 /* vidrio: borde blanco brillante arriba, filo de diamante */
-[data-theme="glass-diamante"] .card,[data-theme="glass-diamante"] .kpi,[data-theme="glass-diamante"] .semaforo,[data-theme="glass-diamante"] .cal .d,[data-theme="glass-diamante"] .regla,[data-theme="glass-diamante"] .pasoB,[data-theme="glass-diamante"] .acceso-form,[data-theme="glass-diamante"] .r4,[data-theme="glass-diamante"] .modal,[data-theme="glass-diamante"] aside{
+[data-rich] .card,[data-rich] .kpi,[data-rich] .semaforo,[data-rich] .cal .d,[data-rich] .regla,[data-rich] .pasoB,[data-rich] .acceso-form,[data-rich] .r4,[data-rich] .modal,[data-rich] aside{
   background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.035) 45%,rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.06),inset 1px 0 0 rgba(255,255,255,.12),0 24px 50px -30px #000;backdrop-filter:blur(26px) saturate(1.4)}
-[data-theme="glass-diamante"] .card,[data-theme="glass-diamante"] .kpi{position:relative;overflow:hidden}
-[data-theme="glass-diamante"] .card::before,[data-theme="glass-diamante"] .kpi::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.0) 45%,rgba(255,255,255,.16) 50%,rgba(255,255,255,0) 55%,transparent 60%);background-size:260% 100%;background-position:130% 0;transition:background-position 1.1s ease}
-[data-theme="glass-diamante"] .card:hover::before,[data-theme="glass-diamante"] .kpi:hover::before{background-position:-130% 0}
-[data-theme="glass-diamante"] .kpi .v{color:#fff;text-shadow:0 0 18px rgba(255,255,255,.25)}
-[data-theme="glass-diamante"] .up,[data-theme="glass-diamante"] .kpi .v.up,[data-theme="glass-diamante"] b.up{color:var(--up);text-shadow:0 0 14px rgba(57,255,20,.55),0 0 2px rgba(57,255,20,.9)}
-[data-theme="glass-diamante"] .down,[data-theme="glass-diamante"] b.down{color:var(--down);text-shadow:0 0 14px rgba(255,46,99,.5),0 0 2px rgba(255,46,99,.9)}
-[data-theme="glass-diamante"] .btn{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -8px 16px rgba(0,0,0,.35),0 10px 24px -14px #000}
-[data-theme="glass-diamante"] .btn:hover{background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -8px 16px rgba(0,0,0,.35),0 0 22px rgba(255,255,255,.18)}
-[data-theme="glass-diamante"] .btn.acc{background:linear-gradient(180deg,#ffffff,#d9e6ff);color:#06070d;border-color:#fff;box-shadow:inset 0 1px 0 #fff,0 0 26px rgba(255,255,255,.35),0 10px 24px -12px rgba(255,255,255,.6);font-weight:700;letter-spacing:.01em}
-[data-theme="glass-diamante"] .btn.acc:hover{background:#fff;filter:none;box-shadow:0 0 34px rgba(255,255,255,.55)}
-[data-theme="glass-diamante"] .btn.mal{color:var(--down)}
-[data-theme="glass-diamante"] .marca b{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.45);letter-spacing:.06em}
-[data-theme="glass-diamante"] nav a.on{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.08));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
-[data-theme="glass-diamante"] .eti,[data-theme="glass-diamante"] .kpi .k{color:#c9d3e8;text-transform:uppercase;letter-spacing:.14em;font-family:var(--mono);font-size:10px}
-[data-theme="glass-diamante"] .pill.acc,[data-theme="glass-diamante"] .chip.up{background:rgba(57,255,20,.14);color:var(--up);border-color:rgba(57,255,20,.4)}
-[data-theme="glass-diamante"] .chip.down{background:rgba(255,46,99,.14);color:var(--down);border-color:rgba(255,46,99,.4)}
-[data-theme="glass-diamante"] .semaforo.verde,[data-theme="glass-diamante"] .semaforo.meta{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 40px -10px rgba(57,255,20,.45)}
-[data-theme="glass-diamante"] .semaforo.rojo{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 40px -10px rgba(255,46,99,.45)}
-[data-theme="glass-diamante"] .cal .d.g{background:linear-gradient(160deg,rgba(57,255,20,.2),rgba(57,255,20,.05));border-color:rgba(57,255,20,.45)}
-[data-theme="glass-diamante"] .cal .d.p_{background:linear-gradient(160deg,rgba(255,46,99,.2),rgba(255,46,99,.05));border-color:rgba(255,46,99,.45)}
-[data-theme="glass-diamante"] .cinta{border-bottom:1px solid rgba(255,255,255,.14)} [data-theme="glass-diamante"] .cinta em{color:#fff}
-[data-theme="glass-diamante"] .anillo .arco{filter:drop-shadow(0 0 6px currentColor)}
-[data-theme="glass-diamante"] .toast{background:#fff;color:#06070d;font-weight:700;box-shadow:0 0 30px rgba(255,255,255,.45)}
-[data-theme="glass-diamante"] input,[data-theme="glass-diamante"] select,[data-theme="glass-diamante"] textarea{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:#fff}
-[data-theme="glass-diamante"] .fichaPreview{background:#000;border-color:rgba(255,255,255,.22);box-shadow:0 0 40px -10px rgba(255,255,255,.35)}
+[data-rich] .card,[data-rich] .kpi{position:relative;overflow:hidden}
+[data-rich] .card::before,[data-rich] .kpi::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.0) 45%,rgba(255,255,255,.16) 50%,rgba(255,255,255,0) 55%,transparent 60%);background-size:260% 100%;background-position:130% 0;transition:background-position 1.1s ease}
+[data-rich] .card:hover::before,[data-rich] .kpi:hover::before{background-position:-130% 0}
+[data-rich] .kpi .v{color:#fff;text-shadow:0 0 18px rgba(255,255,255,.25)}
+[data-rich] .up,[data-rich] .kpi .v.up,[data-rich] b.up{color:var(--up);text-shadow:0 0 14px var(--glowUp),0 0 2px var(--glowUp)}
+[data-rich] .down,[data-rich] b.down{color:var(--down);text-shadow:0 0 14px var(--glowDown),0 0 2px var(--glowDown)}
+[data-rich] .btn{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.22);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -8px 16px rgba(0,0,0,.35),0 10px 24px -14px #000}
+[data-rich] .btn:hover{background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -8px 16px rgba(0,0,0,.35),0 0 22px rgba(255,255,255,.18)}
+[data-rich] .btn.acc{background:linear-gradient(180deg,#ffffff,var(--acc));color:#06070d;border-color:#fff;box-shadow:inset 0 1px 0 #fff,0 0 26px rgba(255,255,255,.35),0 10px 24px -12px var(--acc);font-weight:700;letter-spacing:.01em}
+[data-rich] .btn.acc:hover{background:#fff;filter:none;box-shadow:0 0 34px rgba(255,255,255,.55)}
+[data-rich] .btn.mal{color:var(--down)}
+[data-rich] .marca b{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.45);letter-spacing:.06em}
+[data-rich] nav a.on{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.08));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+[data-rich] .eti,[data-rich] .kpi .k{color:#c9d3e8;text-transform:uppercase;letter-spacing:.14em;font-family:var(--mono);font-size:10px}
+[data-rich] .pill.acc,[data-rich] .chip.up{background:var(--upSuave);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
+[data-rich] .chip.down{background:var(--downSuave);color:var(--down);border-color:color-mix(in srgb,var(--down) 40%,transparent)}
+[data-rich] .semaforo.verde,[data-rich] .semaforo.meta{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 40px -10px var(--glowUp)}
+[data-rich] .semaforo.rojo{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 40px -10px var(--glowDown)}
+[data-rich] .cal .d.g{background:linear-gradient(160deg,var(--gUp),transparent);border-color:color-mix(in srgb,var(--up) 45%,transparent)}
+[data-rich] .cal .d.p_{background:linear-gradient(160deg,var(--gDown),transparent);border-color:color-mix(in srgb,var(--down) 45%,transparent)}
+[data-rich] .cinta{border-bottom:1px solid rgba(255,255,255,.14)} [data-rich] .cinta em{color:#fff}
+[data-rich] .anillo .arco{filter:drop-shadow(0 0 6px currentColor)}
+[data-rich] .toast{background:#fff;color:#06070d;font-weight:700;box-shadow:0 0 30px rgba(255,255,255,.45)}
+[data-rich] input,[data-rich] select,[data-rich] textarea{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:#fff}
+[data-rich] .fichaPreview{background:#000;border-color:rgba(255,255,255,.22);box-shadow:0 0 40px -10px rgba(255,255,255,.35)}
 /* tabla de la noche */
 table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;font-size:12px} .tachado{text-decoration:line-through}
+
+/* ---- los demás RICH: mismos vidrios, otra materia */
+[data-theme="glass-oro"]{--fondo:#070502;--panel:rgba(255,220,120,.06);--panel2:rgba(255,220,120,.05);--panel3:rgba(255,220,120,.13);--linea:rgba(255,220,120,.16);--linea2:rgba(255,220,120,.36);
+  --txt:#FFF7E0;--dim:#D6C39A;--tenue:#8C7D5A;--acc:#FFD54A;--acc2:#E6B92E;--accSuave:rgba(255,213,74,.16);--up:#FFD54A;--upSuave:rgba(255,213,74,.16);--down:#FF4D4D;--downSuave:rgba(255,77,77,.16);--azul:#FFE08A;--azulSuave:rgba(255,224,138,.14);--oro:#FFD54A;--oroSuave:rgba(255,213,74,.16);--a2:#2a2110;
+  --b1:#3a2a08;--b2:#2a1d06;--b3:#1c1404;--b4:rgba(255,213,74,.12);--b5:rgba(255,160,40,.08);--glowUp:rgba(255,213,74,.6);--glowDown:rgba(255,77,77,.5);--gUp:rgba(255,213,74,.22);--gDown:rgba(255,77,77,.2)}
+[data-theme="glass-billetes"]{--fondo:#03100a;--panel:rgba(133,187,101,.07);--panel2:rgba(133,187,101,.05);--panel3:rgba(133,187,101,.14);--linea:rgba(133,187,101,.18);--linea2:rgba(133,187,101,.38);
+  --txt:#F2FFF0;--dim:#B5D2A8;--tenue:#6E8F62;--acc:#85BB65;--acc2:#6EA152;--accSuave:rgba(133,187,101,.16);--up:#39FF14;--upSuave:rgba(57,255,20,.14);--down:#FF2E63;--downSuave:rgba(255,46,99,.16);--azul:#B8F5A8;--azulSuave:rgba(184,245,168,.14);--oro:#E8D77A;--oroSuave:rgba(232,215,122,.14);--a2:#12301c;
+  --b1:#0d3a22;--b2:#0a2d1b;--b3:#062015;--b4:rgba(57,255,20,.1);--b5:rgba(133,187,101,.1);--glowUp:rgba(57,255,20,.55);--glowDown:rgba(255,46,99,.5);--gUp:rgba(57,255,20,.2);--gDown:rgba(255,46,99,.2)}
+[data-theme="glass-esmeralda"]{--fondo:#02100b;--panel:rgba(80,255,177,.06);--panel2:rgba(80,255,177,.05);--panel3:rgba(80,255,177,.13);--linea:rgba(80,255,177,.16);--linea2:rgba(80,255,177,.36);
+  --txt:#EDFFF7;--dim:#A9DCC5;--tenue:#5E8F78;--acc:#50FFB1;--acc2:#2FE597;--accSuave:rgba(80,255,177,.16);--up:#50FFB1;--upSuave:rgba(80,255,177,.16);--down:#FF5C8A;--downSuave:rgba(255,92,138,.16);--azul:#8FFFD9;--azulSuave:rgba(143,255,217,.14);--oro:#FFE86B;--oroSuave:rgba(255,232,107,.14);--a2:#0f3324;
+  --b1:#0b3d2a;--b2:#082e21;--b3:#052018;--b4:rgba(80,255,177,.12);--b5:rgba(0,200,140,.1);--glowUp:rgba(80,255,177,.6);--glowDown:rgba(255,92,138,.5);--gUp:rgba(80,255,177,.22);--gDown:rgba(255,92,138,.2)}
+[data-theme="glass-platino"]{--fondo:#07080b;--panel:rgba(230,233,240,.06);--panel2:rgba(230,233,240,.05);--panel3:rgba(230,233,240,.13);--linea:rgba(230,233,240,.16);--linea2:rgba(230,233,240,.4);
+  --txt:#FFFFFF;--dim:#C3C8D4;--tenue:#767D8C;--acc:#E6E9F0;--acc2:#C9CFDB;--accSuave:rgba(230,233,240,.14);--up:#7CFFB2;--upSuave:rgba(124,255,178,.14);--down:#FF6B6B;--downSuave:rgba(255,107,107,.16);--azul:#BFD3FF;--azulSuave:rgba(191,211,255,.14);--oro:#F0E6C8;--oroSuave:rgba(240,230,200,.14);--a2:#22252e;
+  --b1:#2a2e3a;--b2:#1f2230;--b3:#161923;--b4:rgba(230,233,240,.12);--b5:rgba(124,255,178,.06);--glowUp:rgba(124,255,178,.55);--glowDown:rgba(255,107,107,.5);--gUp:rgba(124,255,178,.2);--gDown:rgba(255,107,107,.2)}
+[data-theme="glass-btc"]{--fondo:#0b0602;--panel:rgba(247,147,26,.06);--panel2:rgba(247,147,26,.05);--panel3:rgba(247,147,26,.13);--linea:rgba(247,147,26,.18);--linea2:rgba(247,147,26,.4);
+  --txt:#FFF4E8;--dim:#E0BE99;--tenue:#8F6D48;--acc:#F7931A;--acc2:#DB7F0E;--accSuave:rgba(247,147,26,.16);--up:#F7931A;--upSuave:rgba(247,147,26,.16);--down:#FF3B3B;--downSuave:rgba(255,59,59,.16);--azul:#FFC375;--azulSuave:rgba(255,195,117,.14);--oro:#FFB347;--oroSuave:rgba(255,179,71,.14);--a2:#33200a;
+  --b1:#3d2408;--b2:#2c1a06;--b3:#1e1204;--b4:rgba(247,147,26,.14);--b5:rgba(255,80,0,.08);--glowUp:rgba(247,147,26,.6);--glowDown:rgba(255,59,59,.5);--gUp:rgba(247,147,26,.22);--gDown:rgba(255,59,59,.2)}
+[data-theme="glass-oro"] .marca b,[data-theme="glass-btc"] .marca b{color:var(--acc);text-shadow:0 0 22px var(--glowUp)}
+[data-theme="glass-oro"] .btn.acc,[data-theme="glass-btc"] .btn.acc{background:linear-gradient(180deg,#fff2c4,var(--acc));border-color:#fff2c4}
+[data-theme="glass-billetes"] .btn.acc,[data-theme="glass-esmeralda"] .btn.acc{background:linear-gradient(180deg,#eafff2,var(--acc));border-color:#eafff2}
+
+/* gráfica de la noche */
+.noche-g{width:100%;height:auto;display:block} .noche-g text{font-family:var(--mono);font-size:10px;fill:var(--dim)} .noche-g .lbl{font-size:10px;font-weight:600} .noche-g .ses{font-size:9px;letter-spacing:.12em;fill:var(--tenue)}

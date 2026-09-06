@@ -394,10 +394,13 @@
       const dd = Store.estado.dias[iso];
       const futuro = !fuera && iso >= Store.hoyISO() && f.getDay() > 0 && f.getDay() < 6;
       const pr = futuro ? (proy[iso] || null) : null;
-      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''}"
-        ${fuera ? '' : `data-dia="${iso}"`}>
-        <div class="n">${f.getDate()}${futuro && pr ? ` <span class="pill ${pr.fase === 'eval' ? 'acc' : 'ok'}" style="font-size:8px;padding:1px 4px">${pr.fase === 'eval' ? 'EVAL' : 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-cal ${x.tono}">${h(x.t)}<i>${h(x.c)}</i></div>`).join('')}</div>` : ''}${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
-        ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} trade${d.n > 1 ? 's' : ''} · ${d.ganadas}G/${d.perdidas}P</div>` : ''}
+      const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
+      const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
+      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + pr.fase : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
+        <div class="n">${f.getDate()}${futuro && pr ? `<i class="fdot ${pr.fase}"></i>` : ''}</div>
+        ${futuro && pr && pr.hitos.length ? pr.hitos.map(x => `<div class="hito-cal ${x.tono}">${h(hitoCorto(x))}</div>`).join('') : ''}
+        ${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
+        ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
       </div>`);
     }
@@ -407,21 +410,21 @@
       sem.push(trozo.reduce((a,d) => a + d.pnl, 0));
     }
 
+    const legEval = `<span class="leg"><i class="fdot eval"></i>EVAL <b class="up">+${fmt(F.eval.target)}</b> <b class="down">-${fmt(F.eval.loss)}</b></span>`;
+    const legFond = `<span class="leg"><i class="fdot fond"></i>FUNDED <b class="up">+${fmt(F.fond.target)}</b> <b class="down">-${fmt(F.fond.loss)}</b></span>`;
     return `
-    <div class="fila" style="margin-bottom:12px">
-      <div><div class="eti">Calendario · ${cta ? h(cta.alias || cta.firma) : 'sin cuenta'} · ${faseCta === 'eval' ? 'EVALUACIÓN: target +' + fmt(F.eval.target) + ' · daily loss -' + fmt(F.eval.loss) + (Store.consistenciaDe(cta) ? ' · consistencia ' + Math.round(Store.consistenciaDe(cta)*100) + '% (máx/día ' + fmt(Store.consistenciaDe(cta) * (cta.reglas.target||0)) + ')' : '') : faseCta === 'pasada' ? 'EVAL PASADA → la fondeada que sigue: target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss) : 'FUNDED: target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss)}</div>
-        <h2 style="margin:3px 0 0;font-size:19px;font-weight:600;text-transform:capitalize">${UI.MESES[cal.m]} ${cal.y}</h2></div>
+    <div class="fila cal-top">
+      <h2 class="cal-mes">${UI.MESES[cal.m]} <span>${cal.y}</span></h2>
+      <span class="mono ${signo(mesPnl)}" style="font-size:15px">${masMenos(mesPnl)}</span>
       <div class="crece"></div>
-      ${Store.estado.cuentas.length ? `<select data-acc="calCuenta" style="width:auto;max-width:240px">${opciones(Store.estado.cuentas.map(c => ({v:c.id, t:(c.alias || c.firma) + ' · ' + (c.tamano/1000) + 'k · ' + Motor.FASES[Motor.faseReal(Motor.estadoCuenta(c))].nombre})), cta ? cta.id : '')}</select>` : ''}
-      <span class="mono mini ${signo(mesPnl)}">${masMenos(mesPnl)}</span>
-      <span class="mini tenue mono">${mesN} trades · ${mesG} días ganadores</span>
+      <div class="cal-leg">${faseCta === 'eval' ? legEval + legFond : legFond}</div>
+      ${Store.estado.cuentas.length ? `<select data-acc="calCuenta" style="width:auto;max-width:220px">${opciones(Store.estado.cuentas.map(c => ({v:c.id, t:(c.alias || c.firma) + ' · ' + (c.tamano/1000) + 'k'})), cta ? cta.id : '')}</select>` : ''}
       <button class="btn chico" data-acc="mes" data-v="-1">←</button>
       <button class="btn chico" data-acc="mes" data-v="0">Hoy</button>
       <button class="btn chico" data-acc="mes" data-v="1">→</button>
     </div>
     <div class="cal" style="margin-bottom:4px">${UI.DOW.map(d => `<div class="dow">${d}</div>`).join('')}</div>
-    <div class="cal">${celdas.join('')}</div>
-    <div class="mini tenue" style="margin-top:10px">Clic en un día para ver o escribir su bitácora. Una cuenta a la vez: cada una va en su fase. En evaluación arriesgas el drawdown para llegar al objetivo; ya fondeado, el target chico y el daily loss corto. Los días por venir muestran eso, los hitos (pasas, buffer, cobras, concluye) y las noticias USD.</div>`;
+    <div class="cal">${celdas.join('')}</div>`;
   };
   Vistas._cal = cal;
   /* después de pintar: llenar los escenarios de los días futuros con Forex Factory */
@@ -435,8 +438,10 @@
       const dentro = semana && new Date(iso + 'T12:00').getTime() <= semana.max + 86400000;
       if(!dentro){ c.innerHTML = ''; return; }
       if(!ns.length){ c.innerHTML = ''; return; }
-      c.innerHTML = ns.slice(0,3).map(n => { const e = Mercado.escenario(n);
-        return `<div class="ev ${n.impacto === 'High' ? 'alto' : ''}"><b>${Mercado.horaLocal(n.t)}</b> ${h(n.titulo.replace(/ m\/m| y\/y/g, ''))}<div class="tenue">${h(e.corto)}</div></div>`; }).join('') + (ns.length > 3 ? `<div class="tenue">+${ns.length-3} más</div>` : '');
+      const alto = ns.find(n => n.impacto === 'High') || ns[0];
+      const corto = alto.titulo.replace(/ m\/m| y\/y| q\/q/g, '').replace(/^(Core |Unemployment |Average |Advance |Prelim |Final |Flash )/,'').split(' ').slice(0,2).join(' ');
+      const titulo = ns.map(n => Mercado.horaLocal(n.t) + ' ' + n.titulo + ' · ' + Mercado.escenario(n).corto).join('\n');
+      c.innerHTML = `<span class="nds" title="${h(titulo)}">${ns.slice(0,4).map(n => `<i class="nd ${n.impacto === 'High' ? 'alto' : ''}"></i>`).join('')}<b>${h(corto)}</b></span>`;
     });
   });
 })();

@@ -156,28 +156,54 @@
     const enSesion = (v, s) => enSesionDe(v, s, D);
     const precio = (r.meta||{}).regularMarketPrice || (velas.length ? velas[velas.length-1].cl : null);
     const out = { sym, precio, D, pasada, abrioNY: !pasada && ahora.ymd === D && ahora.min >= 9*60+30, minParaNY: !pasada && ahora.ymd === D ? (9*60+30) - ahora.min : null, sesiones: [] };
+    const iniAsia = velas.findIndex(v => enSesionDe(v, SESIONES[0], D)); out.serie = iniAsia >= 0 ? velas.slice(iniAsia) : velas.slice(-120);
+    out.serie.forEach(v => { v.min2 = v.ymd === D ? v.min : v.min - 24*60; });     // minutos relativos a la medianoche NY del día D
     SESIONES.forEach(s => { const vs = velas.filter(v => enSesion(v, s)); if(!vs.length){ out.sesiones.push({k:s.k, n:s.n, vacia:true}); return; }
       const high = Math.max(...vs.map(v => v.hi)), low = Math.min(...vs.map(v => v.lo)); const fin = vs[vs.length-1].t;
       const despues = velas.filter(v => v.t > fin);
-      out.sesiones.push({k:s.k, n:s.n, high, low, rango: high - low, highTomado: despues.some(v => v.hi > high), lowTomado: despues.some(v => v.lo < low), velas: vs.length}); });
+      out.sesiones.push({k:s.k, n:s.n, high, low, rango: high - low, highTomado: despues.some(v => v.hi > high), lowTomado: despues.some(v => v.lo < low), velas: vs.length, t0: vs[0].min2, t1: vs[vs.length-1].min2 + 5}); });
     return out;
+  }
+  /* la noche dibujada: cajas por sesión (Asia · Londres · Pre-NY) del low al high, línea del precio y niveles vivos/tomados */
+  function graficaNoche(d){
+    const Wg = 640, Hg = 250, L = 8, R = 92, T = 16, B = 26;
+    const serie = d.serie || []; if(serie.length < 3) return '<div class="tenue mini">sin velas</div>';
+    const ses = d.sesiones.filter(s => !s.vacia);
+    const tMin = Math.min(serie[0].min2, ...ses.map(s => s.t0)), tMax = Math.max(serie[serie.length-1].min2 + 5, 9*60+30);
+    const pMin = Math.min(...serie.map(v => v.lo)), pMax = Math.max(...serie.map(v => v.hi)); const pad = (pMax - pMin) * 0.08 || 1;
+    const X = t => L + (t - tMin) / (tMax - tMin) * (Wg - L - R), Y = p => T + (1 - (p - (pMin - pad)) / ((pMax + pad) - (pMin - pad))) * (Hg - T - B);
+    const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const hora = t => { const mm = ((t % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
+    const tono = {asia:'var(--azul)', lon:'var(--acc)', pre:'var(--oro)'};
+    const cajas = ses.map(s => `<rect x="${X(s.t0)}" y="${Y(s.high)}" width="${Math.max(2, X(s.t1) - X(s.t0))}" height="${Math.max(2, Y(s.low) - Y(s.high))}" rx="3" fill="${tono[s.k]}" fill-opacity=".10" stroke="${tono[s.k]}" stroke-opacity=".45"/>
+      <text class="ses" x="${X(s.t0) + 4}" y="${Hg - B + 14}">${s.n.toUpperCase()}</text>
+      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.high)}" y2="${Y(s.high)}" stroke="${s.highTomado ? 'var(--tenue)' : 'var(--up)'}" stroke-dasharray="${s.highTomado ? '2 4' : '5 4'}" stroke-opacity=".8"/>
+      <line x1="${X(s.t1)}" x2="${Wg - R + 4}" y1="${Y(s.low)}" y2="${Y(s.low)}" stroke="${s.lowTomado ? 'var(--tenue)' : 'var(--down)'}" stroke-dasharray="${s.lowTomado ? '2 4' : '5 4'}" stroke-opacity=".8"/>`).join('');
+    // etiquetas de niveles a la derecha, sin encimarse
+    const niveles = []; ses.forEach(s => { niveles.push({p:s.high, txt:s.n.slice(0,3).toUpperCase() + ' H ' + num(s.high), col: s.highTomado ? 'var(--tenue)' : 'var(--up)', tomado:s.highTomado}); niveles.push({p:s.low, txt:s.n.slice(0,3).toUpperCase() + ' L ' + num(s.low), col: s.lowTomado ? 'var(--tenue)' : 'var(--down)', tomado:s.lowTomado}); });
+    if(d.precio != null) niveles.push({p:d.precio, txt:'AHORA ' + num(d.precio), col:'var(--txt)', ahora:true});
+    niveles.sort((a,b) => b.p - a.p); let last = -99; niveles.forEach(n => { let y = Y(n.p); if(y - last < 11) y = last + 11; n.y = y; last = y; });
+    const etiquetas = niveles.map(n => `<text class="lbl" x="${Wg - R + 8}" y="${n.y + 3.5}" fill="${n.col}" ${n.tomado ? 'text-decoration="line-through"' : ''} ${n.ahora ? 'font-weight="700"' : ''}>${n.txt}</text>`).join('');
+    const linea = serie.map((v, i) => (i ? 'L' : 'M') + X(v.min2 + 2.5).toFixed(1) + ' ' + Y(v.cl != null ? v.cl : (v.hi + v.lo)/2).toFixed(1)).join(' ');
+    const ultimo = serie[serie.length-1];
+    const ny = X(9*60+30);
+    return `<svg class="noche-g" viewBox="0 0 ${Wg} ${Hg}" preserveAspectRatio="none" style="aspect-ratio:${Wg}/${Hg}">
+      ${cajas}
+      <line x1="${ny}" x2="${ny}" y1="${T}" y2="${Hg - B}" stroke="var(--txt)" stroke-opacity=".35" stroke-dasharray="3 3"/><text class="ses" x="${ny + 4}" y="${T + 10}" fill="var(--txt)">NY 9:30</text>
+      <path d="${linea}" fill="none" stroke="var(--txt)" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="${X(ultimo.min2 + 2.5)}" cy="${Y(ultimo.cl != null ? ultimo.cl : (ultimo.hi+ultimo.lo)/2)}" r="3.5" fill="var(--txt)"/>
+      ${etiquetas}
+      <text x="${L}" y="${Hg - 4}">${hora(tMin)} NY</text><text x="${Wg - R - 2}" y="${Hg - 4}" text-anchor="end">${hora(ultimo.min2 + 5)}</text>
+    </svg>`;
   }
   function pintaNoche(A){
     const datos = ['NQ=F','ES=F'].map(noche).filter(Boolean); if(!datos.length){ A.style.display = 'none'; return; }
     const num = v => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const d0 = datos[0];
     const fechaD = new Date(d0.D + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
-    const estadoNY = d0.pasada ? 'Mercado cerrado · la última noche fue la del ' + fechaD + ' · así se ve el resumen cada mañana antes de las 9:30' : d0.abrioNY ? 'NY ya abrió · los niveles que sigan vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm · escribe la condición con estos niveles' : 'Noche en curso · los rangos se van completando';
-    A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>Resumen de la noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div><span class="mini dim">Asia 18:00–02:00 · Londres 02:00–08:30 · Pre-NY 08:30–09:30 (hora de NY)</span></div>
-      <div class="grid g2" style="margin-top:10px;gap:10px">${datos.map(d => `<div class="nbox"><div class="fila" style="margin-bottom:6px"><b>${d.sym.replace('=F','')}</b><span class="mini dim">ahora</span><b class="mono">${num(d.precio)}</b></div>
-        <table class="ff noche"><thead><tr><th>Sesión</th><th class="num">High</th><th class="num">Low</th><th class="num">Rango</th><th>Precio</th></tr></thead><tbody>
-        ${d.sesiones.map(s => s.vacia ? `<tr><td>${s.n}</td><td colspan="4" class="tenue">sin velas todavía</td></tr>` : `<tr>
-          <td><b>${s.n}</b></td>
-          <td class="num mono"><span class="${s.highTomado ? 'tenue tachado' : 'up'}">${num(s.high)}</span>${s.highTomado ? ' <span class="mini tenue">tomado</span>' : ' <span class="mini up">vivo</span>'}</td>
-          <td class="num mono"><span class="${s.lowTomado ? 'tenue tachado' : 'down'}">${num(s.low)}</span>${s.lowTomado ? ' <span class="mini tenue">tomado</span>' : ' <span class="mini down">vivo</span>'}</td>
-          <td class="num mono">${num(s.rango)}</td>
-          <td class="mini">${d.precio == null ? '—' : d.precio > s.high ? '<span class="up">arriba del rango</span>' : d.precio < s.low ? '<span class="down">abajo del rango</span>' : 'dentro · ' + Math.round((d.precio - s.low)/(s.rango||1)*100) + '%'}</td></tr>`).join('')}</tbody></table></div>`).join('')}</div>
-      <div class="mini dim" style="margin-top:8px">Los highs y lows vivos son liquidez: la condición del día se escribe sobre ellos (si barre el low de Asia y respeta el FVG → largo al high de Londres, etc.).</div>`;
+    const estadoNY = d0.pasada ? 'Mercado cerrado · última noche: ' + fechaD : d0.abrioNY ? 'NY ya abrió · los niveles vivos son los imanes del día' : d0.minParaNY != null && d0.minParaNY > 0 ? 'NY abre en ' + Math.floor(d0.minParaNY/60) + 'h ' + (d0.minParaNY%60) + 'm' : 'Noche en curso';
+    A.style.display = ''; A.innerHTML = `<div class="fila"><div><h3>La noche</h3><div class="sub">${estadoNY}</div></div><div class="crece"></div><span class="mini dim">Asia · Londres · Pre-NY · hora de NY · nivel tachado = ya tomado</span></div>
+      <div class="grid g2" style="margin-top:10px;gap:12px">${datos.map(d => `<div><div class="fila" style="margin-bottom:4px"><b>${d.sym.replace('=F','')}</b><div class="crece"></div>${d.sesiones.filter(s => !s.vacia).map(s => `<span class="mini dim">${s.n} <b class="mono">${num(s.rango)}</b></span>`).join('')}</div>${graficaNoche(d)}</div>`).join('')}</div>`;
   }
 
   /* Próxima noticia USD de alto impacto: para el semáforo y el Panel */

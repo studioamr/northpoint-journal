@@ -79,7 +79,12 @@ muestra un chip por cuenta; Trades, Calendario, Reportes y Lab filtran igual).
   salida, stop, take profit, puntos, riesgo $, comisión, bruto, sesión, tipo, TP a liquidez interna/externa, confluencias), las 4
   reglas con ✓/✗ y la disciplina, condición + PDA + objetivo, errores, el screenshot si lo pegaste y las notas. Desde la ficha:
   **Editar** (abre el formulario), **PNG** y **Compartir**.
-- **Calendario** — (el balance en grande de arriba se quitó a petición) la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia
+- **Calendario** — limpio para pantalla completa: solo el mes en grande, el P&L del mes, la leyenda de fases (EVAL +$1,000 / −$2,000 ·
+  FUNDED +$200 / −$500) y la cuenta. Los días futuros llevan un punto y un filo de color según la fase (azul eval, verde funded),
+  los hitos como píldoras cortas (✓ PASAS LA EVAL · → PIDE LA FONDEADA · ◆ BUFFER · $ 1,080 · ■ CONCLUYE) y las noticias USD como
+  puntitos (rojo alto, ámbar medio) con la sigla del dato; el detalle (target, daily loss, escenarios) va en el tooltip y en el modal
+  del día. Se quitaron el balance grande de arriba, la línea «Calendario · cuenta · fase → target…» y el texto de ayuda de abajo.
+  Antes: la cuenta (ganancia desde el inicial, colchón, piso, el mes y el anillo hacia
   objetivo/buffer); debajo el mes con el P&L de cada día. Clic en un **día pasado**: la **ficha oficial del día** (`js/ficha.js`, PNG
   1080×1350 dibujado en canvas: NORTHPOINT, fecha, P&L grande, win/PF/disciplina, condición, trades, hasta dos screenshots, notas)
   para descargar o compartir, más su bitácora y el botón **«Marcar targets del día siguiente →»** que abre el siguiente día hábil. El Calendario ve **una cuenta a la vez** (selector arriba), porque cada
@@ -156,7 +161,9 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   alto y medio, hora de Morelia, «HOY», próxima noticia fuerte con ventana de no-operar). Se muestra en **tabla estilo Forex Factory** (día, hora, divisa, cuadrito de impacto rojo/naranja, evento, real, pronóstico, previo) y
   arriba del calendario va el **Resumen de la noche** (`Mercado.noche`): high y low de **Asia** (18:00–02:00 NY), **Londres**
   (02:00–08:30 NY) y **Pre-NY** (08:30–09:30 NY) para NQ y ES, sacados de las velas de 5 min de Yahoo (`range=2d`), con «vivo» o
-  «tomado» según lo que pasó después, el rango y dónde está el precio; en fin de semana enseña la última noche real. Sustituye al
+  «tomado» según lo que pasó después, el rango y dónde está el precio; en fin de semana enseña la última noche real. Se ve **en
+  gráfica** (`graficaNoche`, SVG): la línea del precio desde que abre Asia, una caja por sesión del low al high, los niveles
+  extendidos a la derecha (verde/rosa vivos, gris tachado si ya se tomaron), la marca de NY 9:30 y el precio de ahora. Sustituye al
   aviso de «próxima noticia fuerte USD», que se quitó. Cada noticia se abre con su ficha: qué mide,
   cómo pega en ES/NQ/BTC, qué esperar si sale mejor o peor que el pronóstico (largos o cortos) y cómo operarla con la estrategia
   (la vela de la noticia deja el FVG → condición del día). Fichas para FOMC, Powell, CPI, PPI, NFP, desempleo, claims, PCE, PIB,
@@ -174,7 +181,12 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   **Diamante** (`glass-diamante`: dark liquid glass animado —blobs que se mueven, red de cristal y destello que barre en CSS— más
   cristales de diamante flotando en el canvas de `fondo.js`, bordes blancos brillantes, verde fosfo #39FF14 en positivo y rosa
   fosfo #FF2E63 en negativo con glow, botón principal blanco; y el copy «rich diamonds» de `Tema.voz`: toasts «💎 RICH · +$215 ·
-  DIAMOND HANDS», semáforo «GANASTE · RICH · DIAMOND HANDS», Resumen «RICH DIAMONDS»… solo en ese tema), **Océano** (#021024→#7DA0CA), **Noche** (navy + azul + ámbar), Blanco, Oro, Papel, Cobalto y los Aurora. Base del rediseño: tarjetas 22px,
+  DIAMOND HANDS», semáforo «GANASTE · RICH · DIAMOND HANDS», Resumen «RICH DIAMONDS»… solo en ese tema) y su familia **RICH**
+  (`Tema.RICH`, atributo `data-rich` en `<html>`, mismas reglas de vidrio en `[data-rich]` con tokens y blobs por tema): **Lingotes**
+  (`glass-oro`, lingotes de oro flotando, voz GOLD), **Billetes** (`glass-billetes`, lluvia de billetes de $100, voz CASH / MONEY
+  PRINTER), **Esmeralda** (`glass-esmeralda`, cristales verdes, voz EMERALD), **Platino** (`glass-platino`, lingotes de platino, voz
+  PLATINUM) y **Bitcoin** (`glass-btc`, monedas ₿, voz STACK SATS / HODL); los objetos se dibujan en `fondo.js` (`gema`, `lingote`,
+  `billete`, `moneda`), **Océano** (#021024→#7DA0CA), **Noche** (navy + azul + ámbar), Blanco, Oro, Papel, Cobalto y los Aurora. Base del rediseño: tarjetas 22px,
   botones **liquid glass** en pastilla (brillo superior, sombra interior), anillos de progreso en los KPIs, Inter en todo.
 - **Trading** (`#trading`, fuera del menú): en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
   vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la

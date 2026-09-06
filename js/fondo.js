@@ -18,12 +18,60 @@
   }
   /* ---- Diamante: cristales que flotan sobre el liquid glass (solo en ese tema) */
   let modo = 'flujo', S = [];
-  function esDiamante(){ return document.documentElement.getAttribute('data-theme') === 'glass-diamante'; }
-  function naceCristal(){ const r = Math.random(); return {x: Math.random()*W, y: H + Math.random()*H*0.3, s: (9 + Math.pow(r, 2.4)*42) * devicePixelRatio, rot: Math.random()*Math.PI*2, vr: (Math.random()-.5)*0.004, vy: -(0.08 + Math.random()*0.35) * devicePixelRatio, vx: (Math.random()-.5)*0.12*devicePixelRatio, a: 0.035 + Math.random()*0.11, fase: Math.random()*Math.PI*2}; }
-  function gema(x, y, s, rot, a, brillo){
+  function richTipo(){ return document.documentElement.getAttribute('data-rich'); }
+  function esDiamante(){ return !!richTipo(); }
+  function naceCristal(){ const r = Math.random(); const tipo = richTipo(); const cae = tipo === 'billetes';
+    return {x: Math.random()*W, y: cae ? -Math.random()*H*0.3 : H + Math.random()*H*0.3, s: (9 + Math.pow(r, 2.4)*42) * devicePixelRatio, rot: Math.random()*Math.PI*2, vr: (Math.random()-.5)*0.004, vy: (cae ? 1 : -1) * (0.08 + Math.random()*0.35) * devicePixelRatio, vx: (Math.random()-.5)*0.12*devicePixelRatio, a: 0.035 + Math.random()*0.11, fase: Math.random()*Math.PI*2}; }
+  /* lingote (oro/platino): prisma con cara superior más clara */
+  function lingote(x, y, s, rot, a, brillo, col){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    const w = s*1.7, h = s*0.75, d = s*0.3;
+    const g = ctx.createLinearGradient(-w, 0, w, 0); g.addColorStop(0, col.oscuro(a*1.6)); g.addColorStop(.5, col.claro(a*2.2)); g.addColorStop(1, col.oscuro(a*1.6));
+    ctx.beginPath(); ctx.moveTo(-w, -h/2); ctx.lineTo(w, -h/2); ctx.lineTo(w*0.86, h/2); ctx.lineTo(-w*0.86, h/2); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-w, -h/2); ctx.lineTo(-w*0.8, -h/2-d); ctx.lineTo(w*0.8, -h/2-d); ctx.lineTo(w, -h/2); ctx.closePath(); ctx.fillStyle = col.claro(a*2.8); ctx.fill();
+    ctx.strokeStyle = col.claro(Math.min(1, a*3)); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-w, -h/2); ctx.lineTo(w, -h/2); ctx.lineTo(w*0.86, h/2); ctx.lineTo(-w*0.86, h/2); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-w, -h/2); ctx.lineTo(-w*0.8, -h/2-d); ctx.lineTo(w*0.8, -h/2-d); ctx.lineTo(w, -h/2); ctx.stroke();
+    if(brillo > 0){ ctx.globalAlpha = brillo; ctx.fillStyle = '#fff'; const dd = s*0.7; ctx.beginPath(); ctx.moveTo(0,-dd-d); ctx.quadraticCurveTo(0,-d,dd,-d); ctx.quadraticCurveTo(0,-d,0,dd-d); ctx.quadraticCurveTo(0,-d,-dd,-d); ctx.quadraticCurveTo(0,-d,0,-dd-d); ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.restore();
+  }
+  /* billete: rectángulo con marco interior y $ */
+  function billete(x, y, s, rot, a){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    const w = s*2.2, h = s*1.0;
+    ctx.fillStyle = `rgba(133,187,101,${a*1.5})`; ctx.fillRect(-w, -h, 2*w, 2*h);
+    ctx.strokeStyle = `rgba(200,255,180,${Math.min(1, a*3)})`; ctx.lineWidth = 1; ctx.strokeRect(-w, -h, 2*w, 2*h); ctx.strokeRect(-w*0.88, -h*0.78, 2*w*0.88, 2*h*0.78);
+    ctx.beginPath(); ctx.ellipse(0, 0, h*0.55, h*0.55, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = `rgba(220,255,200,${Math.min(1, a*3.2)})`; ctx.font = '700 ' + Math.round(h*0.8) + 'px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', 0, 1);
+    ctx.font = '600 ' + Math.round(h*0.32) + 'px Inter, sans-serif'; ctx.fillText('100', -w*0.72, -h*0.55); ctx.fillText('100', w*0.72, h*0.55);
+    ctx.restore();
+  }
+  /* moneda ₿ */
+  function moneda(x, y, s, rot, a, brillo){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot*0.3);
+    const g = ctx.createRadialGradient(-s*0.3, -s*0.3, s*0.1, 0, 0, s); g.addColorStop(0, `rgba(255,200,120,${a*2.4})`); g.addColorStop(1, `rgba(247,147,26,${a*1.4})`);
+    ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = `rgba(255,210,140,${Math.min(1, a*3)})`; ctx.lineWidth = Math.max(1, s*0.06); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, s*0.8, 0, Math.PI*2); ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = `rgba(255,240,210,${Math.min(1, a*3.4)})`; ctx.font = '800 ' + Math.round(s*1.15) + 'px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('₿', 0, s*0.05);
+    if(brillo > 0){ ctx.globalAlpha = brillo; ctx.fillStyle = '#fff'; const d = s*0.9; ctx.beginPath(); ctx.moveTo(-s*0.5,-d-s*0.5); ctx.quadraticCurveTo(-s*0.5,-s*0.5,d-s*0.5,-s*0.5); ctx.quadraticCurveTo(-s*0.5,-s*0.5,-s*0.5,d-s*0.5); ctx.quadraticCurveTo(-s*0.5,-s*0.5,-d-s*0.5,-s*0.5); ctx.quadraticCurveTo(-s*0.5,-s*0.5,-s*0.5,-d-s*0.5); ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.restore();
+  }
+  const COL = {
+    oro:     {claro: a => `rgba(255,225,130,${a})`, oscuro: a => `rgba(200,140,20,${a})`},
+    platino: {claro: a => `rgba(240,244,255,${a})`, oscuro: a => `rgba(150,160,180,${a})`}
+  };
+  function objeto(c, brillo){
+    const tipo = richTipo();
+    if(tipo === 'oro' || tipo === 'platino') return lingote(c.x, c.y, c.s, c.rot*0.25, c.a, brillo, COL[tipo]);
+    if(tipo === 'billetes') return billete(c.x, c.y, c.s*0.8, c.rot, c.a);
+    if(tipo === 'btc') return moneda(c.x, c.y, c.s*0.9, c.rot, c.a, brillo);
+    return gema(c.x, c.y, c.s, c.rot, c.a, brillo, tipo === 'esmeralda');
+  }
+  function gema(x, y, s, rot, a, brillo, verde){
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
     const P = [[-1,-.35],[-.55,-.75],[.55,-.75],[1,-.35],[0,1]];
-    const g = ctx.createLinearGradient(-s, -s, s, s); g.addColorStop(0, `rgba(255,255,255,${a*1.6})`); g.addColorStop(.5, `rgba(200,225,255,${a*.5})`); g.addColorStop(1, `rgba(255,255,255,${a*1.2})`);
+    const g = ctx.createLinearGradient(-s, -s, s, s);
+    if(verde){ g.addColorStop(0, `rgba(120,255,190,${a*1.8})`); g.addColorStop(.5, `rgba(40,200,130,${a*.8})`); g.addColorStop(1, `rgba(160,255,210,${a*1.4})`); }
+    else { g.addColorStop(0, `rgba(255,255,255,${a*1.6})`); g.addColorStop(.5, `rgba(200,225,255,${a*.5})`); g.addColorStop(1, `rgba(255,255,255,${a*1.2})`); }
     ctx.beginPath(); P.forEach(([px,py], i) => i ? ctx.lineTo(px*s, py*s) : ctx.moveTo(px*s, py*s)); ctx.closePath();
     ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = Math.max(1, s*0.03); ctx.strokeStyle = `rgba(255,255,255,${Math.min(1, a*2.6)})`; ctx.stroke();
     // facetas
@@ -40,15 +88,15 @@
     for(const c of S){
       c.y += c.vy; c.x += c.vx + Math.sin(t*0.0004 + c.fase)*0.15*devicePixelRatio; c.rot += c.vr;
       const tw = Math.max(0, Math.sin(t*0.0011 + c.fase*3)); const brillo = tw > 0.985 ? (tw-0.985)/0.015*0.55 : 0;
-      gema(c.x, c.y, c.s, c.rot, c.a, brillo);
-      if(c.y < -c.s*2) Object.assign(c, naceCristal(), {y: H + c.s});
+      objeto(c, brillo);
+      if(c.vy < 0 ? c.y < -c.s*3 : c.y > H + c.s*3) Object.assign(c, naceCristal());
     }
   }
   function paso(now){
-    if(esDiamante()){ if(modo !== 'diamante'){ modo = 'diamante'; S = []; for(let i = 0; i < 26; i++){ const c = naceCristal(); c.y = Math.random()*H; S.push(c); } }
+    if(esDiamante()){ if(modo !== 'diamante:' + richTipo()){ modo = 'diamante:' + richTipo(); S = []; for(let i = 0; i < 26; i++){ const c = naceCristal(); c.y = Math.random()*H; S.push(c); } }
       pasoCristales(now);
       if(!document.hidden) requestAnimationFrame(paso); else setTimeout(() => requestAnimationFrame(paso), 1500); return; }
-    if(modo === 'diamante'){ modo = 'flujo'; ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H); }
+    if(modo.startsWith('diamante')){ modo = 'flujo'; ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H); }
     const t = now - t0;
     ctx.fillStyle = fondoTema; ctx.globalAlpha = 0.08; ctx.fillRect(0,0,W,H); ctx.globalAlpha = 1;
     ctx.lineWidth = 1 * devicePixelRatio;
