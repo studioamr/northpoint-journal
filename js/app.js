@@ -24,6 +24,12 @@
   if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'panel';
 
   /* --------------------------------------------------------------- pintar */
+  /* la tarjeta de perfil de la barra lateral (foto o iniciales, nombre, ciudad/frase) */
+  function pintaPerfil(){
+    const P = Tema.perfil(); const el = document.getElementById('perfil'); if(!el) return;
+    el.innerHTML = `<div class="av">${P.foto ? `<img src="${P.foto}">` : h(P.iniciales)}</div><div><div class="pn">${h(P.nombre)}</div><div class="pf">${h(P.ciudad || P.frase)}</div></div>`;
+    el.onclick = () => { vista = 'ajustes'; location.hash = 'ajustes'; pinta(); };
+  }
   function pinta(){
     const A = Store.ajustes;
     document.getElementById('nav').innerHTML = MENU.map(m => m.g
@@ -32,9 +38,7 @@
 
     const cuentas = Store.estado.cuentas;
     const act = Store.cuentaActiva();
-    const P = Tema.perfil();
-    document.getElementById('perfil').innerHTML = `<div class="av">${P.foto ? `<img src="${P.foto}">` : h(P.iniciales)}</div><div><div class="pn">${h(P.nombre)}</div><div class="pf">${h(P.ciudad || P.frase)}</div></div>`;
-    document.getElementById('perfil').onclick = () => { vista = 'ajustes'; location.hash = 'ajustes'; pinta(); };
+    pintaPerfil();
     document.getElementById('top').innerHTML = `
       <h1>${h((MENU.find(m => m.id === vista)||{}).t || OCULTAS[vista] || '')}</h1>
       <div class="der">
@@ -182,8 +186,9 @@
       },
       apiDesconectar: () => Sync.apiDetener(),
       tema: () => { Store.ajustes.tema = b.dataset.id; Tema.aplicar(b.dataset.id); Store.guardar(); },
-      perfilFoto: () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files[0]; if(!f) return; const src = await Img.comprimir(f); Tema.guardaPerfil({foto: src}); }; i.click(); },
-      perfilSinFoto: () => Tema.guardaPerfil({foto:null}),
+      perfilFoto: () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files[0]; if(!f) return;
+        try{ const src = await Img.avatar(f); Tema.guardaPerfil({foto: src}); pinta(); toast('Foto actualizada'); }catch(e){ toast('No se pudo leer esa imagen'); } }; i.click(); },
+      perfilSinFoto: () => { Tema.guardaPerfil({foto:null}); pinta(); },
       alertasConectar: () => { Alertas.conectar(); toast('Escuchando ' + Alertas.cfg().tema); },
       alertasDesconectar: () => { Alertas.desconectar(); Store.ajustes.alertas = Object.assign({}, Alertas.cfg(), {tema:''}); Store.guardar(); },
       alertasProbar: () => { Alertas.avisar('Prueba', 'Si esto llegó a tu teléfono, el puente funciona.'); toast('Aviso enviado'); },
@@ -214,7 +219,7 @@
   document.addEventListener('change', e => {
     const t = e.target;
     if(e.target.closest('.velo')) return;
-    if(t.dataset.perfil){ Tema.guardaPerfil({[t.dataset.perfil]: t.value}); return; }
+    if(t.dataset.perfil){ Tema.guardaPerfil({[t.dataset.perfil]: t.value}); pintaPerfil(); return; }
     if(t.dataset.alerta){ Store.ajustes.alertas = Object.assign({}, Alertas.cfg(), {[t.dataset.alerta]: t.dataset.alerta === 'telefono' ? t.value === '1' : t.value}); Store.guardar(); return; }
     if(t.dataset.ajuste === 'copiador'){ Store.ajustes.copiador = t.checked; Store.guardar(); return; }
     if(t.dataset.plan5){ Store.ajustes.plan5 = Object.assign({}, Store.ajustes.plan5 || {}, {[t.dataset.plan5]: +t.value}); Store.guardar(); return; }
@@ -838,4 +843,5 @@
   }
 
   pinta();
+  window.App = { pinta, pintaPerfil };
 })();

@@ -23,5 +23,19 @@
       im.onerror = rej; im.src = url;
     });
   }
-  window.Img = { put, get, del, comprimir };
+  /* foto de perfil: recorte cuadrado centrado, chico (256 px), JPEG */
+  function avatar(archivo, tam){
+    tam = tam || 256;
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(archivo); const im = new Image();
+      im.onload = () => {
+        const lado = Math.min(im.width, im.height), sx = (im.width - lado) / 2, sy = (im.height - lado) / 2;
+        const cv = document.createElement('canvas'); cv.width = tam; cv.height = tam;
+        cv.getContext('2d').drawImage(im, sx, sy, lado, lado, 0, 0, tam, tam);
+        URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg', .9));
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('imagen inválida')); }; im.src = url;
+    });
+  }
+  window.Img = { put, get, del, comprimir, avatar };
 })();
