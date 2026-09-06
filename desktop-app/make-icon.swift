@@ -1,18 +1,18 @@
-// Genera el ícono del Dock a partir del logo real de NorthPoint (logo-fuente.png):
-// esquinas redondeadas al estilo macOS y todos los tamaños del iconset → np.icns
+// Ícono = el logo de NorthPoint: la palabra NORTHPOINT en blanco sobre negro (igual que su imagen, pero nítido a 1024px)
 import Cocoa
 let sizes = [16, 32, 64, 128, 256, 512, 1024]
 let dir = "np.iconset"
 try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-guard let fuente = NSImage(contentsOfFile: "logo-fuente.png") else { print("falta logo-fuente.png"); exit(1) }
 func dibuja(_ px: Int) -> NSImage {
     let img = NSImage(size: NSSize(width: px, height: px))
     img.lockFocus()
     let p = CGFloat(px)
-    let r = NSRect(x: p * 0.05, y: p * 0.05, width: p * 0.9, height: p * 0.9)   // margen como los íconos de macOS
+    let r = NSRect(x: p * 0.05, y: p * 0.05, width: p * 0.9, height: p * 0.9)
     let path = NSBezierPath(roundedRect: r, xRadius: p * 0.2, yRadius: p * 0.2)
-    path.addClip()
-    fuente.draw(in: r, from: NSRect(origin: .zero, size: fuente.size), operation: .sourceOver, fraction: 1)
+    NSColor(white: 0.04, alpha: 1).setFill(); path.fill()
+    let f = NSFont.systemFont(ofSize: p * 0.105, weight: .medium)
+    let s = NSAttributedString(string: "NORTHPOINT", attributes: [.font: f, .foregroundColor: NSColor(white: 0.94, alpha: 1), .kern: p * 0.002])
+    let sz = s.size(); s.draw(at: NSPoint(x: (p - sz.width) / 2, y: (p - sz.height) / 2))
     img.unlockFocus()
     return img
 }
