@@ -267,24 +267,27 @@
     const vivos = niveles.filter(nv => !nv.tomado && (dirObj ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio)));
     const objetivo = vivos.length ? vivos.sort((a, b) => dirObj ? a.v - b.v : b.v - a.v)[0] : null;
     if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
-    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velas};
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velas, sesiones};
   }
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
   function graficaPo3(d){
-    const Wg = 1000, Hg = 360, L = 8, R = 200, T = 22, B = 28, VW = 40, GAP = 22;   // R: hueco para la vela grande + columna de etiquetas
+    const Wg = 1000, Hg = 400, L = 8, R = 200, T = 26, B = 34, VW = 40, GAP = 22;   // R: hueco para la vela grande + columna de etiquetas
     const c = d.cur, p = d.prev; const todas = d.velasTodas;
-    const iFin = todas.length - 1; const iIni = Math.max(0, iFin - 143);            // últimas 12 h
+    const iFin = todas.length - 1;
+    const iIni = Math.max(0, iFin - 143);            // últimas 12 h
     const vs = todas.slice(iIni); const iCur = Math.max(0, todas.indexOf(c.vs[0]) - iIni);
     const nivelesVis = d.niveles;
-    const pMin = Math.min(...vs.map(v => v.lo), ...nivelesVis.map(n => n.v)), pMax = Math.max(...vs.map(v => v.hi), ...nivelesVis.map(n => n.v)); const pad = (pMax - pMin) * 0.07 || 1;
+    const pMin = Math.min(...vs.map(v => v.lo), ...nivelesVis.map(n => n.v)), pMax = Math.max(...vs.map(v => v.hi), ...nivelesVis.map(n => n.v)); const pad = (pMax - pMin) * 0.14 || 1;   // aire arriba y abajo: nada se corta
     const lo0 = pMin - pad, hi0 = pMax + pad;
     const n = vs.length, plotR = Wg - R, paso = (plotR - L) / n, cw = Math.max(1.5, paso * 0.6);
     const X = i => L + i * paso + paso / 2, Y = v => T + (1 - (v - lo0) / (hi0 - lo0)) * (Hg - T - B);
+    const clampY = y => Math.max(T + 9, Math.min(Hg - B - 3, y));
     const xv = plotR + GAP + VW/2, xLbl = plotR + GAP + VW + 14;                     // vela grande · columna de etiquetas
     const num = v => v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const hora = mm => { mm = ((mm % 1440) + 1440) % 1440; return String(Math.floor(mm/60)).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0'); };
-    let ejeT = ''; vs.forEach((v, i) => { if(v.min % 60 === 0) ejeT += `<text x="${X(i)}" y="${Hg - 9}" text-anchor="middle">${hora(v.min)}</text>`; if((v.min - 18*60 + 1440) % 240 === 0) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="var(--linea2)" stroke-dasharray="2 4"/>`; });
+    const cada = n > 200 ? 120 : 60;
+    let ejeT = ''; vs.forEach((v, i) => { if(v.min % cada === 0) ejeT += `<text x="${X(i)}" y="${Hg - 9}" text-anchor="middle">${hora(v.min)}</text>`; if((v.min - 18*60 + 1440) % 240 === 0) ejeT += `<line x1="${X(i) - paso/2}" x2="${X(i) - paso/2}" y1="${T}" y2="${Hg - B}" stroke="var(--linea2)" stroke-dasharray="2 4"/>`; });
     const xDe = t => { const idx = vs.findIndex(v => d.rel(v) >= t); return idx < 0 ? plotR - 4 : X(idx); };
     // etiquetas a la derecha sin encimarse (niveles vivos + open + ahora + objetivo)
     const etiq = [];
@@ -295,8 +298,10 @@
     const etiquetas = etiq.map(e => `<text class="ses" x="${xLbl}" y="${e.ty + 3}" fill="${e.col}" font-weight="${e.peso}">${e.txt}</text>`).join('');
     // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
     const kz = nivelesVis.map(nv => { const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)'; const y = Y(nv.v);
-      const xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;
-      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-opacity="${nv.tomado ? .55 : .8}"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="2.5" fill="${col}"/>` : ''}`; }).join('');
+      const esManip = d.manipula && d.manipula.n === nv.n;
+      let xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;
+      if(esManip){ const iM = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo < nv.v : v.hi > nv.v)); if(iM >= 0) xFin = X(iM); }   // hasta la vela de la 4H que lo manipuló
+      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2 : 1}" stroke-opacity="${esManip ? 1 : nv.tomado ? .55 : .8}"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="${esManip ? 4 : 2.5}" fill="${col}"/>` : ''}${esManip ? `<text class="ses" x="${xFin - 8}" y="${clampY(y + (d.arriba ? 14 : -8))}" text-anchor="end" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)} · MANIPULADO</text>` : ''}`; }).join('');
     // rango de la 4H actual (caja punteada) + open hasta la vela grande
     const x0 = X(iCur) - paso/2;
     const caja = `<rect x="${x0}" y="${Y(c.high)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(c.low) - Y(c.high))}" fill="none" stroke="var(--txt)" stroke-opacity=".4" stroke-dasharray="3 3"/>
@@ -310,7 +315,7 @@
     // manipulación: puntito dorado + nombre corto debajo
     let marca = '';
     const mv = d.arriba ? c.low : c.high; const idxM = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo === mv : v.hi === mv));
-    if(idxM >= 0 && (d.manipAbajo || d.manipArriba)) marca = `<circle cx="${X(idxM)}" cy="${Y(mv)}" r="4.5" fill="var(--oro)" stroke="#000"/><text class="ses" x="${X(idxM)}" y="${Y(mv) + (d.arriba ? 15 : -8)}" text-anchor="middle" fill="var(--oro)">${d.manipula ? 'MANIPULA ' + d.manipula.n.toUpperCase() : 'MANIPULACIÓN'}</text>`;
+    if(idxM >= 0 && (d.manipAbajo || d.manipArriba)) marca = `<circle cx="${X(idxM)}" cy="${Y(mv)}" r="4.5" fill="var(--oro)" stroke="#000"/><text class="ses" x="${X(idxM)}" y="${clampY(Y(mv) + (d.arriba ? 15 : -8))}" text-anchor="middle" fill="var(--oro)">${d.manipula ? 'MANIPULA ' + d.manipula.n.toUpperCase() : 'MANIPULACIÓN'}</text>`;
     const fvg = d.fvg ? `<rect x="${X(iCur + d.fvg.i - 1)}" y="${Y(d.fvg.b)}" width="${plotR - 2 - X(iCur + d.fvg.i - 1)}" height="${Math.max(2, Y(d.fvg.a) - Y(d.fvg.b))}" fill="var(--azul)" fill-opacity=".16" stroke="var(--azul)" stroke-opacity=".6"/>` : '';
     // objetivo: el círculo se sienta SOBRE su nivel, al final de la línea, junto a la vela grande
     let obj = '';
