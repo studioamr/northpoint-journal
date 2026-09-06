@@ -42,10 +42,10 @@
   function piramide(P, etapa){
     const pisoGlobal = P.inicial - P.quema;   // nadie baja de inicial − 2k
     const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', prof: Math.max(3, Math.min(5, Math.ceil(P.objetivo / P.evalTP)))}
-      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', prof: 6}
-      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', prof: 6};
+      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', prof: P.prof || 4}
+      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', prof: P.prof || 4};
     const piso = Math.max(pisoGlobal, cfg.bal0 - P.quema);   // y siempre que pierdes 2k desde donde arrancas, pierdes la cuenta
-    const hojas = Math.pow(2, cfg.prof), colW = 66, W = hojas * colW + 40, dy = 78, T = 34, H = T + cfg.prof * dy + 40;
+    const hojas = Math.pow(2, cfg.prof), colW = 66, W = Math.max(600, hojas * colW + 40), dy = 78, T = 34, H = T + cfg.prof * dy + 40;
     let g = '';
     const nodo = (d, i, bal) => {
       const x = 20 + (i + 0.5) * (W - 40) / Math.pow(2, d), y = T + d * dy; const term = bal >= cfg.fin ? 'fin' : bal <= piso ? 'quema' : null;
@@ -71,7 +71,8 @@
     const contratos = Math.max(1, Math.min((A.instrumento === 'MNQ' || A.instrumento === 'MES') ? (A.maxContratos||1)*10 : (A.maxContratos||1), Math.floor(riesgo / stopUSD)));
     const rr = (a, b) => (a / b).toFixed(2);
     const campo = (k, t, step) => `<label class="campo"><span>${t}</span><input type="number" step="${step || 1}" data-sim="${k}" value="${P[k]}"></label>`;
-    const tarjeta = (t, sub, cls, etapa) => `<div class="card etapa ${cls}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${piramide(P, etapa)}</div></div>`;
+    const prof = P.prof || 4;
+    const tarjeta = (t, sub, cls, etapa) => `<div class="card etapa ${cls}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span><div class="crece"></div>${etapa !== 'eval' ? `<span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button>` : ''}</div><div class="arbol">${piramide(P, etapa)}</div></div>`;
     return `
     <div class="grid g5" style="margin-bottom:14px">
       ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}

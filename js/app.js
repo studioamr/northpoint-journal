@@ -150,6 +150,7 @@
       canica: () => { Riesgo.soltar(); pinta(); },
       canicas: () => { Riesgo.lote(); pinta(); },
       simReset: () => { Riesgo.reset(); pinta(); },
+      simProf: () => { const P = Store.ajustes.simRiesgo || {}; const p = Math.max(2, Math.min(7, (P.prof || 4) + (+b.dataset.v))); Store.ajustes.simRiesgo = Object.assign({}, P, {prof: p}); Store.guardar(); pinta(); },
       pdfTrade: () => PDF.descargaTrade(id).then(() => toast('PDF listo')),
       fichaTradeDescarga: () => Ficha.descargaTrade(id).then(() => toast('Ficha guardada')),
       fichaTradeComparte: () => Ficha.comparteTrade(id).then(ok => { if(!ok){ Ficha.descargaTrade(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
