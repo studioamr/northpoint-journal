@@ -155,25 +155,24 @@
     <div class="card" style="margin-bottom:12px">
       <div class="fila"><h3>Dónde estás</h3><div class="crece"></div><span class="mono acc">${pct(hechos/P.length,0)}</span></div>
       <div class="barra" style="margin-top:10px;height:8px"><i style="width:${(hechos/P.length*100).toFixed(0)}%"></i></div>
-      <div class="mini dim" style="margin-top:10px">${sig ? `<b class="acc">Siguiente paso:</b> ${h(sig.t)}. ${h(sig.como)}` : 'Los diez pasos están hechos. Ahora es mantener.'}</div>
     </div>
 
     ${tablaPlan()}
 
-    <div class="pasos">${P.map((p, i) => { const ok = hecho(p); const activo = sig && sig.id === p.id;
-      return `<div class="pasoB ${ok ? 'ok' : ''} ${activo ? 'activo' : ''}">
+    <div class="pasos">${P.filter(p => sig ? p.id === sig.id : false).map(p => { const i = P.indexOf(p);
+      return `<div class="pasoB activo">
         <div class="pb-n mono">${String(i+1).padStart(2,'0')}</div>
         <div class="pb-c">
-          <div class="fila"><b class="pb-t">${h(p.t)}</b>
-            ${ok ? '<span class="pill ok">HECHO</span>' : activo ? '<span class="pill acc">AHORA</span>' : ''}
+          <div class="fila"><b class="pb-t" style="font-size:18px">${h(p.t)}</b><span class="pill acc">AHORA</span>
             <div class="crece"></div>
             ${p.auto === null ? `<label class="check ${manual[p.id] ? 'on' : ''}"><input type="checkbox" data-paso="${p.id}" ${manual[p.id] ? 'checked' : ''}> lo hice</label>`
               : `<span class="mono mini tenue">${p.prog != null ? pct(p.prog,0) : ''}</span>`}</div>
-          ${p.prog != null ? `<div class="barra ${ok ? 'up' : ''}" style="margin:7px 0 6px"><i style="width:${(Math.min(1,p.prog)*100).toFixed(0)}%"></i></div>` : ''}
-          <div class="mini dim">${h(p.como)}</div>
-        </div></div>`; }).join('')}</div>
-
-    ${aviso('Los pasos con barra se palomean solos con lo que registres (trades, cuentas, payouts). El orden importa: <b>no compres el examen sin backtest, no pidas payout sin buffer, no firmes el depa sin 3 meses</b>.', 'acc')}`;
+          ${p.prog != null ? `<div class="barra" style="margin:7px 0 6px"><i style="width:${(Math.min(1,p.prog)*100).toFixed(0)}%"></i></div>` : ''}
+          <div class="dim" style="font-size:13px">${h(p.como)}</div>
+        </div></div>`; }).join('')}
+      ${!sig ? `<div class="pasoB ok"><div class="pb-n mono">10</div><div class="pb-c"><b class="pb-t">Los diez pasos están hechos</b></div></div>` : ''}
+    </div>
+    <div class="pasos-hechos">${P.map((p, i) => `<span class="ph ${hecho(p) ? 'ok' : (sig && sig.id === p.id) ? 'activo' : ''}" title="${h(p.t)}">${String(i+1).padStart(2,'0')}</span>`).join('')}</div>`;
   };
   window.Progreso = { datos, pasos };
 })();
