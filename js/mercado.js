@@ -456,11 +456,13 @@
       const px = await precios();
       const num = (v, d) => v == null ? '—' : v.toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
       const fila = (q, dec) => !q ? 'sin datos · usa la app de escritorio' : (q.chg != null ? `<span class="${q.chg >= 0 ? 'up' : 'down'}">${q.chg >= 0 ? '+' : ''}${q.chg.toFixed(2)}%${q.pts != null ? ' · ' + (q.pts >= 0 ? '+' : '') + num(q.pts, dec) + ' pts' : ''}</span>` : '') + (q.hi != null ? ` · hoy ${num(q.lo, dec)}–${num(q.hi, dec)}` : '') + (q.spot ? ' · spot' : '');
-      const val = (q, dec) => q ? num(q.precio, dec) : '—';
+      /* el precio vive en un span con su signo (verde si el día va positivo, rojo si negativo) y late; al cambiar, rueda del valor viejo al nuevo */
+      const val = (q, dec, id) => q ? `<span id="${id}" class="px ${q.chg != null ? (q.chg >= 0 ? 'up' : 'down') : ''}" data-v="${q.precio}" data-dec="${dec}">${num(q.precio, dec)}</span>` : '—';
+      const previos = {}; ['pxNQ','pxES','pxBTC'].forEach(id => { const el = document.getElementById(id); if(el) previos[id] = +el.dataset.v; });
       if(document.getElementById('mkPrecios')) P.innerHTML =
-        kpi(nombreContrato() + ' · Micro Nasdaq', val(px.fut.NQ, 2), fila(px.fut.NQ, 2)) +
-        kpi('ES · S&P 500', val(px.fut.ES, 2), fila(px.fut.ES, 2)) +
-        kpi('BTC', val(px.fut.BTC, 0), fila(px.fut.BTC, 0)) +
+        kpi(nombreContrato() + ' · Micro Nasdaq', val(px.fut.NQ, 2, 'pxNQ'), fila(px.fut.NQ, 2)) +
+        kpi('ES · S&P 500', val(px.fut.ES, 2, 'pxES'), fila(px.fut.ES, 2)) +
+        kpi('BTC', val(px.fut.BTC, 0, 'pxBTC'), fila(px.fut.BTC, 0)) +
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
       const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);

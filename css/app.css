@@ -685,3 +685,11 @@ html .cal .d.p-eval{box-shadow:none}
 .pill.et-eval::before,.pill.et-buffer::before,.pill.et-payouts::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:5px;vertical-align:1px}
 .pill.et-eval::before{background:var(--etEval)} .pill.et-buffer::before{background:var(--etBuffer)} .pill.et-payouts::before{background:var(--etPay)}
 .cal .d .hito-t{font-weight:600;font-size:11px}
+
+/* precios que laten: verde si el día va positivo, rojo si negativo; al cambiar, ruedan y destellan */
+.px{display:inline-block;transition:color .4s} .px.up{color:var(--up);animation:lateUp 2.4s ease-in-out infinite} .px.down{color:var(--down);animation:lateDown 2.4s ease-in-out infinite}
+@keyframes lateUp{0%,100%{text-shadow:0 0 0 rgba(0,0,0,0)}50%{text-shadow:0 0 16px color-mix(in srgb,var(--up) 70%,transparent)}}
+@keyframes lateDown{0%,100%{text-shadow:0 0 0 rgba(0,0,0,0)}50%{text-shadow:0 0 16px color-mix(in srgb,var(--down) 70%,transparent)}}
+.px.tick-up{animation:tickUp .7s ease-out} .px.tick-down{animation:tickDown .7s ease-out}
+@keyframes tickUp{0%{transform:translateY(6px);text-shadow:0 0 22px var(--up);filter:brightness(1.6)}100%{transform:none;filter:none}}
+@keyframes tickDown{0%{transform:translateY(-6px);text-shadow:0 0 22px var(--down);filter:brightness(1.6)}100%{transform:none;filter:none}}
