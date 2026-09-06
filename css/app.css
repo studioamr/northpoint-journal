@@ -666,3 +666,9 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 .cam{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--linea);background:rgba(255,255,255,.04);color:var(--dim)}
 .cam.arriba{color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,transparent)} .cam.abajo{color:var(--down);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
 .cam.raiz{color:var(--txt);border-color:var(--linea2);font-weight:700} .cam.fin{color:var(--up);background:var(--upSuave);border-color:var(--up);font-weight:700} .cam.quema{color:var(--down);background:var(--downSuave);border-color:var(--down);font-weight:700}
+
+/* riesgo: canica */
+.g6{grid-template-columns:repeat(6,minmax(0,1fr))} @media (max-width:1200px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ruta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.camino-mini{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:10px;padding:4px 0;border-bottom:1px solid var(--linea)} .camino-mini i{flex:1 1 0;min-width:3px;max-width:12px;background:var(--dim);opacity:.55;border-radius:2px 2px 0 0} .camino-mini i.eval{background:var(--etEval)} .camino-mini i.buffer{background:var(--etBuffer)} .camino-mini i.payouts{background:var(--etPay)} .camino-mini i.hito{opacity:1;box-shadow:0 0 8px currentColor} .camino-mini i.fin{background:var(--down);opacity:1}
+.arboles .arbol{max-width:none}

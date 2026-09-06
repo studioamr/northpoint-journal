@@ -1,117 +1,99 @@
 /* ============================================================================
-   NORTHPOINT — GESTIÓN DE RIESGO: su gestión explicada + árbol de decisión por etapa
-   (EVAL · BUFFER · PAYOUTS). Los números salen de Ajustes y de la cuenta activa.
+   NORTHPOINT — GESTIÓN DE RIESGO
+   Parámetros arriba (se calcula solito) → pirámides de decisión por etapa
+   (EVAL · FUNDED/BUFFER · PAYOUTS) como en su libreta → la canica: simulación
+   con probabilidades de cómo le iría desde la eval hasta los payouts.
    ========================================================================= */
 (function(){
   const {h, fmt, kpi} = UI;
-  /* árbol con ramas: cada trade es una bifurcación. WIN → rama izquierda → paras el día. LOSS → rama derecha → siguiente trade
-     o, si ya no hay más, fuera (y en eval, lo que pasa si se repite). Números: TP = target del día, riesgo = TP/2 (2:1). */
-  function arbolSVG(e){
-    const W = 620, H = 380; const num = v => '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
-    const caja = (x, y, w, lineas, col, fill) => `<rect x="${x - w/2}" y="${y - 20}" width="${w}" height="${lineas.length * 15 + 14}" rx="10" fill="${fill || 'rgba(255,255,255,.05)'}" stroke="${col}" stroke-opacity=".9"/>` +
-      lineas.map((t, i) => `<text x="${x}" y="${y + i * 15}" text-anchor="middle" font-size="${i ? 10 : 11}" font-weight="${i ? 400 : 700}" fill="${i ? 'var(--dim)' : col}" font-family="${i ? 'Inter, sans-serif' : 'JetBrains Mono, monospace'}">${t}</text>`).join('');
-    const rama = (x1, y1, x2, y2, col, txt) => `<path d="M${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="2.5" stroke-opacity=".8"/><text x="${(x1+x2)/2 + (x2 < x1 ? -14 : 14)}" y="${(y1+y2)/2 - 4}" text-anchor="middle" font-size="9" font-weight="700" letter-spacing=".12em" fill="${col}" font-family="JetBrains Mono, monospace">${txt}</text>`;
-    const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)', ORO = 'var(--oro)';
-    const tp = e.tp, rk = e.riesgo;
-    let out = '';
-    if(e.lattice){   // TODOS los caminos, día por día, para irle bajando: cada fila es un día con los balances posibles (izquierda = más alto) y cuántos caminos llegan a cada uno
-      const bufBal = e.balance + e.hasta, quemaBal = e.balance - e.quema; const D = 24;
-      let vivos = new Map([[e.balance, 1]]); const filas = []; let totBuf = 0, totQuema = 0;
-      for(let d = 1; d <= D && vivos.size; d++){ const sig = new Map(); let buf = 0, quema = 0;
-        vivos.forEach((c, b) => { const up = b + e.tp, dn = b - e.dl;
-          if(up >= bufBal) buf += c; else sig.set(up, (sig.get(up) || 0) + c);
-          if(dn <= quemaBal) quema += c; else sig.set(dn, (sig.get(dn) || 0) + c); });
-        totBuf += buf; totQuema += quema; vivos = sig;
-        filas.push({d, buf, quema, estados: [...sig.entries()].sort((a, b) => b[0] - a[0]), vivos: [...sig.values()].reduce((a, b) => a + b, 0)}); }
-      const pill = (txt, cls) => `<span class="cam ${cls}">${txt}</span>`;
-      return `<div class="caminos">
-        <div class="cam-fila cab"><span class="cam-dia">HOY</span><div class="cam-est">${pill(num(e.balance), 'raiz')}</div></div>
-        ${filas.map(f => `<div class="cam-fila"><span class="cam-dia">D${f.d}</span><div class="cam-est">${f.buf ? pill((e.finTxt || 'BUFFER') + ' ×' + f.buf, 'fin') : ''}${f.estados.map(([b, c]) => pill(num(b) + (c > 1 ? ' ×' + c : ''), b > e.balance ? 'arriba' : b < e.balance ? 'abajo' : '')).join('')}${f.quema ? pill('QUEMADA ×' + f.quema, 'quema') : ''}</div></div>`).join('')}
-        <div class="cam-fila tot"><span class="cam-dia">Σ</span><div class="cam-est">${pill((e.finTxt || 'BUFFER') + ' · ' + totBuf.toLocaleString('en-US') + ' caminos', 'fin')}${vivos.size ? pill('siguen ' + [...vivos.values()].reduce((a, b) => a + b, 0).toLocaleString('en-US') + ' después del día ' + D, '') : ''}${pill('QUEMADA · ' + totQuema.toLocaleString('en-US') + ' caminos', 'quema')}</div></div>
-      </div>`;
-    }
-    if(e.escalera){   // BUFFER: cada día ganado sube +target por la rama verde hasta el buffer; cada día perdido baja -daily loss por la roja hasta quemar la cuenta
-      const nW = Math.max(1, Math.ceil(e.hasta / e.tp)), nL = Math.max(1, Math.ceil(e.quema / e.dl)); const dy = 46; const Hc = 60 + Math.max(nW, nL) * dy + 30; const Wc = 700;
-      const x0 = 350, y0 = 40; out += caja(x0, y0, 250, [e.balanceTxt + ' · riesgo ' + num(e.riesgo) + ' · TP ' + num(e.tp)], TXT);
-      let px = x0, py = y0;
-      for(let k = 1; k <= nW; k++){ const x = x0 - 40 - k * 18, y = y0 + k * dy; const bal = e.balance + Math.min(e.hasta, k * e.tp); const fin = k === nW;
-        out += rama(px, py + 18, x, y - 18, UP, k === 1 ? 'WIN +' + num(e.tp) : ''); out += caja(x, y, fin ? 230 : 150, [fin ? (e.finTxt || 'BUFFER') + ' · ' + num(bal) : num(bal)], UP, 'var(--upSuave)'); px = x; py = y; }
-      px = x0; py = y0;
-      for(let k = 1; k <= nL; k++){ const x = x0 + 40 + k * 30, y = y0 + k * dy; const bal = e.balance - Math.min(e.quema, k * e.dl); const fin = k === nL;
-        out += rama(px, py + 18, x, y - 18, DOWN, k === 1 ? 'MAX LOSS -' + num(e.dl) : ''); out += caja(x, y, fin ? 230 : 150, [fin ? 'CUENTA QUEMADA · ' + num(bal) : num(bal)], DOWN, 'var(--downSuave)'); px = x; py = y; }
-      return `<svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;height:auto;display:block">${out}</svg>`;
-    }
-    if(e.cadena){   // EVAL: si ganas, la rama sigue hasta el objetivo; si pierdes, no hay trade 2
-      const n = Math.max(1, Math.min(4, Math.ceil(e.objetivo / tp))); const dy = 92; const Wc = 700; const Hc = 60 + n * dy + 40;
-      for(let k = 0; k < n; k++){ const x = 450 - k * 105, y = 40 + k * dy; const xNext = x - 105, yNext = y + dy; const xLoss = x + 125, yLoss = y + dy;
-        out += rama(x, y + 22, xNext, yNext - 22, UP, 'WIN ' + num(tp)) + rama(x, y + 22, xLoss, yLoss - 22, DOWN, 'LOSS ' + num(rk));
-        out += caja(x, y, 236, ['TRADE ' + (k+1) + ' · riesgo ' + num(rk) + ' · TP ' + num(tp)], k ? UP : TXT, k ? 'var(--upSuave)' : null);
-        out += caja(xLoss, yLoss, 190, [(e.lossTxt || 'MAX LOSS') + ' · -' + num(rk)], DOWN, 'var(--downSuave)'); }
-      const xF = 450 - n * 105, yF = 40 + n * dy;
-      out += caja(xF, yF, 236, [(e.finTxt || 'OBJETIVO') + ' ' + num(e.objetivo)], UP, 'var(--upSuave)');
-      return `<svg viewBox="0 0 ${Wc} ${Hc}" style="width:100%;height:auto;display:block">${out}</svg>`;
-    }
-    // raíz: trade 1
-    out += rama(310, 62, 150, 150, UP, 'WIN ' + num(tp)) + rama(310, 62, 470, 150, DOWN, 'LOSS ' + num(rk));
-    out += caja(310, 40, 250, ['TRADE 1 · riesgo ' + num(rk) + ' · TP ' + num(tp)], TXT);
-    // izquierda: paras
-    out += caja(150, 172, 210, [e.winTitulo + ' · +' + num(tp)], UP, 'var(--upSuave)');
-    // derecha: trade 2
-    out += rama(470, 190, 330, 290, UP, 'WIN ' + num(tp)) + rama(470, 190, 510, 290, DOWN, 'LOSS ' + num(rk));
-    out += caja(470, 172, 220, ['TRADE 2 · riesgo ' + num(rk) + ' · TP ' + num(tp)], TXT);
-    // hojas del trade 2
-    out += caja(330, 312, 200, ['PARAS · +' + num(tp - rk)], UP, 'var(--upSuave)');
-    out += caja(510, 312, 190, [e.lossTitulo + ' · -' + num(2*rk)], DOWN, 'var(--downSuave)');
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${out}</svg>`;
-  }
-  Vistas.riesgo = function(){
-    const A = Store.ajustes, F = Store.fases(), cta = Store.cuentaActiva(); const est = cta ? Motor.estadoCuenta(cta) : null;
-    const ini = cta ? cta.inicial : 50000; const riesgo = ini * (A.riesgoPctCuenta || 0.01);
-    const ins = (window.INSTRUMENTOS||{})[A.instrumento] || {puntoUSD:2}; const stopUSD = (A.slPuntos||20) * ins.puntoUSD;
-    const contratos = Math.max(1, Math.min((A.instrumento === 'MNQ' || A.instrumento === 'MES') ? (A.maxContratos||1)*10 : (A.maxContratos||1), Math.floor(riesgo / stopUSD)));
-    const r = cta ? cta.reglas : {}; const cap = r.capPayout ? fmt(r.capPayout) : 'el tope de tu plan'; const maxP = r.maxPayouts || null;
-    const buffer = est && est.buffer ? fmt(est.buffer) : 'el buffer'; const ORO_ = 'var(--oro)';
-    const piso = ini - 2000;      // el stop de la cuenta siempre es el balance inicial − $2,000 (él lo fijó así)
-    const balAct = (cta && est) ? est.balance : ini;
-    const objetivoEval = (cta && est && est.objetivo && cta.fase === 'eval') ? est.objetivo : ini + 3000;
-    const bufferBal = (est && est.buffer) ? est.buffer : ini + 2100;
-    const capPay = (cta && cta.reglas && cta.reglas.capPayout) ? cta.reglas.capPayout : 1000;
-    const balEval = cta && cta.fase === 'eval' ? balAct : ini, balFond = cta && cta.fase !== 'eval' ? balAct : ini;
-    const E = {
-      eval:  {cadena: true, finTxt:'PASAS', lossTxt:'QUEMADA', objetivo: (cta && cta.fase === 'eval' && est && !est.pasado && objetivoEval - balEval > 0) ? objetivoEval - balEval : 3000, tp: F.eval.target, riesgo: F.eval.loss, entrada:''},
-      buffer:{escalera: true, finTxt:'BUFFER', fin:'llegar al buffer', balance: balFond, balanceTxt: fmt(balFond), hasta: Math.max(F.fond.target, bufferBal - balFond), quema: Math.max(F.fond.loss, balFond - piso), tp: F.fond.target, dl: F.fond.loss, riesgo: F.fond.loss},
-      pay:   {escalera: true, finTxt:'COBRAS', fin:'cobrar', balance: bufferBal, balanceTxt: fmt(bufferBal), hasta: capPay, quema: Math.max(F.fond.loss, bufferBal - piso), tp: F.fond.target, dl: F.fond.loss, riesgo: F.fond.loss}
+  const num = v => '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+  const UP = 'var(--up)', DOWN = 'var(--down)', TXT = 'var(--txt)';
+
+  /* ---- parámetros: los de Ajustes/cuenta como base, editables aquí (Store.ajustes.simRiesgo) */
+  function params(){
+    const A = Store.ajustes, F = Store.fases(), cta = Store.cuentaActiva();
+    const dias = Motor.porDia(Store.tradesReales(cta ? cta.id : null)); const wrReal = dias.length >= 10 ? dias.filter(x => x.pnl > 0).length / dias.length : null;
+    const base = {
+      inicial: cta ? cta.inicial : 50000, objetivo: 3000, buffer: 2100, tope: (cta && cta.reglas && cta.reglas.capPayout) || 1000, maxPagos: (cta && cta.reglas && cta.reglas.maxPayouts) || 5, split: 90,
+      evalTP: F.eval.target, evalLoss: F.eval.loss, fondTP: F.fond.target, fondLoss: F.fond.loss, winRate: Math.round((wrReal != null ? wrReal : 0.6) * 100), quema: 2000
     };
-    /* probabilidad de llegar al buffer antes de quemar la cuenta, con su win rate real por día (o 60% si no hay datos) */
-    function probBuffer(e){ const bufBal = e.balance + e.hasta, quemaBal = e.balance - e.quema; const dias = Motor.porDia(Store.tradesReales ? Store.tradesReales((cta||{}).id) : []); const wr = dias.length >= 10 ? dias.filter(x => x.pnl > 0).length / dias.length : 0.6;
-      // iteración de valor sobre los balances (paso $100): V = wr·V(b+TP) + (1−wr)·V(b−DL); V(buffer)=1, V(quemada)=0
-      const paso = 100, n = Math.round((bufBal - quemaBal) / paso); const V = new Array(n + 1).fill(0.5); V[0] = 0; V[n] = 1;
-      const idx = b => Math.max(0, Math.min(n, Math.round((b - quemaBal) / paso)));
-      for(let it = 0; it < 2000; it++){ for(let k = 1; k < n; k++){ const b = quemaBal + k * paso; V[k] = wr * V[idx(b + e.tp)] + (1 - wr) * V[idx(b - e.dl)]; } }
-      return {p: V[idx(e.balance)], wr, dias: dias.length}; }
-    const tarjeta = (t, sub, col, e) => `<div class="card etapa ${col}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span>${e.escalera ? (() => { const q = probBuffer(e); return `<div class="crece"></div><span class="mono ${q.p >= 0.5 ? 'up' : 'down'}">${Math.round(q.p*100)}% de ${e.fin} antes de quemarla · win rate por día ${Math.round(q.wr*100)}%${q.dias >= 10 ? ' (tus ' + q.dias + ' días)' : ' (supuesto)'}</span>`; })() : ''}</div><div class="arbol">${arbolSVG(e)}</div></div>`;
+    return Object.assign({}, base, A.simRiesgo || {}, {wrReal, diasReales: dias.length});
+  }
+
+  /* ---- una canica: recorre día a día desde la eval con la probabilidad de ganar el día = win rate */
+  function canica(P, rnd){
+    rnd = rnd || Math.random; const piso = P.inicial - P.quema; let bal = P.inicial, fase = 'eval', dia = 0, pagos = 0, cobrado = 0; const ruta = [{dia:0, bal, fase}];
+    while(dia < 400){ dia++; const gana = rnd() < P.winRate / 100;
+      if(fase === 'eval'){ bal += gana ? P.evalTP : -P.evalLoss; if(bal <= piso){ ruta.push({dia, bal, fase, fin:'quemada'}); return {ruta, fin:'quemada en eval', dia, pagos, cobrado}; }
+        if(bal >= P.inicial + P.objetivo){ ruta.push({dia, bal, fase, hito:'PASAS'}); fase = 'buffer'; bal = P.inicial; continue; } }
+      else { bal += gana ? P.fondTP : -P.fondLoss; if(bal <= piso){ ruta.push({dia, bal, fase, fin:'quemada'}); return {ruta, fin:'quemada en ' + fase, dia, pagos, cobrado}; }
+        if(fase === 'buffer' && bal >= P.inicial + P.buffer){ fase = 'payouts'; ruta.push({dia, bal, fase, hito:'BUFFER'}); continue; }
+        if(fase === 'payouts' && bal >= P.inicial + P.buffer + P.tope){ pagos++; cobrado += P.tope * P.split / 100; bal = P.inicial + P.buffer; ruta.push({dia, bal, fase, hito:'COBRAS #' + pagos});
+          if(pagos >= P.maxPagos){ return {ruta, fin:'cuenta concluida · ' + pagos + ' retiros', dia, pagos, cobrado}; } continue; } }
+      ruta.push({dia, bal, fase}); }
+    return {ruta, fin:'sigue viva a los 400 días', dia, pagos, cobrado};
+  }
+  function canicas(P, n){ const out = {pasan:0, buffer:0, pagan:0, queman:0, concluyen:0, pagos:0, cobrado:0, dias:0}; const hist = {};
+    for(let i = 0; i < n; i++){ const c = canica(P); if(c.ruta.some(r => r.hito === 'PASAS')) out.pasan++; if(c.ruta.some(r => r.hito === 'BUFFER')) out.buffer++; if(c.pagos > 0) out.pagan++; if(/quemada/.test(c.fin)) out.queman++; if(/concluida/.test(c.fin)) out.concluyen++; out.pagos += c.pagos; out.cobrado += c.cobrado; out.dias += c.dia; hist[c.pagos] = (hist[c.pagos] || 0) + 1; }
+    return Object.assign(out, {n, hist}); }
+
+  /* ---- pirámide: árbol binario completo como en la libreta. WIN a la izquierda, LOSS a la derecha. */
+  function piramide(P, etapa, ruta){
+    const piso = P.inicial - P.quema;
+    const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', prof: Math.max(2, Math.min(4, Math.ceil(P.objetivo / P.evalTP)))}
+      : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', prof: 4}
+      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', prof: 4};
+    const W = 1000, dy = 74, T = 34, H = T + cfg.prof * dy + 40;
+    const pasos = ruta ? ruta.filter(r => r.fase === etapa || (etapa === 'buffer' && r.fase === 'buffer') ).slice(0, cfg.prof + 1) : null;   // la canica en esta etapa
+    let g = '';
+    const nodo = (d, i, bal, camino) => {
+      const x = (i + 0.5) / Math.pow(2, d) * W, y = T + d * dy; const term = bal >= cfg.fin ? 'fin' : bal <= piso ? 'quema' : null;
+      const enRuta = pasos && pasos[d] && Math.abs(pasos[d].bal - bal) < 1 && camino;
+      const col = term === 'fin' ? UP : term === 'quema' ? DOWN : d === 0 ? TXT : 'var(--dim)';
+      const w = Math.max(44, Math.min(150, W / Math.pow(2, d) - 8)); const fs = d >= 4 ? 7.5 : d === 3 ? 8.5 : 10;
+      const txt = (term === 'fin' ? cfg.finTxt + ' ' : term === 'quema' ? 'X ' : '') + Math.round(bal).toLocaleString('en-US');
+      g += `<rect x="${x - w/2}" y="${y - 10}" width="${w}" height="20" rx="10" fill="${term === 'fin' ? 'var(--upSuave)' : term === 'quema' ? 'var(--downSuave)' : enRuta ? 'var(--accSuave)' : 'rgba(255,255,255,.05)'}" stroke="${enRuta ? 'var(--acc)' : col}" stroke-width="${enRuta ? 2 : 1}" stroke-opacity="${term || d === 0 || enRuta ? .95 : .4}"/>`;
+      g += `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="${fs}" font-weight="${term || d === 0 || enRuta ? 700 : 400}" fill="${enRuta ? 'var(--acc)' : col}" font-family="JetBrains Mono, monospace">${txt}</text>`;
+      if(enRuta) g += `<circle cx="${x - w/2 - 8}" cy="${y}" r="5" fill="var(--acc)" style="filter:drop-shadow(0 0 5px var(--acc))"/>`;
+      if(term || d >= cfg.prof) return;
+      const xl = (2*i + 0.5) / Math.pow(2, d+1) * W, xr = (2*i + 1.5) / Math.pow(2, d+1) * W, y2 = y + dy;
+      const sigueL = enRuta && pasos[d+1] && pasos[d+1].bal > bal, sigueR = enRuta && pasos[d+1] && pasos[d+1].bal < bal;
+      g += `<line x1="${x}" y1="${y + 10}" x2="${xl}" y2="${y2 - 10}" stroke="${UP}" stroke-opacity="${sigueL ? 1 : .55}" stroke-width="${sigueL ? 2.5 : 1.2}"/><line x1="${x}" y1="${y + 10}" x2="${xr}" y2="${y2 - 10}" stroke="${DOWN}" stroke-opacity="${sigueR ? 1 : .55}" stroke-width="${sigueR ? 2.5 : 1.2}"/>`;
+      if(d === 0) g += `<text x="${(x + xl)/2 - 10}" y="${(y + y2)/2}" text-anchor="end" font-size="8.5" fill="${UP}" font-family="JetBrains Mono, monospace">WIN +${num(cfg.tp)}</text><text x="${(x + xr)/2 + 10}" y="${(y + y2)/2}" font-size="8.5" fill="${DOWN}" font-family="JetBrains Mono, monospace">LOSS -${num(cfg.dl)}</text>`;
+      nodo(d+1, 2*i, bal + cfg.tp, sigueL); nodo(d+1, 2*i + 1, bal - cfg.dl, sigueR);
+    };
+    nodo(0, 0, cfg.bal0, true);
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>`;
+  }
+
+  let ultima = null, lote = null;   // la última canica y el último lote (viven mientras la vista esté abierta)
+  Vistas.riesgo = function(){
+    const P = params(); const A = Store.ajustes;
+    const rr = (a, b) => (a / b).toFixed(2);
+    const campo = (k, t, step) => `<label class="campo"><span>${t}</span><input type="number" step="${step || 1}" data-sim="${k}" value="${P[k]}"></label>`;
+    const ruta = ultima ? ultima.ruta : null;
+    const tarjeta = (t, sub, cls, etapa) => `<div class="card etapa ${cls}"><div class="fila"><h3>${t}</h3><span class="mono dim">${sub}</span></div><div class="arbol">${piramide(P, etapa, ruta)}</div></div>`;
     return `
-    <div class="grid g5" style="margin-bottom:14px">
-      ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}
-      ${kpi('Contratos', contratos + ' ' + A.instrumento, 'stop ' + (A.slPuntos||20) + ' pts = ' + fmt(stopUSD) + ' c/u · máx ' + (A.maxContratos||1) + ' mini')}
-      ${kpi('Trades por día', '1–' + (A.maxTradesDia||2), 'if W → fuera · ' + (A.pararTrasPerdidas||2) + ' pérdidas → fuera')}
-      ${kpi('Eval', '+' + fmt(F.eval.target) + ' / -' + fmt(F.eval.loss), 'por día · full port para pasar en ~3 días')}
-      ${kpi('Fondeada', '+' + fmt(F.fond.target) + ' / -' + fmt(F.fond.loss), 'por día · consistencia ' + Math.round((F.fond.consistencia||0.4)*100) + '%')}
-    </div>
-    <div class="card" style="margin-bottom:14px"><h3>Mi gestión</h3>
-      <div class="gestion">
-        <div><b>1 · Condición, no sesgo.</b> El día empieza con un «si esto → entonces aquello» escrito sobre el FVG de la apertura. Reacciono a la que se cumpla.</div>
-        <div><b>2 · Solo continuaciones.</b> A favor del impulso, nunca reversiones.</div>
-        <div><b>3 · Equilibrio + FVG.</b> La entrada vive en el retroceso 0.705–0.79 del impulso, con un FVG que haga match. Dos confluencias, nunca una.</div>
-        <div><b>4 · TP interno.</b> Mi pedazo del pastel: la liquidez interna, no la externa.</div>
-        <div><b>5 · 1% y un mini.</b> Nunca más del 1% de la cuenta por trade; los contratos salen del stop, no de las ganas.</div>
-        <div><b>6 · 1–2 trades y fuera.</b> Si gano, cierro la plataforma. Dos pérdidas seguidas o el daily loss, y el día se acabó.</div>
-        <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo el drawdown para pasar rápido; ya fondeado, +${fmt(F.fond.target)} al día y nunca más de -${fmt(F.fond.loss)}; en payouts, cobro en cuanto toco el tope.</div>
-      </div></div>
+    <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y todo se recalcula</span><div class="crece"></div><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
+      <div class="grid g6" style="margin-top:10px">
+        ${campo('inicial', 'Cuenta inicial ($)', 1000)}${campo('objetivo', 'Objetivo eval ($)', 100)}${campo('buffer', 'Buffer ($)', 100)}${campo('tope', 'Tope por retiro ($)', 100)}${campo('maxPagos', 'Retiros máx', 1)}${campo('split', 'Split (%)', 5)}
+        ${campo('evalTP', 'Eval · TP por día ($)', 50)}${campo('evalLoss', 'Eval · riesgo por día ($)', 50)}${campo('fondTP', 'Funded · TP por día ($)', 50)}${campo('fondLoss', 'Funded · riesgo por día ($)', 50)}${campo('winRate', 'Win rate por día (%)', 1)}${campo('quema', 'Se quema a inicial − ($)', 100)}
+      </div>
+      <div class="mini dim" style="margin-top:8px">R:R eval ${rr(P.evalTP, P.evalLoss)} · R:R funded ${rr(P.fondTP, P.fondLoss)} · ${P.wrReal != null ? 'tu win rate real por día: ' + Math.round(P.wrReal*100) + '% en ' + P.diasReales + ' días' : 'sin 10 días reales todavía: win rate supuesto'}</div></div>
+
+    <div class="card" style="margin-bottom:14px"><div class="fila"><h3>La canica</h3><span class="mono dim">una vida simulada con estos parámetros: de la eval hasta donde le alcance la suerte</span><div class="crece"></div><button class="btn acc chico" data-acc="canica">Soltar una canica</button><button class="btn chico" data-acc="canicas">1,000 canicas</button></div>
+      ${ultima ? `<div class="fila" style="margin-top:10px;gap:10px"><span class="pill ${/quemada/.test(ultima.fin) ? 'mal' : 'ok'}">${h(ultima.fin.toUpperCase())}</span><span class="mono dim">${ultima.dia} días · ${ultima.pagos} retiro${ultima.pagos === 1 ? '' : 's'} · cobrado ${fmt(ultima.cobrado)}</span></div>
+        <div class="ruta">${ultima.ruta.filter(r => r.hito || r.fin || r.dia === 0).map(r => `<span class="cam ${r.fin ? 'quema' : r.hito ? 'fin' : 'raiz'}">${r.dia === 0 ? 'D0 · ' + num(r.bal) : 'D' + r.dia + ' · ' + (r.fin ? 'QUEMADA ' : r.hito + ' ') + num(r.bal)}</span>`).join('<span class="dim">→</span>')}</div>
+        <div class="camino-mini">${ultima.ruta.slice(0, 120).map(r => `<i class="${r.fase} ${r.hito ? 'hito' : ''} ${r.fin ? 'fin' : ''}" title="D${r.dia} · ${num(r.bal)} · ${r.fase}" style="height:${Math.max(6, Math.min(60, (r.bal - (P.inicial - P.quema)) / (P.buffer + P.tope + P.quema) * 60))}px"></i>`).join('')}</div>` : `<div class="mini dim" style="margin-top:8px">Suelta una canica y verás su camino en las pirámides de abajo.</div>`}
+      ${lote ? `<div class="grid g6" style="margin-top:12px">
+        ${kpi('Pasan la eval', Math.round(lote.pasan/lote.n*100) + '%', 'de ' + lote.n.toLocaleString('en-US') + ' canicas')}${kpi('Llegan al buffer', Math.round(lote.buffer/lote.n*100) + '%', '')}${kpi('Cobran al menos 1', Math.round(lote.pagan/lote.n*100) + '%', '')}${kpi('Concluyen (' + P.maxPagos + ' retiros)', Math.round(lote.concluyen/lote.n*100) + '%', '')}${kpi('Retiros promedio', (lote.pagos/lote.n).toFixed(2), 'por canica')}${kpi('Cobrado promedio', fmt(lote.cobrado/lote.n), 'por cuenta · ' + Math.round(lote.dias/lote.n) + ' días de vida')}
+      </div><div class="mini dim" style="margin-top:8px">Retiros por canica: ${Object.keys(lote.hist).sort((a,b)=>a-b).map(k => k + ' → ' + Math.round(lote.hist[k]/lote.n*100) + '%').join(' · ')}</div>` : ''}</div>
+
     <div class="grid g3 arboles">
-      ${tarjeta('EVAL', '3 días para pasar · +' + fmt(F.eval.target) + ' por día · una pérdida de -' + fmt(F.eval.loss) + ' quema la cuenta', 'et-eval', E.eval)}
-      ${tarjeta('BUFFER', 'izquierda: cada día ganado +' + fmt(F.fond.target) + ' hasta el buffer · derecha: cada día perdido -' + fmt(F.fond.loss) + ' hasta quemar', 'et-buffer', E.buffer)}
-      ${tarjeta('PAYOUTS', 'desde el buffer · izquierda +' + fmt(F.fond.target) + ' por día hasta cobrar ' + fmt(capPay) + ' · derecha -' + fmt(F.fond.loss) + ' hasta quemar', 'et-payouts', E.pay)}
+      ${tarjeta('EVAL', 'WIN +' + num(P.evalTP) + ' izquierda · LOSS -' + num(P.evalLoss) + ' derecha · hasta ' + num(P.inicial + P.objetivo), 'et-eval', 'eval')}
+      ${tarjeta('FUNDED · BUFFER', 'WIN +' + num(P.fondTP) + ' · LOSS -' + num(P.fondLoss) + ' · hasta ' + num(P.inicial + P.buffer) + ' · se quema en ' + num(P.inicial - P.quema), 'et-buffer', 'buffer')}
+      ${tarjeta('PAYOUTS', 'desde el buffer · cobras al tocar ' + num(P.inicial + P.buffer + P.tope) + ' y el balance vuelve al buffer', 'et-payouts', 'payouts')}
     </div>`;
   };
+  window.Riesgo = { params, canica, canicas, soltar(){ ultima = canica(params()); }, lote(){ lote = canicas(params(), 1000); }, reset(){ Store.ajustes.simRiesgo = null; Store.guardar(); } };
 })();

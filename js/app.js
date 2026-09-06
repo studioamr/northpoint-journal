@@ -147,6 +147,9 @@
       editaTrade: () => modalTrade(Store.estado.trades.find(t => t.id === id)),
       editaTradeForm: () => { cerrar(); modalTrade(Store.estado.trades.find(t => t.id === id)); },
       fichaTrade: () => modalFichaTrade(id),
+      canica: () => { Riesgo.soltar(); pinta(); },
+      canicas: () => { Riesgo.lote(); pinta(); },
+      simReset: () => { Riesgo.reset(); pinta(); },
       pdfTrade: () => PDF.descargaTrade(id).then(() => toast('PDF listo')),
       fichaTradeDescarga: () => Ficha.descargaTrade(id).then(() => toast('Ficha guardada')),
       fichaTradeComparte: () => Ficha.comparteTrade(id).then(ok => { if(!ok){ Ficha.descargaTrade(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
@@ -217,6 +220,7 @@
     if(t.dataset.paso){ Store.ajustes.pasos = Object.assign({}, Store.ajustes.pasos || {}, {[t.dataset.paso]: t.checked}); Store.guardar(); return; }
     if(t.dataset.dia){ Store.guardaDia(Store.hoyISO(), {[t.dataset.dia]: t.value}); return; }
     if(t.dataset.rutina){ const d = Store.dia(); d.rutina[t.dataset.rutina] = t.checked; Store.guardar(); return; }
+    if(t.dataset.sim){ Store.ajustes.simRiesgo = Object.assign({}, Store.ajustes.simRiesgo || {}, {[t.dataset.sim]: +t.value}); Store.guardar(); pinta(); return; }
     if(t.dataset.ajuste){
       let v = t.type === 'number' ? +t.value : t.value;
       if(t.dataset.ajuste === 'evalFullPort') v = t.value === '1';
