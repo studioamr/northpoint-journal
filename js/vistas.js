@@ -406,6 +406,14 @@
     }
 
     return `
+    ${cta ? `<div class="balance-hero">
+      <div><div class="eti">${h(cta.alias || cta.firma)} · balance</div>
+        <div class="bh-num ${estCta.ganancia >= 0 ? 'up' : 'down'}">${fmt(estCta.balance)}</div>
+        <div class="bh-sub"><span class="${signo(estCta.ganancia)}">${masMenos(estCta.ganancia)}</span> desde ${fmt(cta.inicial)} · colchón ${fmt(estCta.colchon)} · piso ${fmt(estCta.piso)}</div></div>
+      <div class="bh-kpis">
+        ${kpi('Este mes', `<span class="${signo(mesPnl)}">${masMenos(mesPnl)}</span>`, mesN + ' trades · ' + mesG + ' días ganadores', 'mini')}
+        ${kpi(estCta.objetivo ? 'Objetivo' : 'Buffer', estCta.objetivo ? fmt(estCta.objetivo) : fmt(estCta.buffer), estCta.objetivo ? 'faltan ' + fmt(estCta.faltaTarget) : (estCta.balance >= estCta.buffer ? fmt(estCta.sobreBuffer) + ' arriba' : 'faltan ' + fmt(estCta.buffer - estCta.balance)), 'mini', null, estCta.objetivo ? Math.max(0, Math.min(1, estCta.ganancia / (estCta.objetivo - cta.inicial))) : Math.max(0, Math.min(1, (estCta.balance - cta.inicial) / Math.max(1, estCta.buffer - cta.inicial))))}
+      </div></div>` : ''}
     <div class="fila" style="margin-bottom:12px">
       <div><div class="eti">Calendario · ${cta ? h(cta.alias || cta.firma) : 'sin cuenta'} · ${faseCta === 'eval' ? 'EVALUACIÓN: target +' + fmt(F.eval.target) + ' · daily loss -' + fmt(F.eval.loss) + (Store.consistenciaDe(cta) ? ' · consistencia ' + Math.round(Store.consistenciaDe(cta)*100) + '% (máx/día ' + fmt(Store.consistenciaDe(cta) * (cta.reglas.target||0)) + ')' : '') : faseCta === 'pasada' ? 'EVAL PASADA → la fondeada que sigue: target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss) : 'FUNDED: target +' + fmt(F.fond.target) + ' · daily loss -' + fmt(F.fond.loss)}</div>
         <h2 style="margin:3px 0 0;font-size:19px;font-weight:600;text-transform:capitalize">${UI.MESES[cal.m]} ${cal.y}</h2></div>

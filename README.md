@@ -154,9 +154,10 @@ sus reglas (Growth / Select / Lightning) o dime a cuál corresponde el apodo com
   Se importa en Google/Apple Calendar en un clic.
 - **Copiador (Tradesyncer / group trading)**: Ajustes → Copiador: un CSV entra en todas las cuentas seleccionadas.
 - **Respaldo completo con screenshots** (JSON con las imágenes de IndexedDB) y **reporte del día en Markdown** por sesión.
-- **Perfil y temas**: Ajustes → nombre, iniciales/foto, ciudad, frase (el perfil va hasta abajo del menú) y nueve temas: Ácido, Blanco (marca
-  original), Oro, Papel, Cobalto y los **Aurora** — Azul, Naranja, Morado, Verde — vidrio esmerilado real, aurora de tres colores que se mueve
-  lento detrás, bordes con gradiente al pasar el mouse, botones con degradado. Tendencia 2026: glassmorphism + aurora, sin rejillas.
+- **Perfil y temas**: Ajustes → nombre, iniciales/foto, ciudad, frase (el perfil va hasta abajo del menú) y los temas: **Glass Oscuro** (de fábrica: minimal glassmorphism,
+  negro + azul suave, esferas desenfocadas de fondo, Inter 500), **Glass Claro** (blanco, clean · calm · clear), Lima, **Bosque** (#051F20→#8EB69B),
+  **Océano** (#021024→#7DA0CA), **Noche** (navy + azul + ámbar), Blanco, Oro, Papel, Cobalto y los Aurora. Base del rediseño: tarjetas 22px,
+  botones **liquid glass** en pastilla (brillo superior, sombra interior), anillos de progreso en los KPIs, Inter en todo.
 - **Trading**: en la app de escritorio, **Tradovate** (trader.tradovate.com) o **TradingView completo** se abren **dentro de la
   vista**, con tu login guardado: tus cuentas de fondeo, posiciones y órdenes ahí mismo (un WKWebView colocado sobre el hueco de la
   vista). En navegador ninguno se deja embeber: botón para abrirlos en pestaña, o el «chart rápido» (widget gratis de TradingView).
