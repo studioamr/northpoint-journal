@@ -335,7 +335,14 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
 .cal-top{margin-bottom:14px;gap:12px} .cal-mes{margin:0;font-size:26px;font-weight:600;letter-spacing:-.02em;text-transform:capitalize} .cal-mes span{color:var(--tenue);font-weight:400}
 .cal-leg{display:flex;gap:14px;font-family:var(--mono);font-size:10px;color:var(--tenue);letter-spacing:.08em} .cal-leg .leg{display:inline-flex;align-items:center;gap:6px} .cal-leg b{font-weight:600}
 .fdot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;vertical-align:middle;background:var(--acc)} .fdot.fond{background:var(--up)}
-.cal .d.futuro{min-height:104px;border-top:2px solid transparent} .cal .d.f-eval{border-top-color:color-mix(in srgb,var(--acc) 55%,transparent)} .cal .d.f-fond{border-top-color:color-mix(in srgb,var(--up) 55%,transparent)}
+.cal .d.futuro{min-height:104px}
+/* etapas: eval azul · buffer rojo · payouts amarillo */
+:root{--etEval:#4F8CFF;--etBuffer:#FF4D5A;--etPay:#FFD54A}
+html .cal .d.f-eval{background:linear-gradient(180deg,rgba(79,140,255,.22),rgba(79,140,255,.05));border-color:rgba(79,140,255,.55)}
+html .cal .d.f-buffer{background:linear-gradient(180deg,rgba(255,77,90,.2),rgba(255,77,90,.05));border-color:rgba(255,77,90,.5)}
+html .cal .d.f-payouts{background:linear-gradient(180deg,rgba(255,213,74,.2),rgba(255,213,74,.05));border-color:rgba(255,213,74,.55)}
+.pill.et-eval{background:rgba(79,140,255,.2);color:var(--etEval);border:1px solid rgba(79,140,255,.5)} .pill.et-buffer{background:rgba(255,77,90,.18);color:var(--etBuffer);border:1px solid rgba(255,77,90,.5)} .pill.et-payouts{background:rgba(255,213,74,.18);color:var(--etPay);border:1px solid rgba(255,213,74,.5)}
+.fdot.et-eval{background:var(--etEval)} .fdot.et-buffer{background:var(--etBuffer)} .fdot.et-payouts{background:var(--etPay)}
 .cal .nds{display:inline-flex;align-items:center;gap:3px;margin-top:6px} .cal .nd{width:5px;height:5px;border-radius:50%;background:var(--oro)} .cal .nd.alto{background:var(--down)} .cal .nds b{font-family:var(--mono);font-size:9px;color:var(--tenue);font-weight:500;margin-left:3px;letter-spacing:.04em}
 .cal .dow{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--tenue);text-align:center;padding:4px 0;text-transform:uppercase}
 .cal .d{background:var(--panel);border:1px solid var(--linea);min-height:104px;padding:10px 12px;cursor:pointer;position:relative;transition:.18s;border-radius:14px}

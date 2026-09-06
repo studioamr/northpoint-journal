@@ -354,7 +354,7 @@
         const perd = fase === 'eval' ? F.eval.loss : F.fond.loss;
         if(primero && evalPasada){ d.hitos.push({t:'EVAL PASADA · PIDE LA FONDEADA', c:alias, tono:'up'}); }
         primero = false;
-        d.pnl += meta; d.perd += perd; d.fase = fase; bal += meta; diasValidos++;
+        d.pnl += meta; d.perd += perd; d.fase = fase; d.etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts'); bal += meta; diasValidos++;
         if(fase === 'eval' && obj && bal >= obj){ d.hitos.push({t:'PASAS LA EVAL', c:alias, tono:'up'}); fase = 'fond'; bal = ini; diasValidos = 0; continue; }
         if(fase === 'fond'){
           if(bal - meta < buffer && bal >= buffer) d.hitos.push({t:'BUFFER HECHO', c:alias, tono:'azul'});
@@ -396,8 +396,8 @@
       const pr = futuro ? (proy[iso] || null) : null;
       const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
-      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + pr.fase : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + pr.hitos[0].tono : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
-        <div class="n">${f.getDate()}${futuro && pr ? ` <span class="pill ${pr.fase === 'eval' ? 'acc' : 'ok'}" style="font-size:8px;padding:1px 4px">${pr.fase === 'eval' ? 'EVAL' : 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-t ${x.tono}">${h(x.t)}</div>`).join('')}</div>` : ''}
+      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + pr.hitos[0].tono : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
+        <div class="n">${f.getDate()}${futuro && pr ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py"><span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>${pr.hitos.map(x => `<div class="hito-t ${x.tono}">${h(x.t)}</div>`).join('')}</div>` : ''}
         ${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
@@ -409,8 +409,8 @@
       sem.push(trozo.reduce((a,d) => a + d.pnl, 0));
     }
 
-    const legEval = `<span class="leg"><i class="fdot eval"></i>EVAL <b class="up">+${fmt(F.eval.target)}</b> <b class="down">-${fmt(F.eval.loss)}</b></span>`;
-    const legFond = `<span class="leg"><i class="fdot fond"></i>FUNDED <b class="up">+${fmt(F.fond.target)}</b> <b class="down">-${fmt(F.fond.loss)}</b></span>`;
+    const legEval = `<span class="leg"><i class="fdot et-eval"></i>EVAL <b class="up">+${fmt(F.eval.target)}</b> <b class="down">-${fmt(F.eval.loss)}</b></span>`;
+    const legFond = `<span class="leg"><i class="fdot et-buffer"></i>BUFFER <b class="up">+${fmt(F.fond.target)}</b> <b class="down">-${fmt(F.fond.loss)}</b></span><span class="leg"><i class="fdot et-payouts"></i>PAYOUTS</span>`;
     return `
     <div class="fila cal-top">
       <h2 class="cal-mes">${UI.MESES[cal.m]} <span>${cal.y}</span></h2>
