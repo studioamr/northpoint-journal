@@ -250,7 +250,8 @@
     const N = noche(sym); const niveles = [];
     const D = N ? N.D : null; const rel = v => v.ymd === D ? v.min : v.min - 1440;
     const sesiones = (N ? N.sesiones.filter(s => !s.vacia).map(s => ({k:s.k, n:{asia:'ASIA', lon:'LNDN', ny:'NY'}[s.k], high:s.high, low:s.low, t0:s.t0, t1:s.t1, tHigh:s.tHigh, tLow:s.tLow})) : []);
-    const tomaEn = (desde, lado, v) => { const k = velas.find(x => rel(x) >= desde && (lado === 'high' ? x.hi > v : x.lo < v)); return k ? rel(k) : null; };
+    const ayer = D ? diaMas(D, -1) : null; const velasD = velas.filter(v => !ayer || v.ymd >= ayer);   // solo la víspera y el día D: con 5 días de velas, los días viejos no deben contar
+    const tomaEn = (desde, lado, v) => { const k = velasD.find(x => rel(x) >= desde && (lado === 'high' ? x.hi > v : x.lo < v)); return k ? rel(k) : null; };
     sesiones.forEach(s => {
       niveles.push({n: s.n + ' High', v: s.high, lado:'high', t: s.tHigh != null ? s.tHigh : s.t1, tFin: tomaEn((s.tHigh != null ? s.tHigh : s.t1) + 5, 'high', s.high)});
       niveles.push({n: s.n + ' Low', v: s.low, lado:'low', t: s.tLow != null ? s.tLow : s.t1, tFin: tomaEn((s.tLow != null ? s.tLow : s.t1) + 5, 'low', s.low)}); });
@@ -259,7 +260,7 @@
     for(let i = niveles.length - 1; i >= 0; i--){ const a = niveles[i]; if(!a.n.startsWith('4H')) continue; if(niveles.some(b => b !== a && !b.n.startsWith('4H') && b.lado === a.lado && Math.abs(b.v - a.v) <= Math.max(2, a.v * 0.0001))) niveles.splice(i, 1); }
     // qué manipuló esta vela: los niveles del lado contrario que barrió antes de expandir
     const t0cur = rel(cur.vs[0]);
-    const barridos = niveles.filter(nv => nv.t <= t0cur + 5 && (arriba ? (nv.lado === 'low' && cur.low < nv.v && nv.v <= cur.open) : (nv.lado === 'high' && cur.high > nv.v && nv.v >= cur.open)));
+    const barridos = niveles.filter(nv => nv.t <= t0cur + 5 && (nv.tFin == null || nv.tFin >= t0cur) && (arriba ? (nv.lado === 'low' && cur.low < nv.v && nv.v <= cur.open) : (nv.lado === 'high' && cur.high > nv.v && nv.v >= cur.open)));
     const manipula = barridos.length ? barridos.sort((a, b) => arriba ? a.v - b.v : b.v - a.v)[0] : null;
     if(manipula) lectura = lectura.replace('(manipulación)', '(manipuló ' + manipula.n + ' ' + manipula.v.toFixed(2) + ')');
     /* objetivo: la liquidez viva más cercana hacia donde va la distribución (si aún es manipulación, hacia el lado contrario) */
@@ -267,7 +268,7 @@
     const vivos = niveles.filter(nv => !nv.tomado && (dirObj ? (nv.lado === 'high' && nv.v > precio) : (nv.lado === 'low' && nv.v < precio)));
     const objetivo = vivos.length ? vivos.sort((a, b) => dirObj ? a.v - b.v : b.v - a.v)[0] : null;
     if(objetivo) lectura += ' Objetivo: ' + objetivo.n + ' ' + objetivo.v.toFixed(2) + ' (' + (dirObj ? '+' : '') + (objetivo.v - precio).toFixed(2) + ' pts).';
-    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velas, sesiones};
+    return {sym, precio, cur, prev, enCurso, restan, fase, lectura, arriba, manipAbajo, manipArriba, bos, fvg, niveles, manipula, objetivo, dirObj, D, rel, velasTodas: velasD, sesiones};
   }
   /* gráfica: velas de 5 min de las últimas horas, las killzones como líneas con su etiqueta, el rango de la 4H actual
      punteado con su open, y la vela de 4H dibujada en grande a la derecha (como en el chart de TradingView) */
@@ -299,9 +300,8 @@
     // líneas de killzone: hasta donde se tomaron (puntito) o hasta la vela grande si siguen vivas
     const kz = nivelesVis.map(nv => { const col = nv.n.startsWith('ASIA') ? '#FF4D5A' : nv.n.startsWith('LNDN') ? '#4F8CFF' : nv.n.startsWith('NY') ? '#39FF14' : 'var(--dim)'; const y = Y(nv.v);
       const esManip = d.manipula && d.manipula.n === nv.n;
-      let xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;
-      if(esManip){ const iM = vs.findIndex((v, i) => i >= iCur && (d.arriba ? v.lo < nv.v : v.hi > nv.v)); if(iM >= 0) xFin = X(iM); }   // hasta la vela de la 4H que lo manipuló
-      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2 : 1}" stroke-opacity="${esManip ? 1 : nv.tomado ? .55 : .8}"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="${esManip ? 4 : 2.5}" fill="${col}"/>` : ''}${esManip ? `<text class="ses" x="${xFin - 8}" y="${clampY(y + (d.arriba ? 14 : -8))}" text-anchor="end" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)} · MANIPULADO</text>` : ''}`; }).join('');
+      const xFin = nv.tomado ? xDe(nv.tFin) : xLbl - 6;   // la línea acaba en su PRIMERA barrida
+      return `<line x1="${xDe(nv.t)}" x2="${xFin}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${esManip ? 2.2 : 1.4}" stroke-opacity="1"/>${nv.tomado ? `<circle cx="${xFin}" cy="${y}" r="${esManip ? 4 : 2.5}" fill="${col}"/>` : ''}${esManip ? `<text class="ses" x="${xFin - 8}" y="${clampY(y + (d.arriba ? 14 : -8))}" text-anchor="end" fill="${col}">${nv.n.toUpperCase()} ${num(nv.v)} · MANIPULADO</text>` : ''}`; }).join('');
     // rango de la 4H actual (caja punteada) + open hasta la vela grande
     const x0 = X(iCur) - paso/2;
     const caja = `<rect x="${x0}" y="${Y(c.high)}" width="${plotR - 2 - x0}" height="${Math.max(2, Y(c.low) - Y(c.high))}" fill="none" stroke="var(--txt)" stroke-opacity=".4" stroke-dasharray="3 3"/>
