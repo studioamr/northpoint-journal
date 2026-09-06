@@ -41,7 +41,6 @@
         ${Vistas._latido()}
         <span class="reloj" id="reloj"></span>
         <button class="btn chico fantasma ${vista === 'ajustes' ? 'acc' : ''}" data-ir="ajustes" title="Ajustes">⚙</button>
-        <button class="btn chico fantasma" data-acc="salir" title="Cerrar sesión">⎋</button>
       </div>`;
 
     document.getElementById('vista').innerHTML = (Vistas[vista] || Vistas.panel)();
@@ -189,7 +188,6 @@
       fichaDescarga: () => Ficha.descarga(id).then(() => toast('Ficha guardada')),
       fichaComparte: () => Ficha.comparte(id).then(ok => { if(!ok){ Ficha.descarga(id); toast('Sin compartir nativo: se descargó la ficha'); } }),
       abreDia: () => { cerrar(); modalDia(id); },
-      salir: () => Acceso.salir(),
       abrirPlataforma: () => window.open(id === 'tradovate' ? 'https://trader.tradovate.com/' : 'https://www.tradingview.com/chart/?symbol=CME_MINI%3AMNQ1!', '_blank'),
       tvOperar: () => { if(window.__npNativo){ try{ window.webkit.messageHandlers.np.postMessage({cmd:'trading'}); }catch(e){} } else window.open('https://www.tradingview.com/chart/?symbol=' + encodeURIComponent('CME_MINI:MNQ1!'), '_blank'); },
       exportarCompleto: () => Store.exportaCompleto().then(n => toast('Respaldo con ' + n + ' screenshots')),

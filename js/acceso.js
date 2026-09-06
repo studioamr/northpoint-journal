@@ -49,7 +49,8 @@
   function entrar(){ sessionStorage.setItem('np.sesion', '1'); el.classList.add('fuera'); setTimeout(() => { el.hidden = true; el.innerHTML = ''; }, 650); }
   function salir(){ sessionStorage.removeItem('np.sesion'); localStorage.removeItem('np.recordar'); el.hidden = false; el.classList.remove('fuera'); pinta(); }
 
-  if(sessionStorage.getItem('np.sesion') || (localStorage.getItem('np.recordar') && acc())) { el.hidden = true; }
-  else pinta();
+  /* 6-sep-2026: sin PIN ni login — la app abre directo (él lo pidió). El hero de acceso queda en el código por si algún día vuelve. */
+  if(Store.ajustes.acceso && Store.ajustes.acceso.pin){ Store.ajustes.acceso.pin = null; Store.guardar(); }
+  el.hidden = true; el.style.display = 'none';
   window.Acceso = { salir, pinta };
 })();
