@@ -42,12 +42,34 @@
   const SYM_NQ = () => contrato() + '.CME';
   const nombreContrato = () => { const c = contrato(); const m2 = c.match(/^([A-Z]+)([HMUZ])(\d\d)$/); return m2 ? m2[1] + m2[2] + '20' + m2[3] : c; };
   const FUT = [{k:'NQ', get y(){ return SYM_NQ(); }, n:'Micro Nasdaq'}, {k:'ES', y:'ES=F', n:'S&P 500 · futuro'}, {k:'BTC', y:'BTC=F', n:'Bitcoin · futuro CME'}];
+  /* Yahoo mete el precio de LIQUIDACIÓN (settlement) al cierre del viernes: una vela sintética a las 16:59:59 con volumen 0 y,
+     en la vela real de las 16:55, un high/close falsos (p. ej. 29,565.25 cuando el último trade fue 29,524.75, como en TradingView).
+     Aquí se quita la sintética y se le devuelve a la de 16:55 su cierre real. */
+  function limpiaSettlement(r){
+    const ts = r.timestamp || [], q = ((r.indicators||{}).quote||[{}])[0]; if(!ts.length || !q.close) return;
+    const n = ts.length - 1;
+    if(ts[n] % 300 !== 0 || (q.volume && q.volume[n] === 0 && q.open[n] === q.close[n] && q.high[n] === q.low[n])){
+      const liq = q.close[n];
+      ts.pop(); ['open','high','low','close','volume'].forEach(k => q[k] && q[k].pop());
+      const m2 = ts.length - 1;
+      if(m2 >= 1 && q.close[m2] === liq && Math.abs(liq - q.open[m2]) > q.open[m2] * 0.0006){   // la vela previa también quedó contaminada
+        q.close[m2] = q.open[m2]; q.high[m2] = Math.max(q.open[m2], q.close[m2-1], q.low[m2]); }
+      r.meta = Object.assign({}, r.meta, {settlement: liq});
+    }
+  }
+  /* precio: el de Yahoo solo si es de hace menos de 15 min (mercado abierto); si no, el cierre de la última vela real */
+  function precioReal(r){
+    const me = r.meta || {}; const q = ((r.indicators||{}).quote||[{}])[0]; const cl = (q.close || []).filter(x => x != null);
+    const fresco = me.regularMarketTime && (Date.now()/1000 - me.regularMarketTime) < 15*60;
+    return fresco && me.regularMarketPrice != null ? me.regularMarketPrice : (cl.length ? cl[cl.length-1] : me.regularMarketPrice);
+  }
   async function yahoo(sym){
     const j = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=5m&range=5d');   // 5 días: para que Asia de la noche anterior siempre esté
     cache['velas_' + sym] = j;
     const r = j && j.chart && j.chart.result && j.chart.result[0]; if(!r) throw new Error('sin datos');
+    limpiaSettlement(r);
     const me = r.meta || {};
-    const precio = me.regularMarketPrice, prev = me.chartPreviousClose || me.previousClose;
+    const precio = precioReal(r), prev = me.chartPreviousClose || me.previousClose;
     const cierres = ((r.indicators||{}).quote||[{}])[0].close || [];
     const validos = cierres.filter(x => x != null);
     return { precio, prev, chg: prev ? (precio - prev) / prev * 100 : null, pts: prev ? precio - prev : null,
@@ -164,7 +186,7 @@
     if(!velas.some(v => SESIONES.some(s => enSesionDe(v, s, D))) && velas.length){       // fin de semana / feriado: enseña la última noche que sí hubo
       const u = velas[velas.length-1]; D = u.min >= 18*60 ? diaMas(u.ymd, 1) : u.ymd; pasada = true; }
     const enSesion = (v, s) => enSesionDe(v, s, D);
-    const precio = (r.meta||{}).regularMarketPrice || (velas.length ? velas[velas.length-1].cl : null);
+    const precio = precioReal(r) || (velas.length ? velas[velas.length-1].cl : null);
     const out = { sym, precio, D, pasada, abrioNY: !pasada && ahora.ymd === D && ahora.min >= 9*60+30, minParaNY: !pasada && ahora.ymd === D ? (9*60+30) - ahora.min : null, sesiones: [] };
     const iniAsia = velas.findIndex(v => SESIONES.some(s => enSesionDe(v, s, D))); out.serie = iniAsia >= 0 ? velas.slice(iniAsia) : velas.slice(-120);
     out.serie.forEach(v => { v.min2 = v.ymd === D ? v.min : v.min - 24*60; });     // minutos relativos a la medianoche NY del día D
@@ -221,7 +243,7 @@
     const arma = k => { const vs = velas.filter(v => bloque(v) === k); if(!vs.length) return null; const b = +k.split('#')[1];
       return {k, ini: (18*60 + b*240) % 1440, vs, open: vs[0].op != null ? vs[0].op : vs[0].cl, high: Math.max(...vs.map(v => v.hi)), low: Math.min(...vs.map(v => v.lo)), close: vs[vs.length-1].cl, n: vs.length}; };
     const cur = arma(claves[claves.length-1]), prev = claves.length > 1 ? arma(claves[claves.length-2]) : null;
-    const precio = (r.meta||{}).regularMarketPrice || cur.close;
+    const precio = precioReal(r) || cur.close;
     const ahora = ny(Date.now()); const enCurso = bloque({ymd: ahora.ymd, min: ahora.min}) === cur.k;
     const restan = enCurso ? 240 - (((ahora.min - cur.ini) + 1440) % 1440) : 0;
     // lectura PO3: dónde está el precio contra el open y si ya hubo la manipulación (barrida del lado contrario)
