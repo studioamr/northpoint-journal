@@ -47,8 +47,9 @@
   function num(v){
     if(v === null || v === undefined) return null;
     let s = String(v).trim(); if(!s) return null;
-    let neg = /^\(.*\)$/.test(s) || /-/.test(s);
-    s = s.replace(/[()$,\s]/g,'').replace(/-/g,'');
+    s = s.replace(/[$€£¥\s]/g, '');                       // la moneda va ANTES del paréntesis: Tradovate escribe "$(70.00)"
+    const neg = /^\(.*\)$/.test(s) || /-/.test(s);        // paréntesis = número negativo (formato contable)
+    s = s.replace(/[(),]/g, '').replace(/-/g, '');
     const n = parseFloat(s); if(isNaN(n)) return null;
     return neg ? -n : n;
   }
@@ -73,7 +74,8 @@
   function dePerformance(cab, regs){
     const cS = col(cab,'symbol','contract','instrument'), cQ = col(cab,'qty','quantity'),
           cBP = col(cab,'buyPrice','buy price'), cSP = col(cab,'sellPrice','sell price'),
-          cP = col(cab,'pnl','p&l','profit'), cBT = col(cab,'boughtTimestamp','bought'), cST = col(cab,'soldTimestamp','sold');
+          cP = col(cab,'pnl','p&l','profit'), cBT = col(cab,'boughtTimestamp','bought'), cST = col(cab,'soldTimestamp','sold'),
+          cBF = col(cab,'buyFillId','buy fill id'), cSF = col(cab,'sellFillId','sell fill id');
     return regs.map(r => {
       const tb = fecha(r[cBT]), ts = fecha(r[cST]);
       if(!tb || !ts) return null;
@@ -84,8 +86,9 @@
       const inst = raiz(r[cS]);
       let pnl = num(r[cP]);
       if(pnl === null && bp !== null && sp !== null) pnl = (sp - bp) * (INSTRUMENTOS[inst]||{puntoUSD:1}).puntoUSD * qty;
+      const ref = [cBF && r[cBF], cSF && r[cSF]].filter(Boolean).join('-');
       return armar({inst, direccion: long ? 'long' : 'short', contratos: qty,
-        entrada: long ? bp : sp, salida: long ? sp : bp, pnl, ent, sal});
+        entrada: long ? bp : sp, salida: long ? sp : bp, pnl, ent, sal, ref});
     }).filter(Boolean);
   }
 
@@ -147,11 +150,16 @@
       resultado: o.pnl - com > 0 ? 'ganada' : o.pnl - com < 0 ? 'perdida' : 'be',
       errores: enVentana ? [] : ['Fuera de la ventana'], notas:'', img:null,
       duracionMin: o.sal ? Math.round((o.sal - o.ent)/60000) : null,
+      ref: o.ref || null,
       porCalificar: true
     };
   }
 
-  const huella = t => [t.fecha, t.hora, t.instrumento, t.direccion, t.contratos, t.entrada, t.salida, Math.round(t.pnl)].join('|');
+  /* Para no repetir trades al reimportar el mismo archivo. Antes se comparaba fecha+precio+monto y dos parciales
+     idénticas (misma hora, mismo precio, mismo P&L) se tomaban por la misma: se perdían operaciones reales.
+     Ahora manda el id de ejecución del CSV; y lo ya guardado sin id se descuenta uno por uno, no en bloque. */
+  const clasica = t => [t.fecha, t.hora, t.instrumento, t.direccion, t.contratos, t.entrada, t.salida, Math.round(t.pnl)].join('|');
+  const huella = t => t.ref ? 'ref|' + t.ref : clasica(t);
 
   /* ------------------------------------------------------------ importar */
   function importarTexto(texto, opt){
@@ -163,7 +171,8 @@
     else if(col(cab,'B/S','side','action','buysell') && col(cab,'avgPrice','avg fill price','price','fill price')){ formato = 'Tradovate · Orders / Fills'; trades = deFills(cab, regs); }
     else return {ok:false, error:'No reconozco las columnas: ' + cab.slice(0,8).join(', ') + '… Exporta desde Tradovate → Reports → Performance u Orders.'};
 
-    const existentes = new Set(Store.estado.trades.map(t => t.huella).filter(Boolean));
+    const veces = new Map();
+    Store.estado.trades.forEach(t => { if(t.huella) veces.set(t.huella, (veces.get(t.huella) || 0) + 1); });
     // copiador (Tradesyncer / group trading): el mismo trade entra en cada cuenta seleccionada
     const destinos = (opt.cuentas && opt.cuentas.length) ? opt.cuentas
                    : (Store.ajustes.copiador && Store.cuentasSel().length > 1) ? Store.cuentasSel().map(c => c.id)
@@ -171,9 +180,10 @@
     let nuevos = 0, dup = 0;
     trades.forEach(t => {
       destinos.forEach(cuentaId => {
-        const hh = huella(t) + '|' + (cuentaId || '');
-        if(existentes.has(hh)){ dup++; return; }
-        existentes.add(hh);
+        const suf = '|' + (cuentaId || '');
+        const hh = huella(t) + suf, vieja = clasica(t) + suf;
+        const ya = [hh, vieja].find(k => (veces.get(k) || 0) > 0);      // uno guardado tapa una fila, no todas
+        if(ya){ veces.set(ya, veces.get(ya) - 1); dup++; return; }
         Store.estado.trades.push(Object.assign({}, t, {id: Store.id(), modo: opt.modo || 'real', cuentaId, sesionId: opt.sesionId || null,
           origen: opt.origen || 'tradovate-csv', huella: hh, creado: new Date().toISOString()}));
         nuevos++;

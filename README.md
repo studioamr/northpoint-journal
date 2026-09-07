@@ -220,7 +220,7 @@ convierten solos en el primer perfil.
 `window.webkit.messageHandlers.np`; `main.js` resuelve `fetch` sin CORS, guardar PNG/PDF, carpeta vigilada de CSV, notificaciones,
 abrir links y Tradovate/TradingView embebidos en un BrowserView). Se construye desde la Mac con `npm run dist:win` (electron-builder,
 NSIS + portable, sin firma). Descarga: **https://github.com/studioamr/northpoint-journal/releases/latest** →
-`NORTHPOINT-Setup-1.0.5.exe` (instalador) o `NORTHPOINT-Portable-1.0.5.exe` (sin instalar). Windows avisará que el editor es
+`NORTHPOINT-Setup-1.0.6.exe` (instalador) o `NORTHPOINT-Portable-1.0.6.exe` (sin instalar). Windows avisará que el editor es
 desconocido (no está firmado): «Más información → Ejecutar de todas formas». Cada persona crea su perfil y sus cuentas; los datos
 viven en su PC.
 

@@ -62,6 +62,23 @@
     // migración única: risk management dictado (1–2 trades/día)
     if(!S.ajustes._rm1){ if(S.ajustes.maxTradesDia > 2) S.ajustes.maxTradesDia = 2; S.ajustes._rm1 = true; }
     if(!S.ajustes._tp1100){ if(S.ajustes.fases && S.ajustes.fases.eval && S.ajustes.fases.eval.target === 1000) S.ajustes.fases.eval.target = 1100; S.ajustes._tp1100 = true; }   // 6-sep-2026: eval = riesgo 2,000 para 1,100 de TP
+    /* 7-sep-2026: los CSV de Tradovate escriben las pérdidas como "$(70.00)" y se leían como ganancia.
+       Se voltea el P&L de los trades importados donde el precio dice lo contrario que el resultado. */
+    if(!S.ajustes._pnlParentesis){
+      let n = 0;
+      (S.trades || []).forEach(t => {
+        if(!t || t.comisionEstimada !== true || t.entrada == null || t.salida == null || !t.pnl) return;
+        const esperado = t.direccion === 'short' ? t.entrada - t.salida : t.salida - t.entrada;
+        if(!esperado || Math.sign(esperado) === Math.sign(t.pnl)) return;
+        t.pnl = -t.pnl; if(t.r != null) t.r = -t.r;
+        const c = t.comision || 0;
+        t.resultado = t.pnl - c > 0 ? 'ganada' : t.pnl - c < 0 ? 'perdida' : 'be';
+        if(t.huella) t.huella = [t.fecha, t.hora, t.instrumento, t.direccion, t.contratos, t.entrada, t.salida, Math.round(t.pnl)].join('|') + '|' + (t.cuentaId || '');
+        n++;
+      });
+      S.ajustes._pnlParentesis = true;
+      if(n) setTimeout(() => { try{ UI.toast(n + ' trade' + (n > 1 ? 's' : '') + ' con el resultado corregido'); }catch(e){} }, 1200);
+    }
     return S;
   }
 
