@@ -175,8 +175,8 @@
       syncReanudar: () => Sync.reanudar().catch(err => alert(err.message)),
       syncDetener: () => Sync.detener(),
       syncEscanear: () => Sync.escanear().then(() => toast('Barrido hecho')),
-      syncArchivo: () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.csv,.tsv,.txt'; i.multiple = true;
-        i.onchange = () => [...i.files].forEach(f => f.text().then(tx => reporta(Sync.importarTexto(tx, {etiqueta:'📄 ' + f.name})))); i.click(); },
+      syncArchivo: async () => { const fs = await UI.elegirArchivos('.csv,.tsv,.txt', true);
+        fs.forEach(f => f.text().then(tx => reporta(Sync.importarTexto(tx, {etiqueta:'📄 ' + f.name})))); },
       syncPegar: () => { const ta = document.getElementById('pegado'); if(ta && ta.value.trim()) reporta(Sync.importarTexto(ta.value, {etiqueta:'📋 Pegado'})); },
       apiConectar: () => {
         const g = n => (document.querySelector(`[name="${n}"]`)||{}).value || '';
@@ -186,8 +186,8 @@
       },
       apiDesconectar: () => Sync.apiDetener(),
       tema: () => { Store.ajustes.tema = b.dataset.id; Tema.aplicar(b.dataset.id); Store.guardar(); },
-      perfilFoto: () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files[0]; if(!f) return;
-        try{ const src = await Img.avatar(f); Tema.guardaPerfil({foto: src}); pinta(); toast('Foto actualizada'); }catch(e){ toast('No se pudo leer esa imagen'); } }; i.click(); },
+      perfilFoto: async () => { const f = await UI.elegirImagen(); if(!f) return;
+        try{ const src = await Img.avatar(f); Tema.guardaPerfil({foto: src}); pinta(); toast('Foto actualizada'); }catch(e){ toast('No se pudo leer esa imagen'); } },
       perfilSinFoto: () => { Tema.guardaPerfil({foto:null}); pinta(); },
       alertasConectar: () => { Alertas.conectar(); toast('Escuchando ' + Alertas.cfg().tema); },
       alertasDesconectar: () => { Alertas.desconectar(); Store.ajustes.alertas = Object.assign({}, Alertas.cfg(), {tema:''}); Store.guardar(); },
@@ -734,14 +734,11 @@
     [...e.dataTransfer.files].forEach(f => f.text().then(tx => reporta(Sync.importarTexto(tx, {etiqueta:'📄 ' + f.name})))); });
 
   /* ------------------------------------------------------ importar / csv */
-  function importar(){
-    const i = document.createElement('input');
-    i.type = 'file'; i.accept = '.json';
-    i.onchange = () => { const f = i.files[0]; if(!f) return;
-      const r = new FileReader();
-      r.onload = () => { Store.importaCompleto(r.result).then(n => toast('Respaldo importado' + (n ? ' · ' + n + ' screenshots' : ''))).catch(e => alert(e.message)); };
-      r.readAsText(f); };
-    i.click();
+  async function importar(){
+    const [f] = await UI.elegirArchivos('.json'); if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { Store.importaCompleto(r.result).then(n => toast('Respaldo importado' + (n ? ' · ' + n + ' screenshots' : ''))).catch(e => alert(e.message)); };
+    r.readAsText(f);
   }
   /* Reporte del día en Markdown: para Drive, Notion o el grupo */
   function reporteDia(){

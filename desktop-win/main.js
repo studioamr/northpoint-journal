@@ -50,6 +50,12 @@ ipcMain.on('np', async (e, d) => {
       const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('downloads'), d.nombre || ('northpoint.' + ext)), filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
       if(!r.canceled && r.filePath) try{ fs.writeFileSync(r.filePath, Buffer.from(d.b64 || '', 'base64')); }catch(err){}
       break; }
+    case 'elegirImagen': {
+      const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Imagen', extensions: ['png','jpg','jpeg','gif','webp','bmp'] }] });
+      let b64 = '';
+      if(!r.canceled && r.filePaths[0]) try{ b64 = fs.readFileSync(r.filePaths[0]).toString('base64'); }catch(err){}
+      js(`window.__npImagen && window.__npImagen("${esc(d.id)}", "${b64}", "image/jpeg")`);
+      break; }
     case 'abrir': if(d.url) shell.openExternal(d.url); break;
     case 'notificar': try{ new Notification({ title: d.titulo || 'NORTHPOINT', body: d.texto || '' }).show(); }catch(err){} break;
     case 'elegirCarpeta': {

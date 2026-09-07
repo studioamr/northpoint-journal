@@ -114,8 +114,39 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
                 let js = "window.__npFetch && window.__npFetch(\"\(id)\", \"\(b64)\", \"\(e)\")"
                 DispatchQueue.main.async { self.webView.evaluateJavaScript(js, completionHandler: nil) }
             }.resume()
+        case "elegirImagen":
+            // foto de perfil: la elige el panel de macOS (hoja sobre la ventana) y se devuelve ya reducida
+            guard let id = d["id"] as? String else { return }
+            let o = NSOpenPanel()
+            o.allowsMultipleSelection = false; o.canChooseDirectories = false
+            o.allowedFileTypes = ["png", "jpg", "jpeg", "heic", "heif", "gif", "webp", "tiff", "bmp"]
+            o.message = "Elige tu foto"
+            o.beginSheetModal(for: window) { r in
+                var b64 = ""
+                if r == .OK, let u = o.urls.first, let dat = self.imagenChica(u, 512) { b64 = dat.base64EncodedString() }
+                let js = "window.__npImagen && window.__npImagen(\"\(id)\", \"\(b64)\", \"image/jpeg\")"
+                DispatchQueue.main.async { self.webView.evaluateJavaScript(js, completionHandler: nil) }
+            }
         default: break
         }
+    }
+
+    // cualquier formato que macOS sepa leer (incluido HEIC del iPhone) → JPEG de máximo `lado` píxeles
+    func imagenChica(_ u: URL, _ lado: CGFloat) -> Data? {
+        guard let img = NSImage(contentsOf: u) else { return nil }
+        let w = img.size.width, h = img.size.height
+        guard w > 0, h > 0 else { return nil }
+        let esc = min(1, lado / Swift.max(w, h))
+        let nw = Int(w * esc), nh = Int(h * esc)
+        guard nw > 0, nh > 0, let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: nw, pixelsHigh: nh,
+              bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+              colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return nil }
+        rep.size = NSSize(width: nw, height: nh)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        img.draw(in: NSRect(x: 0, y: 0, width: nw, height: nh))
+        NSGraphicsContext.restoreGraphicsState()
+        return rep.representation(using: .jpeg, properties: [.compressionFactor: 0.9])
     }
 
     // ---------------------------------------------------------------- Tradovate / TradingView EMBEBIDOS en la ventana
@@ -231,7 +262,7 @@ class Delegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDeleg
     }
     func webView(_ w: WKWebView, runOpenPanelWith p: WKOpenPanelParameters, initiatedByFrame f: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
         let o = NSOpenPanel(); o.allowsMultipleSelection = p.allowsMultipleSelection; o.canChooseDirectories = false
-        o.begin { r in completionHandler(r == .OK ? o.urls : nil) }
+        o.beginSheetModal(for: window) { r in completionHandler(r == .OK ? o.urls : nil) }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { false }
 }

@@ -1,7 +1,7 @@
 {
   "name": "northpoint",
   "productName": "NORTHPOINT",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "NORTHPOINT · del examen al payout",
   "main": "main.js",
   "private": true,

@@ -62,6 +62,30 @@
   function aviso(txt){ return `<div class="aviso">${txt}</div>`; }
   function vacio(txt){ return `<div class="vacio">${h(txt)}</div>`; }
 
+  /* selector de archivos. El <input type=file> se mete al DOM mientras el panel está abierto: suelto (sin estar en el documento),
+     Safari/WKWebView lo recoge antes de que elijas y el evento change nunca llega (así "no se actualizaba" la foto de perfil en la app de Mac). */
+  function elegirArchivos(accept, multiple){
+    return new Promise(res => {
+      const i = document.createElement('input'); i.type = 'file'; if(accept) i.accept = accept; i.multiple = !!multiple;
+      i.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0';
+      i.onchange = () => { const fs = [...i.files]; setTimeout(() => i.remove(), 500); res(fs); };
+      document.body.appendChild(i); i.click();
+      setTimeout(() => { if(document.body.contains(i) && !i.files.length){ i.remove(); res([]); } }, 10*60000);   // cerró el panel sin elegir
+    });
+  }
+  /* Foto: en la app de escritorio el selector lo abre el sistema (Swift / Electron) y devuelve la imagen ya reducida.
+     El <input type=file> de WKWebView no siempre dispara change, por eso la foto "no se actualizaba". */
+  const pendImg = {};
+  function b64aBlob(b64, mime){ const bin = atob(b64); const u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Blob([u8], {type: mime || 'image/jpeg'}); }
+  window.__npImagen = (id, b64, mime) => { const f = pendImg[id]; if(!f) return; delete pendImg[id]; f(b64 ? b64aBlob(b64, mime) : null); };
+  function elegirImagen(){
+    if(window.__npNativo) return new Promise(res => {
+      const id = 'img' + Date.now() + Math.random().toString(36).slice(2, 7); pendImg[id] = res;
+      try{ window.webkit.messageHandlers.np.postMessage({cmd:'elegirImagen', id}); }catch(e){ delete pendImg[id]; res(null); }
+      setTimeout(() => { if(pendImg[id]){ delete pendImg[id]; res(null); } }, 5*60000);
+    });
+    return elegirArchivos('image/*').then(fs => fs[0] || null);
+  }
   function toast(txt){
     const t = document.createElement('div');
     t.textContent = txt;
@@ -73,5 +97,5 @@
     setTimeout(() => t.remove(), 2400);
   }
 
-  window.UI = { h, fmt, pct, signo, masMenos, MESES, DOW, fechaLarga, fechaCorta, kpi, anillo, opciones, modal, cerrar, aviso, vacio, toast };
+  window.UI = { elegirArchivos, elegirImagen,  h, fmt, pct, signo, masMenos, MESES, DOW, fechaLarga, fechaCorta, kpi, anillo, opciones, modal, cerrar, aviso, vacio, toast };
 })();

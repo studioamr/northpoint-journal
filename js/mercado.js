@@ -444,7 +444,6 @@
       <div class="crece"></div><button class="btn chico" data-acc="mercadoRecarga">↻ actualizar</button>
     </div>
     <div class="grid g4" style="margin-bottom:12px" id="mkPrecios">${kpi(nombreContrato() + ' · Micro Nasdaq','…','contrato')}${kpi('ES · S&P 500','…','futuro')}${kpi('BTC','…','futuro CME')}${kpi('USD / MXN','…','tipo de cambio')}</div>
-    <div class="card" id="mkPo3" style="margin-bottom:12px;display:none"></div>
     <div class="card"><div class="fila"><h3>Calendario económico</h3><div class="crece"></div><span class="ffi alto"></span><span class="ffi medio" style="margin-left:8px"></span></div>
       
       <div id="mkTabla" style="margin-top:10px">${vacio('Cargando Forex Factory…')}</div></div>`;
@@ -466,7 +465,6 @@
         kpi('BTC', val(px.fut.BTC, 0, 'pxBTC'), fila(px.fut.BTC, 0)) +
         kpi('USD / MXN', px.mxn ? px.mxn.toFixed(2) : '—', px.mxn ? 'tu meta de ' + (Store.ajustes.metaMXN||100000).toLocaleString('es-MX') + ' MXN = ' + fmt((Store.ajustes.metaMXN||100000)/px.mxn) : '');
       if(px.mxn && Store.ajustes.tcAuto !== false){ Store.ajustes.tc = Math.round(px.mxn*100)/100; }
-      const P3 = document.getElementById('mkPo3'); if(P3) pintaPo3(P3);
     }catch(e){}
   }
   setInterval(() => { if(document.getElementById('mkPrecios') && !document.hidden) cargarPrecios(); }, 60000);
