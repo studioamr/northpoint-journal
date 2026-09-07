@@ -6,7 +6,6 @@
 
   const MENU = [
     {g:'Operar'},
-    {id:'mercado',    t:'Mercado',      i:'◉'},
     {id:'panel',      t:'Dashboard',    i:'▤'},
     {id:'diario',     t:'Trades',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
@@ -698,27 +697,17 @@
       Store.guardaDia(iso, {condicion: g('condicion'), ramaA: g('ramaA'), ramaB: g('ramaB'), notas: g('notas')});
       cerrar(); toast('Día guardado');
     });
-    if(futuro && window.Mercado){
+    if(futuro){
       const A = Store.ajustes, F = Store.fases(), cc = Store.cuentaCal();
       const pr = (Vistas._proyeccion(iso, iso, cc) || {})[iso];
       const faseP = pr ? pr.fase : (cc && Motor.faseReal(Motor.estadoCuenta(cc)) === 'eval' ? 'eval' : 'fond');
       const tg = faseP === 'eval' ? F.eval : F.fond;
-      Mercado.noticiasDe(iso).then(ns => {
-        const el = v.querySelector('#escDia'); if(!el) return;
+      const el = v.querySelector('#escDia');
         const plan = `<div class="card" style="margin-bottom:8px"><div class="fila"><h3>Plan del día · ${cc ? h(cc.alias || cc.firma) : ''}</h3><span class="pill ${faseP === 'eval' ? 'acc' : 'ok'}">${faseP === 'eval' ? 'EVALUACIÓN' : 'FUNDED'}</span></div>
           <div class="grid g3" style="gap:8px;margin-top:10px">${kpi('Target del día', '+' + fmt(pr ? pr.pnl : tg.target), faseP === 'eval' ? '$1k/día = 3 días para pasar' : 'tu pedazo del pastel', 'mini')}${kpi('Daily loss', '-' + fmt(tg.loss), faseP === 'eval' ? 'en examen arriesgas el drawdown para pasar' : 'ya fondeado, corto y sin discusión', 'mini')}${kpi('Consistencia', cc && Store.consistenciaDe(cc) ? Math.round(Store.consistenciaDe(cc)*100) + '%' : '—', cc && Store.consistenciaDe(cc) ? (faseP === 'eval' ? 'ningún día más de ' + fmt(Store.consistenciaDe(cc) * (cc.reglas.target||0)) : 'mejor día ≤ ' + Math.round(Store.consistenciaDe(cc)*100) + '% de la ganancia al retirar') : 'sin regla', 'mini')}</div>
           ${pr && pr.hitos.length ? `<div style="margin-top:8px">${pr.hitos.map(x => `<span class="hito-cal ${x.tono}" style="display:inline-block;margin-right:6px">${h(x.t)}</span>`).join('')}</div>` : ''}
           <div class="mini dim" style="margin-top:8px">Condición escrita antes de la apertura · solo continuaciones · equilibrio + FVG · TP interno · ${A.pararTrasPerdidas} pérdidas = fin · ${A.maxTradesDia} trades máximo.</div></div>`;
-        if(!ns.length){ el.innerHTML = plan + `<div class="card"><h3 class="up">Día limpio</h3><div class="sub">Sin datos USD de impacto alto o medio</div><div class="mini dim" style="margin-top:8px">No hay noticia que cruce la ventana: el escenario lo escribe el precio. Marca rangos, escribe las dos ramas de la condición y espera la apertura.</div></div>`; return; }
-        el.innerHTML = plan + `<div class="card"><h3>Escenarios del día</h3><div class="sub">${ns.length} dato${ns.length > 1 ? 's' : ''} USD que mueven ES · NQ · BTC</div>
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">${ns.map(n => { const I = Mercado.info(n); const enVentana = (() => { const min = n.t.getHours()*60 + n.t.getMinutes(); const abre = Motor.aperturaNY(n.t); return min >= abre - 30 && min <= abre + 95; })();
-            return `<div style="border:1px solid var(--linea);padding:10px 12px">
-              <div class="fila"><b class="mono">${Mercado.horaLocal(n.t)}</b><b>${h(n.titulo)}</b><span class="pill ${n.impacto === 'High' ? 'no' : 'acc'}">${n.impacto === 'High' ? 'ALTO' : 'MEDIO'}</span>${enVentana ? '<span class="pill no">CRUZA TU VENTANA</span>' : ''}<div class="crece"></div><span class="mono mini tenue">previo ${h(n.prev||'—')} · pronóstico ${h(n.fc||'—')}</span></div>
-              <div class="grid g2" style="gap:8px;margin-top:8px">
-                <div class="nbox down"><div class="eti">Escenario A · sale más alto / mejor</div>${h(I.mejor)}</div>
-                <div class="nbox up"><div class="eti">Escenario B · sale más bajo / peor</div>${h(I.peor)}</div></div>
-              <div class="mini dim" style="margin-top:8px"><b>Cómo:</b> ${h(I.como)}${enVentana ? ' <b class="down">Este dato cae dentro de tu ventana NY AM: no entres 15 min antes ni 15 después.</b>' : ''}</div></div>`; }).join('')}</div></div>`;
-      }).catch(() => { const el = v.querySelector('#escDia'); if(el) el.innerHTML = vacio('No se pudo leer Forex Factory (fuera de la semana o sin conexión).'); });
+      if(el) el.innerHTML = plan;
     }
   }
 

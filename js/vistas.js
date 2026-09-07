@@ -403,7 +403,6 @@
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
       celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + etapaHito(pr.hitos[0]) : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
         <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py">${iso === sig ? `<span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>` : ''}${pr.hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
-        ${futuro ? `<div class="esc" data-esc="${iso}"></div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
       </div>`);
@@ -430,19 +429,4 @@
   };
   Vistas._cal = cal;
 
-  /* después de pintar: llenar los escenarios de los días futuros con Forex Factory */
-  document.addEventListener('mesa:pintado', async () => {
-    const celdas = [...document.querySelectorAll('.cal .esc')]; if(!celdas.length || !window.Mercado) return;
-    let lista = []; try{ lista = await Mercado.noticias(); }catch(e){ celdas.forEach(c => c.innerHTML = ''); return; }
-    const semana = lista.length ? {min: Math.min(...lista.map(n => n.t.getTime())), max: Math.max(...lista.map(n => n.t.getTime()))} : null;
-    celdas.forEach(c => {
-      const iso = c.dataset.esc;
-      const ns = lista.filter(n => n.pais === 'USD' && (n.impacto === 'High' || n.impacto === 'Medium') && n.t.toLocaleDateString('en-CA') === iso).sort((a,b) => a.t - b.t);
-      const dentro = semana && new Date(iso + 'T12:00').getTime() <= semana.max + 86400000;
-      if(!dentro){ c.innerHTML = ''; return; }
-      if(!ns.length){ c.innerHTML = ''; return; }
-      c.innerHTML = ns.slice(0,3).map(n => { const e = Mercado.escenario(n);
-        return `<div class="ev ${n.impacto === 'High' ? 'alto' : ''}"><b>${Mercado.horaLocal(n.t)}</b> ${h(n.titulo.replace(/ m\/m| y\/y/g, ''))}<div class="tenue">${h(e.corto)}</div></div>`; }).join('') + (ns.length > 3 ? `<div class="tenue">+${ns.length-3} más</div>` : '');
-    });
-  });
 })();
