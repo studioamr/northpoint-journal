@@ -145,8 +145,8 @@
     const F = {
       nuevoTrade: () => modalCargador(),
       dispara: () => { cerrar(); modalTrade(null); },
-      tradeBacktest: () => modalTrade(null, {modo:'backtest'}),
-      tradeSesion: () => modalTrade(null, {modo:'backtest', sesionId:id}),
+      tradeBacktest: () => modalTrade(null, {modo:'backtest', estrategia: estrFiltrada()}),
+      tradeSesion: () => modalTrade(null, {modo:'backtest', sesionId:id, estrategia: estrFiltrada()}),
       editaTrade: () => modalTrade(Store.estado.trades.find(t => t.id === id)),
       editaTradeForm: () => { cerrar(); modalTrade(Store.estado.trades.find(t => t.id === id)); },
       fichaTrade: () => modalFichaTrade(id),
@@ -281,6 +281,9 @@
   /* ==================================================== MODAL · TRADE === */
   /* Registro RÁPIDO: dirección, P&L, las 4 reglas como cuatro botones,
      screenshot (pegar / arrastrar / clic) y notas. Lo demás, plegado.   */
+  /* la estrategia que Backtesting está filtrando ('Sin estrategia' es un rótulo, no un nombre) */
+  function estrFiltrada(){ const e = Store.ajustes.btEstrategia || ''; return e === 'Sin estrategia' ? '' : e; }
+
   function modalTrade(t, pre){
     const A = Store.ajustes;
     const nuevo = !t;
@@ -453,6 +456,11 @@
       x.resultado = n > 0 ? 'ganada' : n < 0 ? 'perdida' : 'be';
       let guardado;
       if(t){ guardado = Store.editaTrade(t.id, x); } else { guardado = Store.nuevoTrade(x); }
+      /* Backtesting filtra por estrategia: si el trade quedó fuera del filtro parecería que no se guardó */
+      if(x.modo === 'backtest'){
+        const suya = x.estrategia || 'Sin estrategia', filtro = Store.ajustes.btEstrategia || '';
+        if(filtro && filtro !== suya){ Store.ajustes.btEstrategia = suya; Store.guardar(); }
+      }
       if(imgPendiente){ await Img.put(guardado.id, imgPendiente); Store.editaTrade(guardado.id, {img: true}); }
       else if(imgQuitar && t){ await Img.del(t.id); Store.editaTrade(t.id, {img: null}); }
       document.removeEventListener('paste', onPaste);
