@@ -152,17 +152,17 @@
     return `
     <div class="fila" style="margin-bottom:6px">
       <div>
-        <h2 style="margin:3px 0 0">${masMenos(m.pnl)} <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trades · ${m.dias} días</span></h2></div>
+        <h2 style="margin:3px 0 0"><span class="${signo(m.pnl)}">${masMenos(m.pnl)}</span> <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trades · ${m.dias} días</span></h2></div>
       <div class="crece"></div>
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
 
     ${sec('Resumen', '', `<div class="grid g5">
-      ${kpi('Balance', fmt(balanceTotal), `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
-      ${kpi('Win rate', pct(m.winRate,1), `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
-      ${kpi('Profit factor', m.pf === Infinity ? '∞' : m.pf.toFixed(2), `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
-      ${kpi('Días ganadores', pct(m.diaWinRate,0), `${m.diasG} de ${m.dias} días`, '', null, m.diaWinRate, 'var(--oro)')}
-      ${kpi('Prom. gana / pierde', `${fmt(m.avgWin)} <span class="tenue">/</span> ${fmt(m.avgLoss)}`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
+      ${kpi('Balance', `<span class="${balanceTotal >= inicialTotal ? 'up' : 'down'}">${fmt(balanceTotal)}</span>`, `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
+      ${kpi('Win rate', `<span class="${m.winRate >= .4 ? 'up' : 'down'}">${pct(m.winRate,1)}</span>`, `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
+      ${kpi('Profit factor', `<span class="azul">${m.pf === Infinity ? '∞' : m.pf.toFixed(2)}</span>`, `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
+      ${kpi('Días ganadores', `<span class="oro">${pct(m.diaWinRate,0)}</span>`, `${m.diasG} de ${m.dias} días`, '', null, m.diaWinRate, 'var(--oro)')}
+      ${kpi('Prom. gana / pierde', `<span class="up">${fmt(m.avgWin)}</span> <span class="tenue">/</span> <span class="down">${fmt(m.avgLoss)}</span>`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
     </div>`)}
 
     ${sec('Cuenta', varias ? sel.length + ' cuentas' : '', `<div class="grid" style="grid-template-columns:1fr 320px">

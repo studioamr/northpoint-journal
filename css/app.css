@@ -219,7 +219,7 @@ header.top .der{margin-left:auto;display:flex;align-items:center;gap:9px}
 .g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .fila{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .crece{flex:1}.mono{font-family:var(--mono)}.dim{color:var(--dim)}.tenue{color:var(--tenue)}
-.up{color:var(--up)}.down{color:var(--down)}.acc{color:var(--acc)}.mini{font-size:11px}
+.up{color:var(--up)}.down{color:var(--down)}.acc{color:var(--acc)}.azul{color:var(--azul)}.oro{color:var(--oro)}.mini{font-size:11px}
 .eti{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--tenue)}
 hr.l{border:0;border-top:1px solid var(--linea);margin:14px 0}
 
