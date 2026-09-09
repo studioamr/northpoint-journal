@@ -356,7 +356,8 @@
         // consistencia: en eval ningún día puede ser más del X% del objetivo; el target diario se topa ahí
         const cons = fase === 'eval' ? ((r.consistencia > 0 ? r.consistencia : F.eval.consistencia) || 0) : ((r.consistencia > 0 ? r.consistencia : F.fond.consistencia) || 0);
         // eval: TP del día = $1k (o lo que falte para el objetivo), topado por la consistencia
-        let meta = fase === 'eval' ? (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval) : metaFund;
+        // si él fijó el TP por día en Riesgo, ese manda: es su plan. Si no, se topa por la consistencia de la firma.
+        let meta = fase === 'eval' ? (S.evalTP != null ? metaEval : (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval)) : metaFund;
         if(fase === 'eval' && obj) meta = Math.max(0, Math.min(meta, obj - bal));
         const etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts');
         const perd = etapa === 'eval' ? evalLoss : etapa === 'payouts' ? payLoss : fondLoss;

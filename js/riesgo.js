@@ -84,15 +84,13 @@
       ${kpi('Eval', '+' + fmt(P.evalTP) + ' / -' + fmt(P.evalLoss), 'por día · ' + Math.max(1, Math.round(P.quema / P.evalLoss)) + (Math.round(P.quema / P.evalLoss) > 1 ? ' malos días y pierdes' : ' mal día y pierdes'))}
       ${kpi('Fondeada', '+' + fmt(P.fondTP) + ' / -' + fmt(P.fondLoss) + ' · -' + fmt(P.payLoss), 'buffer ' + Math.round(P.quema / P.fondLoss) + ' malos días · payouts ' + Math.round(P.quema / P.payLoss))}
     </div>
-    <div class="card" style="margin-bottom:14px"><h3>Mi gestión</h3>
+    <div class="card" style="margin-bottom:14px"><h3>Mis reglas</h3>
       <div class="gestion">
-        <div><b>1 · Condición, no sesgo.</b> El día empieza con un «si esto → entonces aquello» escrito sobre el FVG de la apertura. Reacciono a la que se cumpla.</div>
-        <div><b>2 · Solo continuaciones.</b> A favor del impulso, nunca reversiones.</div>
-        <div><b>3 · Equilibrio + FVG.</b> La entrada vive en el retroceso 0.705–0.79 del impulso, con un FVG que haga match. Dos confluencias, nunca una.</div>
-        <div><b>4 · TP interno.</b> Mi pedazo del pastel: la liquidez interna, no la externa.</div>
-        <div><b>5 · 1% y un mini.</b> Nunca más del 1% de la cuenta por trade; los contratos salen del stop, no de las ganas.</div>
-        <div><b>6 · 1–2 trades y fuera.</b> Si gano, cierro la plataforma. Dos pérdidas seguidas o el daily loss, y el día se acabó.</div>
-        <div><b>7 · La etapa manda el tamaño del día.</b> En eval arriesgo ${fmt(P.evalLoss)} para ${fmt(P.evalTP)}: ${Math.max(1, Math.round(P.quema / P.evalLoss))} ${Math.round(P.quema / P.evalLoss) > 1 ? 'malos días' : 'mal día'} y pierdo, paso en ${Math.ceil(P.objetivo / P.evalTP)}. En buffer, +${fmt(P.fondTP)} al día y -${fmt(P.fondLoss)} máximo: tengo ${Math.round(P.quema / P.fondLoss)} malos días. En payouts, -${fmt(P.payLoss)} máximo: tengo ${Math.round(P.quema / P.payLoss)}, y cobro en cuanto toco el tope.</div>
+        <div><b>1 · 2 trades al día en NY.</b> Si el día lo opero en Asia o en Londres, uno solo.</div>
+        <div><b>2 · Si gano, fuera.</b> Con la primera ganada cierro la plataforma.</div>
+        <div><b>3 · Dos pérdidas seguidas y se acabó.</b> O el daily loss, lo que llegue primero.</div>
+        <div><b>4 · 1% por trade y máximo un mini.</b> Los contratos salen del stop, no de las ganas.</div>
+        <div><b>5 · La etapa manda el tamaño del día.</b> En eval arriesgo ${fmt(P.evalLoss)} para ${fmt(P.evalTP)}: ${Math.max(1, Math.round(P.quema / P.evalLoss))} ${Math.round(P.quema / P.evalLoss) > 1 ? 'malos días' : 'mal día'} y pierdo, paso en ${Math.ceil(P.objetivo / P.evalTP)}. En buffer, +${fmt(P.fondTP)} al día y -${fmt(P.fondLoss)} máximo: tengo ${Math.round(P.quema / P.fondLoss)} malos días. En payouts, -${fmt(P.payLoss)} máximo: tengo ${Math.round(P.quema / P.payLoss)}, y cobro en cuanto toco el tope.</div>
       </div></div>
     <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y los tres árboles se recalculan</span><div class="crece"></div><span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
       <div class="grid g6" style="margin-top:10px">
