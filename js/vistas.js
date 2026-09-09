@@ -347,6 +347,9 @@
       if(S.maxPagos != null) maxP = S.maxPagos;
       const split = S.split != null ? S.split / 100 : (r.split || 0.9);
       const obj = S.objetivo != null ? ini + S.objetivo : e.objetivo;
+      // lo que ya lleva hecho HOY en esta cuenta: el target del día baja solo conforme opera
+      const hoyISO = Store.hoyISO();
+      const hechoHoy = Store.tradesReales(c.id).filter(x => x.fecha === hoyISO).reduce((a, x) => a + Motor.neto(x), 0);
       const minRetiro = cap ? cap : Math.max(1000, metaFund * 5);   // sin tope: se cobra en bloques, no cada $250
       const f = new Date(desdeISO + 'T12:00'), fin = new Date(hastaISO + 'T12:00');
       for(; f <= fin; f.setDate(f.getDate() + 1)){
@@ -358,9 +361,11 @@
         // eval: TP del día = $1k (o lo que falte para el objetivo), topado por la consistencia
         // si él fijó el TP por día en Riesgo, ese manda: es su plan. Si no, se topa por la consistencia de la firma.
         let meta = fase === 'eval' ? (S.evalTP != null ? metaEval : (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval)) : metaFund;
-        if(fase === 'eval' && obj) meta = Math.max(0, Math.min(meta, obj - bal));
+        if(iso === hoyISO && hechoHoy > 0) meta = Math.max(0, meta - hechoHoy);          // ya ganó parte del día
+        if(fase === 'eval' && obj) meta = Math.max(0, Math.min(meta, obj - bal));        // el balance ya trae lo de hoy
         const etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts');
-        const perd = etapa === 'eval' ? evalLoss : etapa === 'payouts' ? payLoss : fondLoss;
+        let perd = etapa === 'eval' ? evalLoss : etapa === 'payouts' ? payLoss : fondLoss;
+        if(iso === hoyISO && hechoHoy < 0) perd = Math.max(0, perd + hechoHoy);          // ya quemó parte del riesgo del día
         if(primero && evalPasada){ d.hitos.push({t:'EVAL PASADA · PIDE LA FONDEADA', c:alias, tono:'up'}); }
         primero = false;
         d.pnl += meta; d.perd += perd; d.fase = fase; d.etapa = etapa; bal += meta; diasValidos++;
@@ -401,9 +406,10 @@
       Motor.porDia(t).slice().sort((a,b) => a.fecha < b.fecha ? -1 : 1).some(d => { evalDias.add(d.fecha); bal += d.pnl; return bal >= obj; });
     }
     /* solo el siguiente día hábil enseña su target y daily loss; los demás solo la fase y las noticias */
-    const sig = (() => { const x = new Date(Store.hoyISO() + 'T12:00'); do { x.setDate(x.getDate() + 1); } while(x.getDay() === 0 || x.getDay() === 6); return x.toLocaleDateString('en-CA'); })();
+    /* el target y el daily loss van en el día de HOY; si hoy es sábado o domingo, en el siguiente hábil */
+    const sig = Object.keys(proy).sort()[0] || Store.hoyISO();
     const celdas = [];
-    let mesPnl = 0, mesN = 0, mesG = 0;
+    let mesPnl = 0, mesN = 0, mesG = 0, etapaPrevia = null, cobrado = false;
     for(let i = 0; i < 42; i++){
       const f = new Date(arranque.getFullYear(), arranque.getMonth(), arranque.getDate() + i);
       const iso = f.toLocaleDateString('en-CA');
@@ -413,10 +419,19 @@
       const dd = Store.estado.dias[iso];
       const futuro = !fuera && iso >= Store.hoyISO() && f.getDay() > 0 && f.getDay() < 6;
       const pr = futuro ? (proy[iso] || null) : null;
+      /* el calendario solo marca lo que CAMBIA: la palabra de la etapa el día que arranca,
+         y los hitos de verdad. Nada de repetir «cobras» todos los días. */
+      const arranca = !!pr && pr.etapa !== etapaPrevia;
+      if(pr) etapaPrevia = pr.etapa;
+      const hitos = (pr ? pr.hitos : []).filter(x => {
+        if(!x.t.startsWith('COBRAS')) return true;     // pasas, buffer, concluye: se marcan siempre
+        if(cobrado) return false;                      // el primer cobro se marca; los demás no se repiten
+        cobrado = true; return true;
+      });
       const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
-      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && pr && pr.hitos.length ? 'hito-' + etapaHito(pr.hitos[0]) : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
-        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py">${iso === sig ? `<span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>` : ''}${pr.hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
+      celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && hitos.length ? 'hito-' + etapaHito(hitos[0]) : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
+        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr && arranca ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py">${iso === sig ? `<span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>` : ''}${hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
       </div>`);
