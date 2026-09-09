@@ -15,7 +15,7 @@
     const dias = Motor.porDia(Store.tradesReales(cta ? cta.id : null)); const wrReal = dias.length >= 10 ? dias.filter(x => x.pnl > 0).length / dias.length : null;
     const base = {
       inicial: cta ? cta.inicial : 50000, objetivo: 3000, buffer: 2100, tope: (cta && cta.reglas && cta.reglas.capPayout) || 1000, maxPagos: (cta && cta.reglas && cta.reglas.maxPayouts) || 5, split: 90,
-      evalTP: F.eval.target, evalLoss: F.eval.loss, fondTP: F.fond.target, fondLoss: F.fond.loss, payLoss: 250, winRate: Math.round((wrReal != null ? wrReal : 0.6) * 100), quema: 2000
+      evalTP: F.eval.target, evalLoss: F.eval.loss, fondTP: F.fond.target, fondLoss: F.fond.loss, payTP: F.fond.target, payLoss: 250, winRate: Math.round((wrReal != null ? wrReal : 0.6) * 100), quema: 2000
     };
     return Object.assign({}, base, A.simRiesgo || {}, {wrReal, diasReales: dias.length});
   }
@@ -26,7 +26,7 @@
     while(dia < 400){ dia++; const gana = rnd() < P.winRate / 100;
       if(fase === 'eval'){ bal += gana ? P.evalTP : -P.evalLoss; if(bal <= piso){ ruta.push({dia, bal, fase, fin:'quemada'}); return {ruta, fin:'quemada en eval', dia, pagos, cobrado}; }
         if(bal >= P.inicial + P.objetivo){ ruta.push({dia, bal, fase, hito:'PASAS'}); fase = 'buffer'; bal = P.inicial; continue; } }
-      else { bal += gana ? P.fondTP : -(fase === 'payouts' ? P.payLoss : P.fondLoss); if(bal <= (fase === 'payouts' ? P.inicial + P.buffer - P.quema : piso)){ ruta.push({dia, bal, fase, fin:'quemada'}); return {ruta, fin:'quemada en ' + fase, dia, pagos, cobrado}; }
+      else { bal += gana ? (fase === 'payouts' ? P.payTP : P.fondTP) : -(fase === 'payouts' ? P.payLoss : P.fondLoss); if(bal <= (fase === 'payouts' ? P.inicial + P.buffer - P.quema : piso)){ ruta.push({dia, bal, fase, fin:'quemada'}); return {ruta, fin:'quemada en ' + fase, dia, pagos, cobrado}; }
         if(fase === 'buffer' && bal >= P.inicial + P.buffer){ fase = 'payouts'; ruta.push({dia, bal, fase, hito:'BUFFER'}); continue; }
         if(fase === 'payouts' && bal >= P.inicial + P.buffer + P.tope){ pagos++; cobrado += P.tope * P.split / 100; bal = P.inicial + P.buffer; ruta.push({dia, bal, fase, hito:'COBRAS #' + pagos});
           if(pagos >= P.maxPagos){ return {ruta, fin:'cuenta concluida · ' + pagos + ' retiros', dia, pagos, cobrado}; } continue; } }
@@ -45,7 +45,7 @@
        BUFFER: −loss por día, piso fijo en inicial − quema.  PAYOUTS: −payLoss por día, piso fijo en buffer − quema. */
     const cfg = etapa === 'eval' ? {bal0: P.inicial, tp: P.evalTP, dl: P.evalLoss, fin: P.inicial + P.objetivo, finTxt:'PASAS', trailing: true}
       : etapa === 'buffer' ? {bal0: P.inicial, tp: P.fondTP, dl: P.fondLoss, fin: P.inicial + P.buffer, finTxt:'BUFFER', piso: P.inicial - P.quema}
-      : {bal0: P.inicial + P.buffer, tp: P.fondTP, dl: P.payLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', piso: P.inicial + P.buffer - P.quema};
+      : {bal0: P.inicial + P.buffer, tp: P.payTP, dl: P.payLoss, fin: P.inicial + P.buffer + P.tope, finTxt:'COBRAS', piso: P.inicial + P.buffer - P.quema};
     const prof = P.prof || 4; const hojas = Math.pow(2, prof), colW = 66, W = Math.max(600, hojas * colW + 40), dy = 78, T = 34, H = T + prof * dy + 40;
     let g = '';
     const nodo = (d, i, bal, pico, quemado) => {
@@ -82,7 +82,7 @@
       ${kpi('Contratos', contratos + ' ' + A.instrumento, 'stop ' + (A.slPuntos||20) + ' pts = ' + fmt(stopUSD) + ' c/u · máx ' + (A.maxContratos||1) + ' mini')}
       ${kpi('Trades por día', '1–' + (A.maxTradesDia||2), 'if W → fuera · ' + (A.pararTrasPerdidas||2) + ' pérdidas → fuera')}
       ${kpi('Eval', '+' + fmt(P.evalTP) + ' / -' + fmt(P.evalLoss), 'por día · ' + Math.max(1, Math.round(P.quema / P.evalLoss)) + (Math.round(P.quema / P.evalLoss) > 1 ? ' malos días y pierdes' : ' mal día y pierdes'))}
-      ${kpi('Fondeada', '+' + fmt(P.fondTP) + ' / -' + fmt(P.fondLoss) + ' · -' + fmt(P.payLoss), 'buffer ' + Math.round(P.quema / P.fondLoss) + ' malos días · payouts ' + Math.round(P.quema / P.payLoss))}
+      ${kpi('Fondeada', '+' + fmt(P.fondTP) + ' / -' + fmt(P.fondLoss) + ' · +' + fmt(P.payTP) + ' / -' + fmt(P.payLoss), 'buffer ' + Math.round(P.quema / P.fondLoss) + ' malos días · payouts ' + Math.round(P.quema / P.payLoss))}
     </div>
     <div class="card" style="margin-bottom:14px"><h3>Mis reglas</h3>
       <div class="gestion">
@@ -95,12 +95,12 @@
     <div class="card" style="margin-bottom:14px"><div class="fila"><h3>Parámetros</h3><span class="mono dim">cambia uno y los tres árboles se recalculan</span><div class="crece"></div><span class="mono dim">${prof} niveles</span><button class="btn chico fantasma" data-acc="simProf" data-v="-1">− raíces</button><button class="btn chico fantasma" data-acc="simProf" data-v="1">+ raíces</button><button class="btn chico fantasma" data-acc="simReset">valores de Ajustes</button></div>
       <div class="grid g6" style="margin-top:10px">
         ${campo('inicial', 'Cuenta inicial ($)', 1000)}${campo('objetivo', 'Objetivo eval ($)', 100)}${campo('buffer', 'Buffer ($)', 100)}${campo('tope', 'Tope por retiro ($)', 100)}${campo('quema', 'Drawdown ($)', 100)}${campo('maxPagos', 'Retiros máx', 1)}
-        ${campo('evalTP', 'Eval · TP por día ($)', 50)}${campo('evalLoss', 'Eval · riesgo por día ($)', 50)}${campo('fondTP', 'Funded · TP por día ($)', 50)}${campo('fondLoss', 'Buffer · riesgo por día ($)', 50)}${campo('payLoss', 'Payouts · riesgo por día ($)', 50)}${campo('split', 'Split (%)', 5)}
+        ${campo('evalTP', 'Eval · TP por día ($)', 50)}${campo('evalLoss', 'Eval · riesgo por día ($)', 50)}${campo('fondTP', 'Funded · TP por día ($)', 50)}${campo('fondLoss', 'Buffer · riesgo por día ($)', 50)}${campo('payTP', 'Payouts · TP por día ($)', 50)}${campo('payLoss', 'Payouts · riesgo por día ($)', 50)}${campo('split', 'Split (%)', 5)}
       </div></div>
     <div class="grid g3 arboles">
       ${tarjeta('EVAL', 'WIN +' + num(P.evalTP) + ' izquierda · LOSS -' + num(P.evalLoss) + ' derecha · drawdown ' + num(P.quema) + ' desde el pico · pasas en ' + num(P.inicial + P.objetivo), 'et-eval', 'eval')}
       ${tarjeta('FUNDED · BUFFER', 'WIN +' + num(P.fondTP) + ' · LOSS -' + num(P.fondLoss) + ' · buffer en ' + num(P.inicial + P.buffer) + ' · se quema en ' + num(P.inicial - P.quema), 'et-buffer', 'buffer')}
-      ${tarjeta('PAYOUTS', 'desde el buffer · WIN +' + num(P.fondTP) + ' · LOSS -' + num(P.payLoss) + ' · cobras en ' + num(P.inicial + P.buffer + P.tope) + ' · se quema en ' + num(P.inicial + P.buffer - P.quema), 'et-payouts', 'payouts')}
+      ${tarjeta('PAYOUTS', 'desde el buffer · WIN +' + num(P.payTP) + ' · LOSS -' + num(P.payLoss) + ' · cobras en ' + num(P.inicial + P.buffer + P.tope) + ' · se quema en ' + num(P.inicial + P.buffer - P.quema), 'et-payouts', 'payouts')}
     </div>`;
   };
   window.Riesgo = { params, canica, canicas, reset(){ Store.ajustes.simRiesgo = null; Store.guardar(); } };

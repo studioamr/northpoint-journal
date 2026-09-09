@@ -324,7 +324,8 @@
     const P = (window.Riesgo && Riesgo.params) ? Riesgo.params() : null;       // base + lo suyo
     const metaEval = P ? P.evalTP : F.eval.target, metaFund = P ? P.fondTP : F.fond.target;
     const evalLoss = P ? P.evalLoss : F.eval.loss, fondLoss = P ? P.fondLoss : F.fond.loss;
-    const payLoss  = P ? P.payLoss  : F.fond.loss;                             // en payouts se arriesga menos
+    const payLoss  = P ? P.payLoss  : F.fond.loss;                             // payouts tiene su propio objetivo y su propio riesgo
+    const payTP    = P && P.payTP != null ? P.payTP : metaFund;
     const out = {};
     [cuenta || Store.cuentaCal()].filter(Boolean).forEach(c => {
       const e = Motor.estadoCuenta(c); if(e.quemada || c.estado !== 'viva') return;
@@ -360,10 +361,10 @@
         const cons = fase === 'eval' ? ((r.consistencia > 0 ? r.consistencia : F.eval.consistencia) || 0) : ((r.consistencia > 0 ? r.consistencia : F.fond.consistencia) || 0);
         // eval: TP del día = $1k (o lo que falte para el objetivo), topado por la consistencia
         // si él fijó el TP por día en Riesgo, ese manda: es su plan. Si no, se topa por la consistencia de la firma.
-        let meta = fase === 'eval' ? (S.evalTP != null ? metaEval : (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval)) : metaFund;
+        const etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts');
+        let meta = etapa === 'eval' ? (S.evalTP != null ? metaEval : (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval)) : etapa === 'payouts' ? payTP : metaFund;
         if(iso === hoyISO && hechoHoy > 0) meta = Math.max(0, meta - hechoHoy);          // ya ganó parte del día
         if(fase === 'eval' && obj) meta = Math.max(0, Math.min(meta, obj - bal));        // el balance ya trae lo de hoy
-        const etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts');
         let perd = etapa === 'eval' ? evalLoss : etapa === 'payouts' ? payLoss : fondLoss;
         if(iso === hoyISO && hechoHoy < 0) perd = Math.max(0, perd + hechoHoy);          // ya quemó parte del riesgo del día
         if(primero && evalPasada){ d.hitos.push({t:'EVAL PASADA · PIDE LA FONDEADA', c:alias, tono:'up'}); }
@@ -424,14 +425,15 @@
       const arranca = !!pr && pr.etapa !== etapaPrevia;
       if(pr) etapaPrevia = pr.etapa;
       const hitos = (pr ? pr.hitos : []).filter(x => {
-        if(!x.t.startsWith('COBRAS')) return true;     // pasas, buffer, concluye: se marcan siempre
+        if(/^(PASAS|BUFFER|EVAL PASADA)/.test(x.t)) return false;   // la palabra de la etapa ya lo dice
+        if(!x.t.startsWith('COBRAS')) return true;     // «cuenta concluye» se marca siempre
         if(cobrado) return false;                      // el primer cobro se marca; los demás no se repiten
         cobrado = true; return true;
       });
       const hitoCorto = x => x.t.startsWith('PASAS') ? '✓ PASAS LA EVAL' : x.t.startsWith('EVAL PASADA') ? '→ PIDE LA FONDEADA' : x.t.startsWith('BUFFER') ? '◆ BUFFER' : x.t.startsWith('COBRAS') ? '$ ' + x.t.replace('COBRAS ', '') : x.t.startsWith('CUENTA') ? '■ CONCLUYE' : x.t;
       const tit = futuro && pr ? `${pr.fase === 'eval' ? 'Evaluación' : 'Fondeada'} · target +${fmt(pr.pnl)} · daily loss -${fmt(pr.perd)}` : '';
       celdas.push(`<div class="d ${fuera ? 'fuera' : ''} ${d ? (d.pnl > 0 ? 'g' : d.pnl < 0 ? 'p_' : '') : ''} ${iso === Store.hoyISO() ? 'hoy' : ''} ${futuro ? 'futuro' : ''} ${futuro && pr ? 'f-' + (pr.etapa || pr.fase) : ''} ${futuro && hitos.length ? 'hito-' + etapaHito(hitos[0]) : ''} ${!futuro && d && evalDias.has(iso) ? 'p-eval' : ''}" ${fuera ? '' : `data-dia="${iso}"`} ${tit ? `title="${tit}"` : ''}>
-        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr && arranca ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'BUFFER', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py">${iso === sig ? `<span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>` : ''}${hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
+        <div class="n">${f.getDate()}${!futuro && d && evalDias.has(iso) ? ' <span class="pill et-eval" style="font-size:8px;padding:1px 4px">EVAL</span>' : ''}${futuro && pr && arranca ? ` <span class="pill et-${pr.etapa || pr.fase}" style="font-size:8px;padding:1px 4px">${{eval:'EVAL', buffer:'FUNDED', payouts:'PAYOUTS'}[pr.etapa] || 'FUNDED'}</span>` : ''}</div>${futuro && pr ? `<div class="py">${iso === sig ? `<span class="eti" style="font-size:8px">target</span> <span class="up">+${fmt(pr.pnl)}</span> <span class="eti" style="font-size:8px">· daily loss</span> <span class="down">-${fmt(pr.perd)}</span>` : ''}${hitos.map(x => `<div class="hito-t ${etapaHito(x)}">${h(x.t)}</div>`).join('')}</div>` : ''}
         ${d ? `<div class="p ${signo(d.pnl)}">${masMenos(d.pnl)}</div><div class="t">${d.n} · ${d.ganadas}G ${d.perdidas}P</div>` : ''}
         ${dd && dd.condicion ? '<div class="marca">✎</div>' : ''}
       </div>`);
@@ -445,9 +447,10 @@
     /* la leyenda dice los mismos números con los que se proyecta: los de Riesgo → Parámetros */
     const PR = (window.Riesgo && Riesgo.params) ? Riesgo.params() : null;
     const rp = {evalTP: PR ? PR.evalTP : F.eval.target, evalLoss: PR ? PR.evalLoss : F.eval.loss,
-                fondTP: PR ? PR.fondTP : F.fond.target, fondLoss: PR ? PR.fondLoss : F.fond.loss, payLoss: PR ? PR.payLoss : F.fond.loss};
+                fondTP: PR ? PR.fondTP : F.fond.target, fondLoss: PR ? PR.fondLoss : F.fond.loss,
+                payTP: PR && PR.payTP != null ? PR.payTP : (PR ? PR.fondTP : F.fond.target), payLoss: PR ? PR.payLoss : F.fond.loss};
     const legEval = `<span class="leg"><i class="fdot et-eval"></i>EVAL <b class="up">+${fmt(rp.evalTP)}</b> <b class="down">-${fmt(rp.evalLoss)}</b></span>`;
-    const legFond = `<span class="leg"><i class="fdot et-buffer"></i>BUFFER <b class="up">+${fmt(rp.fondTP)}</b> <b class="down">-${fmt(rp.fondLoss)}</b></span><span class="leg"><i class="fdot et-payouts"></i>PAYOUTS <b class="up">+${fmt(rp.fondTP)}</b> <b class="down">-${fmt(rp.payLoss)}</b></span>`;
+    const legFond = `<span class="leg"><i class="fdot et-buffer"></i>FUNDED <b class="up">+${fmt(rp.fondTP)}</b> <b class="down">-${fmt(rp.fondLoss)}</b></span><span class="leg"><i class="fdot et-payouts"></i>PAYOUTS <b class="up">+${fmt(rp.payTP)}</b> <b class="down">-${fmt(rp.payLoss)}</b></span>`;
     return `
     <div class="fila cal-top">
       <h2 class="cal-mes">${UI.MESES[cal.m]} <span>${cal.y}</span></h2>

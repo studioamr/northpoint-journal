@@ -701,3 +701,12 @@ html .cal .d.p-eval{box-shadow:none}
 .perfil-btn .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:#000;font-weight:700;font-size:12px}
 .perfil-btn i{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--tenue)}
 #pinZona{display:grid;gap:8px;margin-bottom:6px} #pinZona[hidden]{display:none}
+
+/* 8-sep-2026 · calendario en 3 etapas: eval azul, funded rojo, payouts amarillo.
+   Todos los días de una etapa llevan su color; el día de hoy se enmarca en ese mismo color. */
+html .cal .d.f-eval{border-top-color:var(--etEval);border-top-width:2px;background-image:linear-gradient(180deg,color-mix(in srgb,var(--etEval) 12%,transparent),transparent 62%)}
+html .cal .d.f-buffer{border-top-color:var(--etBuffer);border-top-width:2px;background-image:linear-gradient(180deg,color-mix(in srgb,var(--etBuffer) 12%,transparent),transparent 62%)}
+html .cal .d.f-payouts{border-top-color:var(--etPay);border-top-width:2px;background-image:linear-gradient(180deg,color-mix(in srgb,var(--etPay) 12%,transparent),transparent 62%)}
+html .cal .d.hoy.hoy.f-eval{box-shadow:0 0 0 1.5px var(--etEval),0 0 26px -8px var(--etEval)}
+html .cal .d.hoy.hoy.f-buffer{box-shadow:0 0 0 1.5px var(--etBuffer),0 0 26px -8px var(--etBuffer)}
+html .cal .d.hoy.hoy.f-payouts{box-shadow:0 0 0 1.5px var(--etPay),0 0 26px -8px var(--etPay)}
