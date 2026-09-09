@@ -315,9 +315,16 @@
   /* Proyección hacia adelante con el plan: cuánto ganas o pierdes por día,
      cuándo pasas la eval, cuándo haces buffer, cuándo cobras y cuándo se
      cierra la cuenta. Determinista: cada día operado = la meta del plan.   */
+  /* El calendario proyecta con los PARÁMETROS DE RIESGO (vista Riesgo → Parámetros).
+     Riesgo.params() ya trae como base las fases de Ajustes y las reglas de la cuenta, y encima
+     lo que él haya cambiado a mano (Store.ajustes.simRiesgo). Lo que no tocó se comporta igual que antes. */
   function proyeccion(desdeISO, hastaISO, cuenta){
     const F = Store.fases();
-    const metaFund = F.fond.target, metaEval = F.eval.target;
+    const S = Store.ajustes.simRiesgo || {};                                   // solo lo que él fijó a mano
+    const P = (window.Riesgo && Riesgo.params) ? Riesgo.params() : null;       // base + lo suyo
+    const metaEval = P ? P.evalTP : F.eval.target, metaFund = P ? P.fondTP : F.fond.target;
+    const evalLoss = P ? P.evalLoss : F.eval.loss, fondLoss = P ? P.fondLoss : F.fond.loss;
+    const payLoss  = P ? P.payLoss  : F.fond.loss;                             // en payouts se arriesga menos
     const out = {};
     [cuenta || Store.cuentaCal()].filter(Boolean).forEach(c => {
       const e = Motor.estadoCuenta(c); if(e.quemada || c.estado !== 'viva') return;
@@ -334,8 +341,13 @@
         const pf = k ? planes[k] : null, tf = pf ? (pf.tamanos[c.tamano] || {}) : {};
         if(pf){ cap = pf.capPayout ? (pf.capPayout[c.tamano] || cap) : cap; maxP = pf.maxPayouts || maxP; if(tf.buffer != null) buffer = ini + tf.buffer; }
       }
-      const obj = e.objetivo;
-      const minRetiro = cap ? cap : Math.max(1000, F.fond.target * 5);   // sin tope: se cobra en bloques, no cada $250
+      // lo que él fijó en Riesgo manda sobre el plan de la firma
+      if(S.buffer != null) buffer = ini + S.buffer;
+      if(S.tope != null) cap = S.tope;
+      if(S.maxPagos != null) maxP = S.maxPagos;
+      const split = S.split != null ? S.split / 100 : (r.split || 0.9);
+      const obj = S.objetivo != null ? ini + S.objetivo : e.objetivo;
+      const minRetiro = cap ? cap : Math.max(1000, metaFund * 5);   // sin tope: se cobra en bloques, no cada $250
       const f = new Date(desdeISO + 'T12:00'), fin = new Date(hastaISO + 'T12:00');
       for(; f <= fin; f.setDate(f.getDate() + 1)){
         if(f.getDay() === 0 || f.getDay() === 6 || muerta) continue;
@@ -346,10 +358,11 @@
         // eval: TP del día = $1k (o lo que falte para el objetivo), topado por la consistencia
         let meta = fase === 'eval' ? (cons && r.target ? Math.min(metaEval, cons * r.target) : metaEval) : metaFund;
         if(fase === 'eval' && obj) meta = Math.max(0, Math.min(meta, obj - bal));
-        const perd = fase === 'eval' ? F.eval.loss : F.fond.loss;
+        const etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts');
+        const perd = etapa === 'eval' ? evalLoss : etapa === 'payouts' ? payLoss : fondLoss;
         if(primero && evalPasada){ d.hitos.push({t:'EVAL PASADA · PIDE LA FONDEADA', c:alias, tono:'up'}); }
         primero = false;
-        d.pnl += meta; d.perd += perd; d.fase = fase; d.etapa = fase === 'eval' ? 'eval' : (bal < buffer ? 'buffer' : 'payouts'); bal += meta; diasValidos++;
+        d.pnl += meta; d.perd += perd; d.fase = fase; d.etapa = etapa; bal += meta; diasValidos++;
         if(fase === 'eval' && obj && bal >= obj){ d.hitos.push({t:'PASAS LA EVAL', c:alias, tono:'up'}); fase = 'fond'; bal = ini; diasValidos = 0; continue; }
         if(fase === 'fond'){
           if(bal - meta < buffer && bal >= buffer) d.hitos.push({t:'BUFFER HECHO', c:alias, tono:'azul'});
@@ -357,7 +370,7 @@
           const listo = sobre >= minRetiro && (!r.minDias || diasValidos >= r.minDias);
           if(bal >= buffer && listo){
             const monto = cap ? cap : sobre; pagos++;
-            d.hitos.push({t:'COBRAS ' + fmt(monto * (r.split || 0.9)), c:alias, tono:'acc', monto, neto: monto * (r.split || 0.9), n: pagos, cuentaId: c.id}); bal -= monto;
+            d.hitos.push({t:'COBRAS ' + fmt(monto * split), c:alias, tono:'acc', monto, neto: monto * split, n: pagos, cuentaId: c.id}); bal -= monto;
             if(maxP && pagos >= maxP){ d.hitos.push({t:'CUENTA CONCLUYE · retiro #' + pagos, c:alias, tono:'down'}); muerta = true; }
           }
         }
@@ -413,8 +426,12 @@
       sem.push(trozo.reduce((a,d) => a + d.pnl, 0));
     }
 
-    const legEval = `<span class="leg"><i class="fdot et-eval"></i>EVAL <b class="up">+${fmt(F.eval.target)}</b> <b class="down">-${fmt(F.eval.loss)}</b></span>`;
-    const legFond = `<span class="leg"><i class="fdot et-buffer"></i>BUFFER <b class="up">+${fmt(F.fond.target)}</b> <b class="down">-${fmt(F.fond.loss)}</b></span><span class="leg"><i class="fdot et-payouts"></i>PAYOUTS</span>`;
+    /* la leyenda dice los mismos números con los que se proyecta: los de Riesgo → Parámetros */
+    const PR = (window.Riesgo && Riesgo.params) ? Riesgo.params() : null;
+    const rp = {evalTP: PR ? PR.evalTP : F.eval.target, evalLoss: PR ? PR.evalLoss : F.eval.loss,
+                fondTP: PR ? PR.fondTP : F.fond.target, fondLoss: PR ? PR.fondLoss : F.fond.loss, payLoss: PR ? PR.payLoss : F.fond.loss};
+    const legEval = `<span class="leg"><i class="fdot et-eval"></i>EVAL <b class="up">+${fmt(rp.evalTP)}</b> <b class="down">-${fmt(rp.evalLoss)}</b></span>`;
+    const legFond = `<span class="leg"><i class="fdot et-buffer"></i>BUFFER <b class="up">+${fmt(rp.fondTP)}</b> <b class="down">-${fmt(rp.fondLoss)}</b></span><span class="leg"><i class="fdot et-payouts"></i>PAYOUTS <b class="up">+${fmt(rp.fondTP)}</b> <b class="down">-${fmt(rp.payLoss)}</b></span>`;
     return `
     <div class="fila cal-top">
       <h2 class="cal-mes">${UI.MESES[cal.m]} <span>${cal.y}</span></h2>
