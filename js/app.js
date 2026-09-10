@@ -206,6 +206,31 @@
       plan5mas: () => { const P = Store.ajustes.plan5 || {}; Store.ajustes.plan5 = Object.assign({}, P, {cuentas: Math.min(50, (P.cuentas || 5) + 1)}); Store.guardar(); },
       plan5menos: () => { const P = Store.ajustes.plan5 || {}; Store.ajustes.plan5 = Object.assign({}, P, {cuentas: Math.max(1, (P.cuentas || 5) - 1)}); Store.guardar(); },
       nuevaEstrategia: () => { const n = prompt('Nombre de la estrategia nueva:'); if(n && n.trim()){ Store.ajustes.estrategias = (Store.ajustes.estrategias || []).concat([n.trim()]); Store.guardar(); toast('Estrategia añadida'); } },
+      /* en Backtesting: la crea y además la deja seleccionada, para que el siguiente trade caiga ahí */
+      estrNueva: () => {
+        const n = prompt('Nombre de la estrategia nueva:'); if(!n || !n.trim()) return;
+        const nombre = n.trim();
+        if(!(Store.ajustes.estrategias || []).includes(nombre)) Store.ajustes.estrategias = (Store.ajustes.estrategias || []).concat([nombre]);
+        Store.ajustes.btEstrategia = nombre; Store.guardar(); pinta(); toast('Estrategia añadida');
+      },
+      /* borra la estrategia seleccionada. Sus trades de backtest se van con ella; los REALES no se tocan. */
+      estrBorrar: () => {
+        const e = Store.ajustes.btEstrategia;
+        if(!e){ toast('Elige primero una estrategia'); return; }
+        const suyos = t => (t.estrategia || 'Sin estrategia') === e;
+        const n = Store.estado.trades.filter(t => t.modo === 'backtest' && suyos(t)).length;
+        const reales = Store.estado.trades.filter(t => t.modo === 'real' && suyos(t)).length;
+        const plural = (k, uno, varios) => k + ' ' + (k === 1 ? uno : varios);
+        if(!confirm(n ? 'Borrar «' + e + '» y ' + (n === 1 ? 'su trade de backtest' : 'sus ' + n + ' trades de backtest') + '.'
+                        + (reales ? ' ' + plural(reales, 'trade real tuyo', 'trades reales tuyos') + ' con esa estrategia NO se toca' + (reales === 1 ? '' : 'n') + '.' : '')
+                        + ' ¿Seguro?'
+                      : 'Borrar la estrategia «' + e + '»?')) return;
+        if(n) Store.estado.trades = Store.estado.trades.filter(t => !(t.modo === 'backtest' && suyos(t)));
+        Store.ajustes.estrategias = (Store.ajustes.estrategias || []).filter(x => x !== e);
+        Store.ajustes.btEstrategia = '';
+        Store.guardar(); pinta();
+        toast(n ? 'Borrada · ' + n + ' trades fuera' : 'Estrategia borrada');
+      },
       exportar: () => Store.exporta(),
       importar: () => importar(),
       exportarCsv: () => csv(),

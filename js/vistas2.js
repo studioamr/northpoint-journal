@@ -154,6 +154,8 @@
       <h2>${bt.length} trades probados <span class="dim mono" style="font-size:13px">${m.rTotal ? m.rTotal.toFixed(1)+'R · ' : ''}win ${pct(m.winRate,0)}</span></h2></div>
       <div class="crece"></div>
       <label class="campo" style="min-width:230px"><span>Estrategia</span><select data-ajuste="btEstrategia">${opciones([{v:'', t:'Todas las estrategias'}].concat(estrategias.map(e => ({v:e, t:e}))), estrSel)}</select></label>
+      <button class="btn chico fantasma" data-acc="estrNueva" title="Nueva estrategia">+ estrategia</button>
+      <button class="btn chico fantasma mal" data-acc="estrBorrar" title="Borrar la estrategia seleccionada" ${estrSel ? '' : 'disabled'}>✕</button>
       <button class="btn acc" data-acc="tradeBacktest">+ Trade de backtest</button>
     </div>
     ${bt.length < 30 ? aviso('Antes de arriesgar una cuenta: <b>mínimo 50 trades</b> de backtest de esta estrategia. Con menos, cualquier win rate es ruido.') : ''}
