@@ -710,3 +710,39 @@ html .cal .d.f-payouts{border-top-color:var(--etPay);border-top-width:2px;backgr
 html .cal .d.hoy.hoy.f-eval{box-shadow:0 0 0 1.5px var(--etEval),0 0 26px -8px var(--etEval)}
 html .cal .d.hoy.hoy.f-buffer{box-shadow:0 0 0 1.5px var(--etBuffer),0 0 26px -8px var(--etBuffer)}
 html .cal .d.hoy.hoy.f-payouts{box-shadow:0 0 0 1.5px var(--etPay),0 0 26px -8px var(--etPay)}
+
+/* ---------------------------------------------------------------- HOY
+   La pantalla que mira hacia adelante. Un número grande por momento del día,
+   la condición siempre a la vista y el camino abajo. Sin gráficas. */
+.hoy-wrap{max-width:1100px}
+.hoy-hero{display:flex;align-items:center;gap:18px;margin-bottom:14px}
+.hoy-reloj b{display:block;font-family:var(--disp);font-size:clamp(34px,5vw,54px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.hoy-reloj span{font-size:12px;color:var(--dim)}
+.hoy-num{font-family:var(--disp);font-size:clamp(34px,5vw,54px);font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.btn.grande{padding:12px 22px;font-size:14px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.hoy-candado{border:1px solid color-mix(in srgb,var(--down) 45%,transparent);background:var(--downSuave);color:var(--down);
+  padding:9px 14px;border-radius:var(--r);font-size:12.5px;margin-bottom:12px}
+.hoy-cond{border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px;background:var(--panel)}
+.hoy-cond.falta{border-color:color-mix(in srgb,var(--down) 40%,transparent)}
+.hoy-cond.hecha{border-left:2px solid var(--acc)}
+.hoy-cond p{margin:6px 0 0;font-size:15px;line-height:1.45}
+.hoy-cond textarea{width:100%;margin-top:6px;background:var(--panel2);border:1px solid var(--linea);border-radius:10px;
+  color:var(--txt);padding:10px 12px;font:inherit;font-size:14px;resize:vertical}
+.hoy-cond textarea:focus{outline:none;border-color:var(--acc)}
+.hoy-ramas{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--dim)}
+.hoy-fin{border:1px solid var(--linea);border-radius:var(--r);padding:26px 22px;text-align:center;background:var(--panel)}
+.hoy-fin b{display:block;font-family:var(--disp);font-size:clamp(20px,3vw,30px);font-weight:800;letter-spacing:-.02em;margin:4px 0 10px}
+.hoy-fin.ok{border-color:color-mix(in srgb,var(--up) 45%,transparent)} .hoy-fin.ok b{color:var(--up)}
+.hoy-fin.mal{border-color:color-mix(in srgb,var(--down) 40%,transparent)} .hoy-fin.mal b{color:var(--down)}
+.hoy-fin .hoy-num{margin-top:6px}
+.hoy-cierre{border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px;margin-top:12px;background:var(--panel)}
+.hoy-cierre .check{cursor:pointer;font-size:11.5px}
+.hoy-camino{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.hoy-camino .cam-b{height:4px;border-radius:3px;background:var(--panel3);overflow:hidden}
+.hoy-camino .cam-b i{display:block;height:100%;border-radius:3px;transition:width .5s}
+.hoy-camino .cam-t{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--tenue)}
+.hoy-camino .cam-t b{color:var(--txt);font-family:var(--disp);font-size:12px;letter-spacing:0;text-transform:none}
+.hoy-camino .ev .cam-b i{background:var(--etEval)} .hoy-camino .bu .cam-b i{background:var(--etBuffer)} .hoy-camino .pa .cam-b i{background:var(--etPay)}
+.hoy-camino .listo .cam-t b{color:var(--up)}

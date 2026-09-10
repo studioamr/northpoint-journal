@@ -6,6 +6,7 @@
 
   const MENU = [
     {g:'Operar'},
+    {id:'hoy',        t:'Hoy',          i:'◉'},
     {id:'panel',      t:'Dashboard',    i:'▤'},
     {id:'diario',     t:'Trades',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
@@ -19,8 +20,8 @@
     {id:'riesgo',     t:'Riesgo',       i:'◈'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading'};
-  let vista = location.hash.replace('#','') || 'panel';
-  if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'panel';
+  let vista = location.hash.replace('#','') || 'hoy';
+  if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'hoy';
 
   /* --------------------------------------------------------------- pintar */
   /* la tarjeta de perfil de la barra lateral (foto o iniciales, nombre, ciudad/frase) */
@@ -143,7 +144,14 @@
     if(!b){ const fila = e.target.closest('tr[data-trade]'); if(fila) modalTrade(Store.estado.trades.find(t => t.id === fila.dataset.trade)); return; }
     const acc = b.dataset.acc, id = b.dataset.id;
     const F = {
-      nuevoTrade: () => modalCargador(),
+      nuevoTrade: () => {
+        // regla 1: la condición se escribe ANTES de la apertura. Sin ella no se registra el trade de hoy.
+        if(!Store.dia().condicion.trim()){ toast('Escribe la condición del día antes de operar'); vista = 'hoy'; location.hash = 'hoy'; pinta(); return; }
+        // el día ya se cerró por una de TUS reglas: friccionar, no impedir (a veces solo estás capturando lo que ya operaste)
+        const r = window.Hoy ? Hoy.estado().razon : null;
+        if(r && !/mercado/.test(r) && !confirm('El día ya se cerró porque ' + r + '. ¿De todos modos registrar un trade?')) return;
+        modalCargador();
+      },
       dispara: () => { cerrar(); modalTrade(null); },
       tradeBacktest: () => modalTrade(null, {modo:'backtest', estrategia: estrFiltrada()}),
       tradeSesion: () => modalTrade(null, {modo:'backtest', sesionId:id, estrategia: estrFiltrada()}),
