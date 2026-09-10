@@ -29,6 +29,41 @@
       cobradoTotal: pagados.reduce((a,p) => a + neto(p), 0) };
   }
 
+  /* ¿Qué tan cerca estoy de los 100,000 MXN al mes? 0 = arrancando la evaluación, 100 = meta cumplida.
+     Cuatro tramos de 25: pasar la eval · hacer el buffer · el primer retiro · y lo cobrado en 30 días
+     contra la meta. Los tres primeros miden la cuenta más adelantada; el último es dinero real en tu bolsillo. */
+  function cerca(D){
+    D = D || datos();
+    const metaUSD = META_MXN() / TC();
+    const S = Store.ajustes.simRiesgo || {};
+    let ev = 0, bu = 0, pa = 0, faltaEv = 0, faltaBu = 0, faltaPa = 0;
+    D.ests.filter(x => !x.e.quemada && x.c.estado !== 'quemada').forEach(({c, e}) => {
+      const ini = +c.inicial;
+      const obj  = S.objetivo != null ? ini + S.objetivo : (e.objetivo || ini + 3000);
+      const buf  = S.buffer   != null ? ini + S.buffer   : (e.buffer   || ini + 2100);
+      const tope = S.tope     != null ? S.tope           : ((c.reglas || {}).capPayout || 1000);
+      const paso = e.pasado || c.fase !== 'eval';
+      const v = paso ? 1 : Math.max(0, Math.min(1, (e.balance - ini) / Math.max(1, obj - ini)));
+      if(v >= ev){ ev = v; faltaEv = Math.max(0, obj - e.balance); }
+      if(c.fase !== 'eval'){
+        const b = Math.max(0, Math.min(1, (e.balance - ini) / Math.max(1, buf - ini)));
+        if(b >= bu){ bu = b; faltaBu = Math.max(0, buf - e.balance); }
+        if(e.balance >= buf || e.payoutsHechos){
+          const q = e.payoutsHechos ? 1 : Math.max(0, Math.min(1, (e.balance - buf) / Math.max(1, tope)));
+          if(q >= pa){ pa = q; faltaPa = Math.max(0, buf + tope - e.balance); }
+        }
+      }
+    });
+    if(D.cobradoTotal > 0){ ev = bu = pa = 1; }
+    const mes = Math.max(0, Math.min(1, D.cobrado30 / Math.max(1, metaUSD)));
+    const total = Math.min(100, (ev + bu + pa + mes) * 25);
+    const sigue = ev < 1 ? {t:'pasar la evaluación', f: faltaEv}
+                : bu < 1 ? {t:'hacer el buffer',     f: faltaBu}
+                : pa < 1 ? {t:'tu primer retiro',    f: faltaPa}
+                :          {t:'cobrar la meta del mes', f: Math.max(0, metaUSD - D.cobrado30)};
+    return {total, ev, bu, pa, mes, metaUSD, cobrado30: D.cobrado30, sigue};
+  }
+
   function pasos(D){
     const usd = META_MXN() / TC();
     const m = Store.ajustes;
@@ -170,5 +205,5 @@
     </div>
     <div class="pasos-hechos">${P.map((p, i) => `<span class="ph ${hecho(p) ? 'ok' : (sig && sig.id === p.id) ? 'activo' : ''}" title="${h(p.t)}">${String(i+1).padStart(2,'0')}</span>`).join('')}</div>`;
   };
-  window.Progreso = { datos, pasos };
+  window.Progreso = { datos, pasos, cerca };
 })();

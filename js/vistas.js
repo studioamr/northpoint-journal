@@ -157,6 +157,20 @@
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
 
+    ${(() => {
+      /* qué tan cerca estás de los 100,000 MXN al mes: 0 es arrancar la evaluación */
+      if(!window.Progreso || !Progreso.cerca) return '';
+      const C = Progreso.cerca();
+      const tramo = (t, p, cls) => `<div class="c100-t ${cls} ${p >= 1 ? 'listo' : ''}"><i style="width:${p*100}%"></i><span>${t}</span></div>`;
+      return `<div class="c100">
+        <div class="c100-n">${C.total.toFixed(0)}<small>%</small></div>
+        <div class="c100-d">
+          <div class="eti">de tu meta de ${(Store.ajustes.metaMXN||100000).toLocaleString('es-MX')} MXN al mes</div>
+          <div class="c100-b">${tramo('evaluación', C.ev, 'ev')}${tramo('buffer', C.bu, 'bu')}${tramo('primer retiro', C.pa, 'pa')}${tramo('la meta', C.mes, 'me')}</div>
+          <div class="c100-s">sigue: ${h(C.sigue.t)}${C.sigue.f > 0 ? ' · faltan ' + fmt(C.sigue.f) : ''}</div>
+        </div>
+      </div>`;
+    })()}
     ${sec('Resumen', '', `<div class="grid g5">
       ${kpi('Balance', `<span class="${balanceTotal >= inicialTotal ? 'up' : 'down'}">${fmt(balanceTotal)}</span>`, `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
       ${kpi('Win rate', `<span class="${m.winRate >= .4 ? 'up' : 'down'}">${pct(m.winRate,1)}</span>`, `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
