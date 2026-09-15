@@ -61,7 +61,7 @@
   };
   /* pétalo de sakura: dos lóbulos que se juntan en una punta con muesca */
   function petalo(x, y, s, rot, a){
-    const A = Math.min(.95, a * 7);                                  // nacen muy tenues: el pétalo necesita cuerpo
+    const A = Math.min(.8, a * 5.5);                                  // nacen muy tenues: el pétalo necesita cuerpo
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, 0.62 + 0.38*Math.sin(rot*3));   // se voltea mientras cae
     const g = ctx.createLinearGradient(0, s, 0, -s);
     g.addColorStop(0, `rgba(226,84,145,${A})`);
@@ -83,7 +83,7 @@
     if(tipo === 'oro' || tipo === 'platino') return lingote(c.x, c.y, c.s, c.rot*0.25, c.a, brillo, COL[tipo]);
     if(tipo === 'billetes') return billete(c.x, c.y, c.s*0.8, c.rot, c.a);
     if(tipo === 'btc') return moneda(c.x, c.y, c.s*0.9, c.rot, c.a, brillo);
-    if(tipo === 'sakura') return petalo(c.x, c.y, c.s*0.8, c.rot, c.a);
+    if(tipo === 'sakura') return petalo(c.x, c.y, c.s*0.55, c.rot, c.a);
     return gema(c.x, c.y, c.s, c.rot, c.a, brillo, tipo === 'esmeralda');
   }
   function gema(x, y, s, rot, a, brillo, verde){
@@ -105,6 +105,7 @@
   function pasoCristales(now){
     const t = now - t0;
     ctx.clearRect(0,0,W,H);
+    if(richTipo() === 'sakura' && window.Jardin) Jardin.pinta(ctx, W, H, t);      // el jardín va detrás de los pétalos
     for(const c of S){
       const bal = richTipo() === 'sakura' ? 1.1 : 0.15;                                   // el pétalo se mece mucho más que un cristal
       c.y += c.vy; c.x += c.vx + Math.sin(t*0.0004 + c.fase)*bal*devicePixelRatio; c.rot += c.vr;
@@ -133,7 +134,7 @@
   }
   tam(); for(let i = 0; i < N; i++) P.push(nace());
   ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H);
-  addEventListener('resize', () => { tam(); ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H); });
+  addEventListener('resize', () => { tam(); if(window.Jardin) Jardin.invalida(); ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H); });
   document.addEventListener('mesa:tema', () => { if(esDiamante()){ ctx.clearRect(0,0,W,H); } else { ctx.fillStyle = fondoTema; ctx.fillRect(0,0,W,H); } });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) requestAnimationFrame(paso); });
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(paso);
