@@ -624,6 +624,18 @@ table.ff.noche{margin:0} table.ff.noche th,table.ff.noche td{padding:5px 6px;fon
 [data-theme="glass-billetes"]{--fondo:#03100a;--panel:rgba(133,187,101,.07);--panel2:rgba(133,187,101,.05);--panel3:rgba(133,187,101,.14);--linea:rgba(133,187,101,.18);--linea2:rgba(133,187,101,.38);
   --txt:#F2FFF0;--dim:#B5D2A8;--tenue:#6E8F62;--acc:#85BB65;--acc2:#6EA152;--accSuave:rgba(133,187,101,.16);--up:#39FF14;--upSuave:rgba(57,255,20,.14);--down:#FF2E63;--downSuave:rgba(255,46,99,.16);--azul:#B8F5A8;--azulSuave:rgba(184,245,168,.14);--oro:#E8D77A;--oroSuave:rgba(232,215,122,.14);--a2:#12301c;
   --b1:#0d3a22;--b2:#0a2d1b;--b3:#062015;--b4:rgba(57,255,20,.1);--b5:rgba(133,187,101,.1);--glowUp:rgba(57,255,20,.55);--glowDown:rgba(255,46,99,.5);--gUp:rgba(57,255,20,.2);--gDown:rgba(255,46,99,.2)}
+/* Jardín Sakura · el jardín al atardecer: tinta de ciruela, niebla rosa, musgo y carmín */
+[data-theme="glass-sakura"]{--fondo:#140A12;--panel:rgba(255,168,201,.055);--panel2:rgba(255,168,201,.05);--panel3:rgba(255,168,201,.12);--linea:rgba(255,190,214,.15);--linea2:rgba(255,190,214,.34);
+  --txt:#FFF0F6;--dim:#D9AFC4;--tenue:#8C6478;--acc:#FFA8C9;--acc2:#F581AF;--accSuave:rgba(255,168,201,.16);--up:#6FE3B4;--upSuave:rgba(111,227,180,.15);--down:#FF4D6D;--downSuave:rgba(255,77,109,.16);--azul:#A8C8FF;--azulSuave:rgba(168,200,255,.14);--oro:#FFD98A;--oroSuave:rgba(255,217,138,.14);--a2:#2A1522;
+  --b1:#3A1B2E;--b2:#2A1A2C;--b3:#1C1020;--b4:rgba(255,168,201,.14);--b5:rgba(120,200,170,.08);--glowUp:rgba(111,227,180,.55);--glowDown:rgba(255,77,109,.5);--gUp:rgba(111,227,180,.2);--gDown:rgba(255,77,109,.2)}
+[data-theme="glass-sakura"] .btn.acc{background:linear-gradient(180deg,#ffe3ee,var(--acc));border-color:#ffe3ee;color:#3A1B2E}
+/* en el jardín la red de cristal sobra: se queda la niebla y el destello suave */
+[data-theme="glass-sakura"] body::before{background:
+  linear-gradient(115deg,transparent 42%,rgba(255,225,238,.04) 47%,rgba(255,225,238,.14) 50%,rgba(255,225,238,.04) 53%,transparent 58%),
+  radial-gradient(1.5px 1.5px at 18% 26%,rgba(255,224,238,.9) 60%,transparent 62%),radial-gradient(1px 1px at 74% 18%,rgba(255,224,238,.8) 60%,transparent 62%),
+  radial-gradient(1.5px 1.5px at 84% 70%,rgba(255,224,238,.85) 60%,transparent 62%),radial-gradient(1px 1px at 30% 82%,rgba(255,224,238,.7) 60%,transparent 62%);
+  background-size:280% 280%,auto,auto,auto,auto}
+[data-theme="glass-sakura"] #fondo{opacity:.95;mix-blend-mode:normal}
 [data-theme="glass-esmeralda"]{--fondo:#02100b;--panel:rgba(80,255,177,.06);--panel2:rgba(80,255,177,.05);--panel3:rgba(80,255,177,.13);--linea:rgba(80,255,177,.16);--linea2:rgba(80,255,177,.36);
   --txt:#EDFFF7;--dim:#A9DCC5;--tenue:#5E8F78;--acc:#50FFB1;--acc2:#2FE597;--accSuave:rgba(80,255,177,.16);--up:#50FFB1;--upSuave:rgba(80,255,177,.16);--down:#FF5C8A;--downSuave:rgba(255,92,138,.16);--azul:#8FFFD9;--azulSuave:rgba(143,255,217,.14);--oro:#FFE86B;--oroSuave:rgba(255,232,107,.14);--a2:#0f3324;
   --b1:#0b3d2a;--b2:#082e21;--b3:#052018;--b4:rgba(80,255,177,.12);--b5:rgba(0,200,140,.1);--glowUp:rgba(80,255,177,.6);--glowDown:rgba(255,92,138,.5);--gUp:rgba(80,255,177,.22);--gDown:rgba(255,92,138,.2)}

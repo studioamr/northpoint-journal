@@ -12,6 +12,7 @@
     {id:'glass-esmeralda',n:'Esmeralda', d:'Liquid glass esmeralda · cristales verdes · EMERALD', sw:['#02100b','#50FFB1']},
     {id:'glass-platino',  n:'Platino',   d:'Liquid glass gris hielo · lingotes de platino · PLATINUM', sw:['#07080b','#E6E9F0']},
     {id:'glass-btc',      n:'Bitcoin',   d:'Liquid glass naranja · monedas ₿ flotando · STACK SATS', sw:['#0b0602','#F7931A']},
+    {id:'glass-sakura',   n:'Jardín Sakura', d:'Liquid glass ciruela · pétalos que caen · el jardín al atardecer', sw:['#140A12','#FFA8C9']},
     {id:'acido',   n:'Lima',         d:'Carbón + lima', sw:['#0d0d0f','#C6FF3D']},
     {id:'bosque',  n:'Bosque',       d:'Verde profundo → menta · vidrio', sw:['#051F20','#8EB69B']},
     {id:'oceano',  n:'Océano',       d:'Azul marino → hielo · vidrio', sw:['#021024','#7DA0CA']},
@@ -25,7 +26,7 @@
     {id:'aurora-morado',  n:'Aurora Morado',  d:'Vidrio + aurora violeta y rosa', sw:['#0c0714','#A78BFA']},
     {id:'aurora-verde',   n:'Aurora Verde',   d:'Vidrio + aurora esmeralda', sw:['#06110d','#34D399']}
   ];
-  const RICH = ['glass-diamante','glass-oro','glass-billetes','glass-esmeralda','glass-platino','glass-btc'];
+  const RICH = ['glass-diamante','glass-oro','glass-billetes','glass-esmeralda','glass-platino','glass-btc','glass-sakura'];
   function aplicar(id){
     if(id && id.startsWith('tron-')) id = id.replace('tron-', 'aurora-');   // los Tron viejos pasan a Aurora
     if(!id || id === 'acido' && !Store.ajustes._glass1){ id = 'glass-oscuro'; Store.ajustes.tema = id; Store.ajustes._glass1 = true; }
@@ -49,7 +50,8 @@
     billetes:  {e:'💵', nombre:'CASH', win:'MONEY PRINTER GO BRRR', loss:'la impresora descansa', be:'ni un billete de más ni de menos', gana:'GANASTE · CASH · APAGA LA IMPRESORA · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. Ya imprimiste lo de hoy: cierra la plataforma.', fin:'SE ACABÓ · LOS BILLETES NO SE QUEMAN', resumen:'CASH · los cinco números de la caja fuerte', cinta:'NORTHPOINT · CASH · el primer trade es el primer billete'},
     esmeralda: {e:'💚', nombre:'EMERALD', win:'ESMERALDA TALLADA', loss:'la esmeralda no pierde el verde', be:'la esmeralda sigue entera', gana:'GANASTE · EMERALD · VERDE PROFUNDO · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. Ya tallaste la esmeralda de hoy: cierra la plataforma.', fin:'SE ACABÓ · LA ESMERALDA NO SE RAYA', resumen:'EMERALD · los cinco números verdes', cinta:'NORTHPOINT · EMERALD · el primer trade es el primer quilate verde'},
     platino:   {e:'⚪', nombre:'PLATINUM', win:'PLATINUM STATUS', loss:'el platino no se dobla', be:'el platino sigue pulido', gana:'GANASTE · PLATINUM · NIVEL MÁXIMO · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. Ya subiste de nivel hoy: cierra la plataforma.', fin:'SE ACABÓ · EL PLATINO NO SE ARRIESGA', resumen:'PLATINUM · los cinco números de élite', cinta:'NORTHPOINT · PLATINUM · el primer trade es el primer gramo'},
-    btc:       {e:'₿', nombre:'STACK SATS', win:'SATS APILADOS', loss:'HODL · los sats no se venden', be:'ni un sat de más ni de menos', gana:'GANASTE · SATS APILADOS · HODL · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. Ya apilaste los sats de hoy: cierra la plataforma.', fin:'SE ACABÓ · LOS SATS NO SE QUEMAN', resumen:'STACK SATS · los cinco números de la cadena', cinta:'NORTHPOINT · STACK SATS · el primer trade es el primer sat'}
+    btc:       {e:'₿', nombre:'STACK SATS', win:'SATS APILADOS', loss:'HODL · los sats no se venden', be:'ni un sat de más ni de menos', gana:'GANASTE · SATS APILADOS · HODL · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. Ya apilaste los sats de hoy: cierra la plataforma.', fin:'SE ACABÓ · LOS SATS NO SE QUEMAN', resumen:'STACK SATS · los cinco números de la cadena', cinta:'NORTHPOINT · STACK SATS · el primer trade es el primer sat'},
+    sakura:    {e:'🌸', nombre:'JARDÍN SAKURA', win:'FLORECIÓ', loss:'el jardín aguanta el invierno', be:'el jardín quedó igual', gana:'GANASTE · EL JARDÍN FLORECIÓ · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. La flor ya abrió hoy: cierra la plataforma y déjala en paz.', fin:'SE ACABÓ · EL JARDÍN NO SE FUERZA', resumen:'JARDÍN SAKURA · los cinco números del jardín', cinta:'NORTHPOINT · JARDÍN SAKURA · el primer trade es el primer pétalo'}
   };
   function voz(clave, normal, arg){
     const r = document.documentElement.getAttribute('data-rich'); const V = r && VOCES[r]; if(!V) return normal;

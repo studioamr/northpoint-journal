@@ -20,7 +20,7 @@
   let modo = 'flujo', S = [];
   function richTipo(){ return document.documentElement.getAttribute('data-rich'); }
   function esDiamante(){ return !!richTipo(); }
-  function naceCristal(){ const r = Math.random(); const tipo = richTipo(); const cae = tipo === 'billetes';
+  function naceCristal(){ const r = Math.random(); const tipo = richTipo(); const cae = tipo === 'billetes' || tipo === 'sakura';
     return {x: Math.random()*W, y: cae ? -Math.random()*H*0.3 : H + Math.random()*H*0.3, s: (9 + Math.pow(r, 2.4)*42) * devicePixelRatio, rot: Math.random()*Math.PI*2, vr: (Math.random()-.5)*0.004, vy: (cae ? 1 : -1) * (0.08 + Math.random()*0.35) * devicePixelRatio, vx: (Math.random()-.5)*0.12*devicePixelRatio, a: 0.035 + Math.random()*0.11, fase: Math.random()*Math.PI*2}; }
   /* lingote (oro/platino): prisma con cara superior más clara */
   function lingote(x, y, s, rot, a, brillo, col){
@@ -59,11 +59,31 @@
     oro:     {claro: a => `rgba(255,225,130,${a})`, oscuro: a => `rgba(200,140,20,${a})`},
     platino: {claro: a => `rgba(240,244,255,${a})`, oscuro: a => `rgba(150,160,180,${a})`}
   };
+  /* pétalo de sakura: dos lóbulos que se juntan en una punta con muesca */
+  function petalo(x, y, s, rot, a){
+    const A = Math.min(.95, a * 7);                                  // nacen muy tenues: el pétalo necesita cuerpo
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, 0.62 + 0.38*Math.sin(rot*3));   // se voltea mientras cae
+    const g = ctx.createLinearGradient(0, s, 0, -s);
+    g.addColorStop(0, `rgba(226,84,145,${A})`);
+    g.addColorStop(.55, `rgba(255,158,196,${A})`);
+    g.addColorStop(1, `rgba(255,236,245,${Math.min(1, A*1.2)})`);
+    ctx.beginPath();
+    ctx.moveTo(0, s);
+    ctx.bezierCurveTo(-s*0.95, s*0.35, -s*0.82, -s*0.72, -s*0.20, -s*0.95);
+    ctx.quadraticCurveTo(0, -s*0.68, s*0.20, -s*0.95);
+    ctx.bezierCurveTo(s*0.82, -s*0.72, s*0.95, s*0.35, 0, s);
+    ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = `rgba(255,222,236,${Math.min(1, A*0.7)})`; ctx.lineWidth = .8; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, s*0.85); ctx.quadraticCurveTo(0, 0, 0, -s*0.6);                   // la nervadura
+    ctx.strokeStyle = `rgba(255,255,255,${Math.min(.8, A*0.45)})`; ctx.lineWidth = .7; ctx.stroke();
+    ctx.restore();
+  }
   function objeto(c, brillo){
     const tipo = richTipo();
     if(tipo === 'oro' || tipo === 'platino') return lingote(c.x, c.y, c.s, c.rot*0.25, c.a, brillo, COL[tipo]);
     if(tipo === 'billetes') return billete(c.x, c.y, c.s*0.8, c.rot, c.a);
     if(tipo === 'btc') return moneda(c.x, c.y, c.s*0.9, c.rot, c.a, brillo);
+    if(tipo === 'sakura') return petalo(c.x, c.y, c.s*0.8, c.rot, c.a);
     return gema(c.x, c.y, c.s, c.rot, c.a, brillo, tipo === 'esmeralda');
   }
   function gema(x, y, s, rot, a, brillo, verde){
@@ -86,7 +106,8 @@
     const t = now - t0;
     ctx.clearRect(0,0,W,H);
     for(const c of S){
-      c.y += c.vy; c.x += c.vx + Math.sin(t*0.0004 + c.fase)*0.15*devicePixelRatio; c.rot += c.vr;
+      const bal = richTipo() === 'sakura' ? 1.1 : 0.15;                                   // el pétalo se mece mucho más que un cristal
+      c.y += c.vy; c.x += c.vx + Math.sin(t*0.0004 + c.fase)*bal*devicePixelRatio; c.rot += c.vr;
       const tw = Math.max(0, Math.sin(t*0.0011 + c.fase*3)); const brillo = tw > 0.985 ? (tw-0.985)/0.015*0.55 : 0;
       objeto(c, brillo);
       if(c.vy < 0 ? c.y < -c.s*3 : c.y > H + c.s*3) Object.assign(c, naceCristal());
