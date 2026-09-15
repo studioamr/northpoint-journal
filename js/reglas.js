@@ -203,11 +203,19 @@ window.ESTRATEGIA = {
   ],
 
   /* Rutina en hora de Morelia. La apertura de NY se calcula sola (horario de verano). */
+  /* El día tiene DOS ventanas y un solo trade en cada una. Nada fuera de ahí. */
+  ventanas: [
+    {id:'overnight', t:'Overnight · manipulación de Asia', corto:'Overnight', n:'01',
+     txt:'Un trade. Se espera a que el precio manipule el rango de Asia y se entra a favor de la continuación.'},
+    {id:'orb', t:'NY · ORB', corto:'ORB', n:'02',
+     txt:'Un trade. El opening range de Nueva York: se opera el ORB, nada antes y nada después.'}
+  ],
+
   rutina: [
     {t:"-45", clave:"prep",      txt:"Marcar rangos: Asia, Londres, PDH/PDL, ONH/ONL. Fibonacci sobre el último retroceso."},
     {t:"-30", clave:"condicion", txt:"ESCRIBIR la condición del día. Las dos ramas, con precios. Si no la escribes, no operas."},
     {t:"0",   clave:"apertura",  txt:"Apertura NY. Ver qué rama se activa. No ejecutar todavía."},
-    {t:"+15", clave:"ventana",   txt:"Ventana de ejecución: solo continuaciones, solo con equilibrio + FVG."},
+    {t:"+15", clave:"ventana",   txt:"Ventana del ORB: UN trade, solo continuación, con equilibrio + FVG."},
     {t:"+90", clave:"cierre",    txt:"Cierre del día. Se acabó. Registrar y calificar cada trade."}
   ]
 };

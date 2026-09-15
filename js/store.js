@@ -149,7 +149,7 @@
         direccion:'long', contratos:1,
         entrada:null, sl:null, tp:null, salida:null,
         pnl:0, comision:0, r:null,
-        estrategia:'', condicion:'', condicionPDA:'', condicionCumplida:true,
+        estrategia:'', ventana:'', condicion:'', condicionPDA:'', condicionCumplida:true,
         tipo:'continuacion', confluencias:[], tpTipo:'interno', objetivo:'',
         resultado:'ganada', errores:[], notas:'', img:null,
         creado: new Date().toISOString()

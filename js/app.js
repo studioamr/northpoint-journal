@@ -326,7 +326,7 @@
       fecha: Store.hoyISO(), hora: new Date().toTimeString().slice(0,5), instrumento: A.instrumento,
       direccion:'long', contratos:1, entrada:'', sl:'', tp:'', salida:'', pnl:'', comision:0, r:null,
       condicion: diaHoy.condicion || '', condicionPDA: diaHoy.condicionPDA || '', condicionCumplida:true,
-      tipo:'continuacion', confluencias:['equilibrio','fvg','killzone'], tpTipo:'interno', objetivo:'',
+      ventana:'', tipo:'continuacion', confluencias:['equilibrio','fvg','killzone'], tpTipo:'interno', objetivo:'',
       resultado:'ganada', errores:[], notas:'', img:null
     }, t || {}, pre || {});
     let imgPendiente = null, imgQuitar = false;
@@ -366,6 +366,9 @@
         <div class="fila" style="gap:8px">
           <label class="campo" style="flex:1"><span>Estrategia</span><select name="estrategia">${opciones([{v:'',t:'— sin estrategia —'}].concat((A.estrategias||[]).map(x => ({v:x,t:x}))), d.estrategia || (A.estrategias||[])[0] || '')}</select></label>
           <button type="button" class="btn chico" id="btnEstr" style="margin-top:14px">+ nueva</button>
+          <label class="campo" style="flex:1"><span>Ventana del plan</span><select name="ventana">${opciones(
+            [{v:'', t:'— fuera del plan —'}].concat(ESTRATEGIA.ventanas.map(v => ({v:v.id, t:v.t}))),
+            d.ventana || Motor.ventanaDe(d.fecha, d.hora))}</select></label>
         </div>
         <div>
           <div class="fila" style="margin-bottom:7px"><span class="eti">Las 4 reglas · toca las que cumpliste</span><div class="crece"></div><span class="mono" id="calif" style="font-size:12px"></span></div>
@@ -435,7 +438,7 @@
         tipo: estadoRegla.continuacion ? 'continuacion' : 'reversion', tpTipo: estadoRegla.tpInterno ? 'interno' : 'externo',
         objetivo: g('objetivo'), confluencias: conf,
         errores: [...form.querySelectorAll('[name="err"]:checked')].map(x => x.value),
-        notas: g('notas'), porCalificar: false, estrategia: g('estrategia')
+        notas: g('notas'), porCalificar: false, estrategia: g('estrategia'), ventana: g('ventana')
       };
     }
     q('#btnEstr').addEventListener('click', () => {

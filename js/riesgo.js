@@ -80,13 +80,13 @@
     <div class="grid g5" style="margin-bottom:14px">
       ${kpi('Riesgo por trade', fmt(riesgo), (A.riesgoPctCuenta||0.01)*100 + '% de ' + fmt(ini))}
       ${kpi('Contratos', contratos + ' ' + A.instrumento, 'stop ' + (A.slPuntos||20) + ' pts = ' + fmt(stopUSD) + ' c/u · máx ' + (A.maxContratos||1) + ' mini')}
-      ${kpi('Trades por día', '1–' + (A.maxTradesDia||2), 'if W → fuera · ' + (A.pararTrasPerdidas||2) + ' pérdidas → fuera')}
+      ${kpi('Trades por día', '1 + 1', 'overnight · ORB · if W → fuera')}
       ${kpi('Eval', '+' + fmt(P.evalTP) + ' / -' + fmt(P.evalLoss), 'por día · ' + Math.max(1, Math.round(P.quema / P.evalLoss)) + (Math.round(P.quema / P.evalLoss) > 1 ? ' malos días y pierdes' : ' mal día y pierdes'))}
       ${kpi('Fondeada', '+' + fmt(P.fondTP) + ' / -' + fmt(P.fondLoss) + ' · +' + fmt(P.payTP) + ' / -' + fmt(P.payLoss), 'buffer ' + Math.round(P.quema / P.fondLoss) + ' malos días · payouts ' + Math.round(P.quema / P.payLoss))}
     </div>
     <div class="card" style="margin-bottom:14px"><h3>Mis reglas</h3>
       <div class="gestion">
-        <div><b>1 · 2 trades al día en NY.</b> Si el día lo opero en Asia o en Londres, uno solo.</div>
+        <div><b>1 · Dos ventanas, un trade en cada una.</b> Overnight: la manipulación de Asia. NY: el ORB. Nada fuera de esas dos.</div>
         <div><b>2 · Si gano, fuera.</b> Con la primera ganada cierro la plataforma.</div>
         <div><b>3 · Dos pérdidas seguidas y se acabó.</b> O el daily loss, lo que llegue primero.</div>
         <div><b>4 · 1% por trade y máximo un mini.</b> Los contratos salen del stop, no de las ganas.</div>

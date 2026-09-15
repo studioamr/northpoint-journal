@@ -38,6 +38,8 @@
     const err = D(t.filter(x => (x.errores||[]).length), x => x.errores);
     const dir = D(t, x => x.direccion === 'long' ? 'Largos' : 'Cortos');
     const estr = D(t, x => x.estrategia || 'Sin estrategia');
+    const vent = D(t, x => { const k = x.ventana || Motor.ventanaDe(x.fecha, x.hora);
+      return (ESTRATEGIA.ventanas.find(y => y.id === k) || {corto:'Fuera del plan'}).corto; });
 
     return `
     <div class="fila" style="margin-bottom:12px">
@@ -56,6 +58,7 @@
         <span class="mono ${x.tono}" style="font-size:10px;margin-top:2px">${x.tono === 'up' ? '▲' : x.tono === 'down' ? '▼' : '■'}</span>
         <span style="font-size:12.5px;color:var(--dim)">${x.txt}</span></div>`).join('')}</div></div>
     <div class="grid g2" style="margin-bottom:12px">
+      ${tablaDesglose('Por ventana del plan', vent, 'Un trade en overnight y uno en el ORB · lo demás está fuera del plan')}
       ${tablaDesglose('Por estrategia', estr, 'Cuál rinde y cuál te cuesta')}
       ${tablaDesglose('Por regla de TP', tp, 'Regla 4: el TP conservador debería ganarte más veces')}
     </div>
@@ -553,6 +556,12 @@
       <div class="eti">Playbook</div>
       <h2 style="margin:3px 0 4px;font-size:21px;font-weight:600">${h(ESTRATEGIA.nombre)}</h2>
       <p class="dim" style="margin:0 0 16px;font-size:13px">${h(ESTRATEGIA.premisa)}</p>
+      <div class="grid g2" style="margin-bottom:14px">
+        ${ESTRATEGIA.ventanas.map(w => `<div class="regla">
+          <div class="n">VENTANA ${w.n}</div>
+          <h4>${h(w.t)}</h4>
+          <p>${h(w.txt)}</p></div>`).join('')}
+      </div>
       <div class="grid g2" style="margin-bottom:14px">
         ${ESTRATEGIA.reglas.map((r,i) => `<div class="regla">
           <div class="n">REGLA 0${i+1} · ${r.peso} pts</div>

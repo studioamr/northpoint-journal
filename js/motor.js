@@ -238,5 +238,19 @@
     return ((+n||0) < 0 ? '-$' : '$') + s.replace('-','');
   }
 
-  window.Motor = { estadoCuenta, planDelDia, faseReal, FASES, adherencia, porDia, neto, aperturaNY, hhmm, minAhora, fmt };
+  /* En qué ventana del plan cayó un trade, por su hora de entrada.
+     ORB: desde 5 min antes de la apertura de NY hasta una hora después. Overnight: antes de eso.
+     Lo de más tarde queda fuera del plan y así se reporta. */
+  function ventanaDe(fecha, hora){
+    if(!hora) return '';
+    const [hh, mm] = String(hora).split(':').map(Number);
+    if(isNaN(hh)) return '';
+    const min = hh*60 + (mm||0), abre = aperturaNY(new Date((fecha || hoyISOm()) + 'T12:00'));
+    if(min >= abre - 5 && min <= abre + 60) return 'orb';
+    if(min < abre - 5) return 'overnight';
+    return '';
+  }
+  const hoyISOm = () => new Date().toLocaleDateString('en-CA');
+
+  window.Motor = { ventanaDe, estadoCuenta, planDelDia, faseReal, FASES, adherencia, porDia, neto, aperturaNY, hhmm, minAhora, fmt };
 })();

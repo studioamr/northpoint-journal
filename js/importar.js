@@ -140,7 +140,8 @@
     const abre = Motor.aperturaNY(o.ent), min = o.ent.getHours()*60 + o.ent.getMinutes();
     const enVentana = min >= abre - 5 && min <= abre + 95;
     return {
-      fecha: iso(o.ent), hora: hhmm(o.ent), instrumento: o.inst, direccion: o.direccion, contratos: o.contratos,
+      fecha: iso(o.ent), hora: hhmm(o.ent), ventana: Motor.ventanaDe(iso(o.ent), hhmm(o.ent)),
+      instrumento: o.inst, direccion: o.direccion, contratos: o.contratos,
       entrada: o.entrada != null ? +(+o.entrada).toFixed(2) : null, salida: o.salida != null ? +(+o.salida).toFixed(2) : null,
       sl: null, tp: null, pnl: Math.round((o.pnl||0)*100)/100, comision: com,
       r: rEst != null ? Math.round(rEst*100)/100 : null, rEstimado: true, comisionEstimada: true,
