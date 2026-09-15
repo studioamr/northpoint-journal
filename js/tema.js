@@ -12,7 +12,7 @@
     {id:'glass-esmeralda',n:'Esmeralda', d:'Liquid glass esmeralda · cristales verdes · EMERALD', sw:['#02100b','#50FFB1']},
     {id:'glass-platino',  n:'Platino',   d:'Liquid glass gris hielo · lingotes de platino · PLATINUM', sw:['#07080b','#E6E9F0']},
     {id:'glass-btc',      n:'Bitcoin',   d:'Liquid glass naranja · monedas ₿ flotando · STACK SATS', sw:['#0b0602','#F7931A']},
-    {id:'glass-sakura',   n:'Jardín Sakura', d:'Liquid glass ciruela · pétalos que caen · el jardín al atardecer', sw:['#140A12','#FFA8C9']},
+    {id:'glass-sakura',   n:'Jardín Sakura', d:'Cielo azul, montañas nevadas, cascadas y pétalos · el jardín de verdad', sw:['#BBDCF2','#C2185B']},
     {id:'acido',   n:'Lima',         d:'Carbón + lima', sw:['#0d0d0f','#C6FF3D']},
     {id:'bosque',  n:'Bosque',       d:'Verde profundo → menta · vidrio', sw:['#051F20','#8EB69B']},
     {id:'oceano',  n:'Océano',       d:'Azul marino → hielo · vidrio', sw:['#021024','#7DA0CA']},
@@ -26,7 +26,7 @@
     {id:'aurora-morado',  n:'Aurora Morado',  d:'Vidrio + aurora violeta y rosa', sw:['#0c0714','#A78BFA']},
     {id:'aurora-verde',   n:'Aurora Verde',   d:'Vidrio + aurora esmeralda', sw:['#06110d','#34D399']}
   ];
-  const RICH = ['glass-diamante','glass-oro','glass-billetes','glass-esmeralda','glass-platino','glass-btc','glass-sakura'];
+  const RICH = ['glass-diamante','glass-oro','glass-billetes','glass-esmeralda','glass-platino','glass-btc'];
   function aplicar(id){
     if(id && id.startsWith('tron-')) id = id.replace('tron-', 'aurora-');   // los Tron viejos pasan a Aurora
     if(!id || id === 'acido' && !Store.ajustes._glass1){ id = 'glass-oscuro'; Store.ajustes.tema = id; Store.ajustes._glass1 = true; }
@@ -34,6 +34,8 @@
     document.documentElement.setAttribute('data-theme', id || 'glass-oscuro');
     const rich = RICH.includes(id) ? id.replace('glass-', '') : null;
     if(rich) document.documentElement.setAttribute('data-rich', rich); else document.documentElement.removeAttribute('data-rich');
+    /* el Jardín no es RICH (es claro, con su paisaje), pero sí quiere su escena y su voz */
+    if(id === 'glass-sakura') document.documentElement.setAttribute('data-jardin', '1'); else document.documentElement.removeAttribute('data-jardin');
     const acc = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim();
     window.__temaAcc = acc;
     document.dispatchEvent(new CustomEvent('mesa:tema', {detail:{id, acc}}));
@@ -54,7 +56,8 @@
     sakura:    {e:'🌸', nombre:'JARDÍN SAKURA', win:'FLORECIÓ', loss:'el jardín aguanta el invierno', be:'el jardín quedó igual', gana:'GANASTE · EL JARDÍN FLORECIÓ · FUERA DE LAS GRÁFICAS', razon:'If W, get off the charts. La flor ya abrió hoy: cierra la plataforma y déjala en paz.', fin:'SE ACABÓ · EL JARDÍN NO SE FUERZA', resumen:'JARDÍN SAKURA · los cinco números del jardín', cinta:'NORTHPOINT · JARDÍN SAKURA · el primer trade es el primer pétalo'}
   };
   function voz(clave, normal, arg){
-    const r = document.documentElement.getAttribute('data-rich'); const V = r && VOCES[r]; if(!V) return normal;
+    const r = document.documentElement.getAttribute('data-rich') || (document.documentElement.hasAttribute('data-jardin') ? 'sakura' : null);
+    const V = r && VOCES[r]; if(!V) return normal;
     switch(clave){
       case 'trade.win':  return V.e + ' ' + V.nombre.split(' ')[0] + ' · ' + arg + ' · ' + V.win;
       case 'trade.loss': return V.e + ' STAY ' + V.nombre.split(' ')[0] + ' · ' + arg + ' · ' + V.loss;

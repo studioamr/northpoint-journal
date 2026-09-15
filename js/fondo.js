@@ -18,7 +18,7 @@
   }
   /* ---- Diamante: cristales que flotan sobre el liquid glass (solo en ese tema) */
   let modo = 'flujo', S = [];
-  function richTipo(){ return document.documentElement.getAttribute('data-rich'); }
+  function richTipo(){ return document.documentElement.getAttribute('data-rich') || (document.documentElement.hasAttribute('data-jardin') ? 'sakura' : null); }
   function esDiamante(){ return !!richTipo(); }
   function naceCristal(){ const r = Math.random(); const tipo = richTipo(); const cae = tipo === 'billetes' || tipo === 'sakura';
     return {x: Math.random()*W, y: cae ? -Math.random()*H*0.3 : H + Math.random()*H*0.3, s: (9 + Math.pow(r, 2.4)*42) * devicePixelRatio, rot: Math.random()*Math.PI*2, vr: (Math.random()-.5)*0.004, vy: (cae ? 1 : -1) * (0.08 + Math.random()*0.35) * devicePixelRatio, vx: (Math.random()-.5)*0.12*devicePixelRatio, a: 0.035 + Math.random()*0.11, fase: Math.random()*Math.PI*2}; }
