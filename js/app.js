@@ -29,6 +29,10 @@
     el.innerHTML = `<div class="av">${P.foto ? `<img src="${P.foto}">` : h(P.iniciales)}</div><div><div class="pn">${h(P.nombre)}</div><div class="pf">${h(P.ciudad || P.frase)}</div></div>`;
     el.onclick = () => { vista = 'ajustes'; location.hash = 'ajustes'; pinta(); };
   }
+  /* pliega o despliega la barra de la izquierda, y lo recuerda */
+  function aplicaMenu(){
+    document.documentElement.setAttribute('data-menu', Store.ajustes.menuOculto ? 'off' : 'on');
+  }
   function pinta(){
     const A = Store.ajustes;
     document.getElementById('nav').innerHTML = MENU.map(m => m.g
@@ -39,6 +43,7 @@
     const act = Store.cuentaActiva();
     pintaPerfil();
     document.getElementById('top').innerHTML = `
+      <button class="plegar" data-acc="menu" title="${Store.ajustes.menuOculto ? 'Mostrar el menú' : 'Esconder el menú'}">${Store.ajustes.menuOculto ? '»' : '«'}</button>
       <h1>${h((MENU.find(m => m.id === vista)||{}).t || OCULTAS[vista] || '')}</h1>
       <div class="der">
         ${cuentas.length ? selectorCuentas() : ''}
@@ -83,6 +88,7 @@
   }
   setInterval(reloj, 1000);
 
+  aplicaMenu();
   document.addEventListener('mesa:cambio', pinta);
   document.addEventListener('mesa:sync', () => { if(!document.querySelector('.velo')) pinta(); });
 
@@ -185,6 +191,8 @@
       },
       apiDesconectar: () => Sync.apiDetener(),
       tema: () => { Store.ajustes.tema = b.dataset.id; Tema.aplicar(b.dataset.id); Store.guardar(); },
+      /* el menú se pliega para dejarle toda la pantalla a la vista */
+      menu: () => { Store.ajustes.menuOculto = !Store.ajustes.menuOculto; Store.guardar(); aplicaMenu(); pinta(); },
       perfilFoto: async () => { const f = await UI.elegirImagen(); if(!f) return;
         try{ const src = await Img.avatar(f); Tema.guardaPerfil({foto: src}); pinta(); toast('Foto actualizada'); }catch(e){ toast('No se pudo leer esa imagen'); } },
       perfilSinFoto: () => { Tema.guardaPerfil({foto:null}); pinta(); },
