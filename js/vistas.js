@@ -398,8 +398,7 @@
     const ny = d.toLocaleTimeString('es-MX', {timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
     return `<b>${local}</b><span>Nueva York ${ny}</span>`;
   };
-    Vistas.horarioSesion = id => { const v = (Motor.ventanas()||[]).find(x => x.id === id); return v ? hm(v.ini) + ' → ' + hm(v.fin) : ''; };
-  Vistas.relojSesion = id => {
+    Vistas.relojSesion = id => {
     const e = Motor.estadoVentana(id); if(!e) return '';
     if(e.estado === 'viva') return `<b class="viva">en sesión</b> · llevas ${dur(e.lleva)} · quedan ${dur(e.queda)}`;
     return `abre en ${dur(e.falta)}`;
@@ -409,16 +408,12 @@
     const S = (window.ESTRATEGIA || {}).ventanas || [];
     return `<div class="portada">
       <div class="pt-marca">NORTHPOINT</div>
-      <div class="pt-sub">del examen al payout</div>
       <div class="pt-hora" data-reloj="ahora">${Vistas.relojAhora()}</div>
       <div class="pt-ses">${S.map(s => `<div class="pt-s" data-ses="${s.id}">
           <div class="pt-n">${h(s.sesion || s.corto)}</div>
           <div class="pt-t">${h(s.que || s.corto)}</div>
           <div class="pt-u">un trade</div>
-          <div class="pt-h">${Vistas.horarioSesion(s.id)}</div>
           <div class="pt-r" data-reloj="${s.id}">${Vistas.relojSesion(s.id)}</div></div>`).join('<div class="pt-y">y</div>')}</div>
-      <div class="pt-no">no más</div>
-      <div class="pt-lim"><span><b>${pct(Store.ajustes.riesgoPctCuenta || 0.01, 0)}</b> máximo por trade</span></div>
       <button class="btn acc pt-btn" data-acc="nuevoTrade">Registrar trade</button>
     </div>`;
   };
