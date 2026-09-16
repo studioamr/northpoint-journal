@@ -205,9 +205,9 @@ window.ESTRATEGIA = {
   /* Rutina en hora de Morelia. La apertura de NY se calcula sola (horario de verano). */
   /* El día tiene DOS ventanas y un solo trade en cada una. Nada fuera de ahí. */
   ventanas: [
-    {id:'overnight', t:'Overnight · manipulación de Asia', corto:'Overnight', n:'01',
-     txt:'Un trade. Se espera a que el precio manipule el rango de Asia y se entra a favor de la continuación.'},
-    {id:'orb', t:'NY · ORB', corto:'ORB', n:'02',
+    {id:'overnight', sesion:'Overnight', que:'el sweep de Asia', t:'Overnight · el sweep de Asia', corto:'Overnight', n:'01',
+     txt:'Un trade. Se espera el sweep del rango de Asia y se entra a favor de la continuación.'},
+    {id:'orb', sesion:'Nueva York', que:'el ORB', t:'NY · el ORB', corto:'ORB', n:'02',
      txt:'Un trade. El opening range de Nueva York: se opera el ORB, nada antes y nada después.'}
   ],
 

@@ -6,6 +6,7 @@
 
   const MENU = [
     {g:'Operar'},
+    {id:'inicio',     t:'Inicio',       i:'◈'},
     {id:'panel',      t:'Dashboard',    i:'▤'},
     {id:'diario',     t:'Trades',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'},
@@ -19,8 +20,8 @@
     {id:'riesgo',     t:'Riesgo',       i:'◈'}
   ];
   const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading'};
-  let vista = location.hash.replace('#','') || 'panel';
-  if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'panel';
+  let vista = location.hash.replace('#','') || 'inicio';
+  if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'inicio';
 
   /* --------------------------------------------------------------- pintar */
   /* la tarjeta de perfil de la barra lateral (foto o iniciales, nombre, ciudad/frase) */
@@ -306,7 +307,7 @@
         <div class="wr-min"><span class="eti">mínimo</span> <b>${pct(minimo,0)}</b> <span class="tenue mini">para no perder a 1.5R · ${g}G · ${p}P</span></div>
         <div class="bateria"><div class="celdas">${Array.from({length:10}, (_, i) => celda(i < usadas ? t[t.length - usadas + i] : null, i, i < usadas)).join('')}</div><div class="polo"></div></div>
         <div class="mini dim" style="text-align:center;margin-top:12px">${usadas ? `Batería ${Math.floor(t.length/10)+1} · ${usadas} de 10 celdas usadas · quedan ${10 - usadas}.` : 'Batería llena: 10 celdas.'} Toca la siguiente celda para registrar el trade.${bajo ? ' <b class="down">Estás debajo del 40%: antes de gastar otra, revisa qué regla estás rompiendo.</b>' : ''}</div>
-        <div class="rm ${gano || tope ? 'down' : ''}"><span class="eti">risk management</span> ${A.maxTradesDia} trade${A.maxTradesDia > 1 ? 's' : ''}/día máx · if W get off the charts · ≤ ${((A.riesgoPctCuenta||0.01)*100).toFixed(0)}% por trade · máx ${A.maxContratos || 1} mini${gano ? ' — <b>hoy ya ganaste: fuera de las gráficas</b>' : tope ? ' — <b>hoy ya tomaste ' + hoyT.length + ': se acabó</b>' : ' — hoy llevas ' + hoyT.length}</div>
+        <div class="rm ${gano || tope ? 'down' : ''}"><span class="eti">el plan</span> ${(ESTRATEGIA.ventanas||[]).map(v => v.sesion + ': ' + v.que).join(' · ')} · un trade por sesión, no más · ≤ ${((A.riesgoPctCuenta||0.01)*100).toFixed(0)}% por trade · 1:${(A.plan5||{}).rr || 1.5} · if W get off the charts — hoy llevas ${hoyT.length}</div>
       </div>`;
     modal('Registrar trade', cuerpo, `<div class="crece"></div><button class="btn" data-cerrar>Cancelar</button><button class="btn acc" data-acc="dispara">Usar la celda ${usadas+1}</button>`, {ancho:720, sinFoco:true});
   }

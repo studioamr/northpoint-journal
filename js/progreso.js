@@ -29,41 +29,6 @@
       cobradoTotal: pagados.reduce((a,p) => a + neto(p), 0) };
   }
 
-  /* ¿Qué tan cerca estoy de los 100,000 MXN al mes? 0 = arrancando la evaluación, 100 = meta cumplida.
-     Cuatro tramos de 25: pasar la eval · hacer el buffer · el primer retiro · y lo cobrado en 30 días
-     contra la meta. Los tres primeros miden la cuenta más adelantada; el último es dinero real en tu bolsillo. */
-  function cerca(D){
-    D = D || datos();
-    const metaUSD = META_MXN() / TC();
-    const S = Store.ajustes.simRiesgo || {};
-    let ev = 0, bu = 0, pa = 0, faltaEv = 0, faltaBu = 0, faltaPa = 0;
-    D.ests.filter(x => !x.e.quemada && x.c.estado !== 'quemada').forEach(({c, e}) => {
-      const ini = +c.inicial;
-      const obj  = S.objetivo != null ? ini + S.objetivo : (e.objetivo || ini + 3000);
-      const buf  = S.buffer   != null ? ini + S.buffer   : (e.buffer   || ini + 2100);
-      const tope = S.tope     != null ? S.tope           : ((c.reglas || {}).capPayout || 1000);
-      const paso = e.pasado || c.fase !== 'eval';
-      const v = paso ? 1 : Math.max(0, Math.min(1, (e.balance - ini) / Math.max(1, obj - ini)));
-      if(v >= ev){ ev = v; faltaEv = Math.max(0, obj - e.balance); }
-      if(c.fase !== 'eval'){
-        const b = Math.max(0, Math.min(1, (e.balance - ini) / Math.max(1, buf - ini)));
-        if(b >= bu){ bu = b; faltaBu = Math.max(0, buf - e.balance); }
-        if(e.balance >= buf || e.payoutsHechos){
-          const q = e.payoutsHechos ? 1 : Math.max(0, Math.min(1, (e.balance - buf) / Math.max(1, tope)));
-          if(q >= pa){ pa = q; faltaPa = Math.max(0, buf + tope - e.balance); }
-        }
-      }
-    });
-    if(D.cobradoTotal > 0){ ev = bu = pa = 1; }
-    const mes = Math.max(0, Math.min(1, D.cobrado30 / Math.max(1, metaUSD)));
-    const total = Math.min(100, (ev + bu + pa + mes) * 25);
-    const sigue = ev < 1 ? {t:'pasar la evaluación', f: faltaEv}
-                : bu < 1 ? {t:'hacer el buffer',     f: faltaBu}
-                : pa < 1 ? {t:'tu primer retiro',    f: faltaPa}
-                :          {t:'cobrar la meta del mes', f: Math.max(0, metaUSD - D.cobrado30)};
-    return {total, ev, bu, pa, mes, metaUSD, cobrado30: D.cobrado30, sigue};
-  }
-
   function pasos(D){
     const usd = META_MXN() / TC();
     const m = Store.ajustes;
@@ -91,73 +56,90 @@
     ];
   }
 
-  /* ------------------------------------------------ plan de riesgo -----
-     Objetivo: retirar X al mes con N cuentas (copiador: el mismo trade en
-     todas). De ahí salen targets y pérdidas máximas mensual / semanal /
-     diario / por trade, en total y por cuenta.                            */
+  /* ------------------------------------------------ el plan, al revés -----
+     Antes se partía de «cuánto quiero hacer al día». Ahora se parte de la META
+     y del número de cuentas, y la app calcula sola cuánto hay que apuntar cada
+     día en cada etapa: evaluación, funded (buffer) y payouts. Todo con el
+     riesgo:beneficio que él opera.                                           */
   function plan(){
-    const A = Store.ajustes, P = Object.assign({metaDia:250, cuentas:5, split:0.9, dias:20, semanas:4, maxDD:2000, diaValido:150, rr:1.5, trades:2}, A.plan5 || {});
+    const A = Store.ajustes;
+    const P = Object.assign({cuentas:5, dias:20, rr:1.5, diasEval:3, diasBuffer:4}, A.plan5 || {});
+    const R = window.Riesgo && Riesgo.params ? Riesgo.params() : null;
+    const objetivo = R ? R.objetivo : 3000, buffer = R ? R.buffer : 2100, tope = R ? R.tope : 1000;
+    const split = (R ? R.split : 90) / 100, maxPagos = R ? R.maxPagos : 5, inicial = R ? R.inicial : 50000;
+    const perd = {eval: R ? R.evalLoss : 2000, buffer: R ? R.fondLoss : 500, payouts: R ? R.payLoss : 250};
+
+    const metaUSD   = META_MXN() / TC();
+    const netoRet   = tope * split;                                  // lo que te queda de cada retiro
+    const retirosCta = P.cuentas > 0 ? (metaUSD / netoRet) / P.cuentas : 0;   // retiros al mes POR CUENTA
+    const diasRetiro = retirosCta > 0 ? P.dias / retirosCta : Infinity;       // días que puedes tardar en cada uno
+
+    const T = {eval: objetivo / Math.max(1, P.diasEval),
+               buffer: buffer / Math.max(1, P.diasBuffer),
+               payouts: isFinite(diasRetiro) ? tope / diasRetiro : 0};
+    const dias = {eval: P.diasEval, buffer: P.diasBuffer, payouts: diasRetiro};
+
     const inst = INSTRUMENTOS[A.instrumento] || INSTRUMENTOS.MNQ;
-    const stopUSD = A.slPuntos * inst.puntoUSD;
-    // se parte del mínimo diario por cuenta y se sube: semana, mes, retiro
-    const porCta = { dia: P.metaDia };
-    porCta.semana = porCta.dia * (P.dias / P.semanas);
-    porCta.mes = porCta.dia * P.dias;
-    porCta.trade = porCta.dia / Math.max(1, P.trades);
-    const brutoMes = porCta.mes * P.cuentas;
-    const retiro = brutoMes * P.split;
-    const riesgo = {
-      dia: Math.min(porCta.dia, A.perdidaMaxDia || 500),
-      semana: Math.min(porCta.semana, P.maxDD * 0.25),
-      mes: Math.min(porCta.mes, P.maxDD * 0.5)
-    };
-    riesgo.trade = riesgo.dia / Math.max(1, A.pararTrasPerdidas);
-    const contratos = Math.max(1, Math.floor(riesgo.trade / stopUSD));
-    const ganaTrade = contratos * stopUSD * P.rr;
+    const stopUSD = (A.slPuntos || 20) * inst.puntoUSD;
+    const riesgoTrade = inicial * (A.riesgoPctCuenta || 0.01);
+    const techo = (A.instrumento === 'MNQ' || A.instrumento === 'MES') ? (A.maxContratos || 1) * 10 : (A.maxContratos || 1);
+    const contratos = Math.max(1, Math.min(techo, Math.floor(riesgoTrade / stopUSD)));   // nunca más de un mini
+    const ganador = contratos * stopUSD * P.rr;   // lo que deja un ganador con el tamaño real                      // lo que deja un ganador a 1:rr
     const wrBE = 1 / (1 + P.rr);
-    const tradesGanadores = Math.ceil(porCta.dia / ganaTrade);      // ganadores que necesitas al día para el mínimo
-    const diasBuenos = Math.ceil(porCta.mes / Math.max(P.diaValido, porCta.dia));
-    return {P, stopUSD, brutoMes, retiro, porCta, riesgo, contratos, ganaTrade, wrBE, diasBuenos, tradesGanadores,
-      total: k => porCta[k] * P.cuentas, riesgoTotal: k => riesgo[k] * P.cuentas};
+    const ganadores = k => Math.max(1, Math.ceil(T[k] / Math.max(1, ganador)));
+
+    const arranque = P.diasEval + P.diasBuffer;                      // días hasta poder cobrar
+    const primerRetiro = arranque + Math.ceil(isFinite(diasRetiro) ? diasRetiro : 0);
+    const porCuentaTotal = maxPagos * netoRet;                       // todo lo que da una cuenta antes de morir
+    const mesesCuenta = retirosCta > 0 ? maxPagos / retirosCta : Infinity;
+    const ingresoMes = retirosCta * netoRet * P.cuentas;
+    return {P, objetivo, buffer, tope, split, maxPagos, inicial, perd, metaUSD, netoRet, retirosCta, diasRetiro,
+            T, dias, stopUSD, riesgoTrade, contratos, ganador, wrBE, ganadores,
+            arranque, primerRetiro, porCuentaTotal, mesesCuenta, ingresoMes};
   }
 
   function tablaPlan(){
     const X = plan(), P = X.P, A = Store.ajustes;
     const campo = (k, lbl, step) => `<label class="campo"><span>${lbl}</span><input type="number" step="${step||1}" data-plan5="${k}" value="${P[k]}"></label>`;
-    const fila = (nom, tgt, rsk, nota) => `<tr><td><b>${nom}</b><div class="mini tenue">${nota||''}</div></td>
-      <td class="num up">+${fmt(tgt)}</td><td class="num up">+${fmt(tgt * P.cuentas)}</td>
-      <td class="num down">-${fmt(rsk)}</td><td class="num down">-${fmt(rsk * P.cuentas)}</td></tr>`;
+    const nd = n => !isFinite(n) ? '—' : (n < 10 ? (Math.round(n*10)/10) : Math.round(n)) + (Math.round(n) === 1 ? ' día' : ' días');
+    const fila = (nom, k, nota) => `<tr>
+      <td><b>${nom}</b><div class="mini tenue">${nota}</div></td>
+      <td class="num up">+${fmt(X.T[k])}</td>
+      <td class="num down">-${fmt(X.perd[k])}</td>
+      <td class="num">${nd(X.dias[k])}</td>
+      <td class="num">${X.ganadores(k)}</td></tr>`;
+    const alerta = X.retirosCta > X.maxPagos
+      ? aviso(`A este ritmo cada cuenta pide <b>${X.retirosCta.toFixed(1)} retiros al mes</b> y el plan solo da ${X.maxPagos}. La cuenta se agota antes de fin de mes: sube el número de cuentas o baja la meta.`)
+      : '';
     return `<div class="card" style="margin-bottom:12px">
       <div class="fila" style="gap:14px">
-        <div><h3>Plan de riesgo</h3></div>
+        <div><h3>El plan</h3><div class="sub">De la meta hacia atrás: cuánto tienes que apuntar cada día en cada etapa</div></div>
         <div class="crece"></div>
         <div class="fila" style="gap:6px"><span class="eti">Cuentas</span>
           <button class="btn chico" data-acc="plan5menos">−</button><span class="mono" style="font-size:20px;min-width:28px;text-align:center" id="p5n">${P.cuentas}</span><button class="btn chico" data-acc="plan5mas">+</button></div>
-        <label class="campo" style="width:150px"><span>Mínimo/día por cuenta ($)</span><input type="number" step="25" data-plan5="metaDia" value="${P.metaDia}"></label>
       </div>
+      ${alerta}
       <div class="grid g4" style="gap:8px;margin:12px 0">
-        ${kpi('Retiro al mes', fmt(X.retiro), fmt(X.brutoMes) + ' ganados × ' + pct(P.split,0) + ' · ' + P.cuentas + ' cuentas', 'mini')}
-        ${kpi('Por cuenta al mes', fmt(X.porCta.mes), fmt(P.metaDia) + ' × ' + P.dias + ' días', 'mini')}
-        ${kpi('Tamaño', X.contratos + ' ' + h(A.instrumento) + ' × ' + P.cuentas, fmt(X.riesgo.trade) + ' de riesgo por trade por cuenta · stop ' + A.slPuntos + ' pts', 'mini')}
-        ${kpi('Un ganador deja', '+' + fmt(X.ganaTrade), 'a ' + P.rr + 'R · necesitas ' + X.tradesGanadores + ' ganador' + (X.tradesGanadores > 1 ? 'es' : '') + ' al día para los ' + fmt(P.metaDia), 'mini')}
+        ${kpi('Meta al mes', fmt(X.metaUSD), META_MXN().toLocaleString('es-MX') + ' MXN al tipo de cambio ' + TC(), 'mini')}
+        ${kpi('Con este plan', fmt(X.ingresoMes), X.retirosCta.toFixed(1) + ' retiros al mes por cuenta × ' + P.cuentas + ' cuentas', 'mini')}
+        ${kpi('Cada retiro deja', fmt(X.netoRet), fmt(X.tope) + ' de tope × ' + pct(X.split,0), 'mini')}
+        ${kpi('Primer retiro', nd(X.primerRetiro), X.P.diasEval + ' de eval + ' + X.P.diasBuffer + ' de buffer + ' + nd(X.diasRetiro), 'mini')}
       </div>
-      <div class="tabla-scroll"><table><thead><tr><th>Periodo</th><th class="num">target por cuenta</th><th class="num">target total ×${P.cuentas}</th><th class="num">pérdida máx. por cuenta</th><th class="num">total ×${P.cuentas}</th></tr></thead><tbody>
-        ${fila('Día', X.porCta.dia, X.riesgo.dia, 'mínimo hecho = plataforma cerrada · ' + A.pararTrasPerdidas + ' pérdidas seguidas = día cerrado')}
-        ${fila('Semana', X.porCta.semana, X.riesgo.semana, 'máximo 2 días rojos · tope 25% del drawdown')}
-        ${fila('Mes', X.porCta.mes, X.riesgo.mes, 'si pierdes esto se cierra el mes y se revisa la estrategia · tope 50% del drawdown')}
-        ${fila('Trade', X.porCta.trade, X.riesgo.trade, X.contratos + ' ' + A.instrumento + ' por cuenta · riesgo/día ÷ ' + A.pararTrasPerdidas)}
+      <div class="tabla-scroll"><table><thead><tr><th>Etapa</th><th class="num">apuntar al día</th><th class="num">riesgo del día</th><th class="num">cuánto dura</th><th class="num">ganadores a 1:${P.rr}</th></tr></thead><tbody>
+        ${fila('Evaluación', 'eval', 'hasta ' + fmt(X.objetivo) + ' para pasar')}
+        ${fila('Funded · buffer', 'buffer', 'hasta ' + fmt(X.buffer) + ' arriba del inicial')}
+        ${fila('Payouts', 'payouts', fmt(X.tope) + ' por retiro · ' + X.retirosCta.toFixed(1) + ' al mes')}
       </tbody></table></div>
       <div class="grid g3" style="gap:8px;margin-top:12px">
-        ${kpi('Win rate mínimo', pct(X.wrBE,0), 'para no perder a ' + P.rr + 'R · tú vas en ' + pct(Stats.metricas(Store.tradesSel()).winRate,0), 'mini')}
-        ${kpi('Día malo × ' + P.cuentas, '-' + fmt(X.riesgoTotal('dia')), 'eso cuesta un día mal con el copiador · nunca más de ' + fmt(A.perdidaMaxDia||500) + ' por cuenta', 'mini')}
-        ${kpi('Retiro por cuenta', fmt(X.porCta.mes * P.split), 'revisa el tope de retiro de tu plan: si es menor, el excedente se queda en la cuenta', 'mini')}
+        ${kpi('Riesgo por trade', fmt(X.contratos * X.stopUSD), 'máximo ' + pct(A.riesgoPctCuenta||0.01,0) + ' de ' + fmt(X.inicial) + ' · ' + X.contratos + ' ' + h(A.instrumento) + ' con stop de ' + (A.slPuntos||20) + ' pts', 'mini')}
+        ${kpi('Un ganador deja', '+' + fmt(X.ganador), 'a 1:' + P.rr + ' · win rate mínimo ' + pct(X.wrBE,0) + ' · vas en ' + pct(Stats.metricas(Store.tradesSel()).winRate,0), 'mini')}
+        ${kpi('Vida de una cuenta', fmt(X.porCuentaTotal), X.maxPagos + ' retiros · se agota en ' + (isFinite(X.mesesCuenta) ? (Math.round(X.mesesCuenta*10)/10) + ' meses' : '—') + ' y hay que reponerla', 'mini')}
       </div>
       <details class="mas" style="margin-top:12px"><summary>Supuestos del plan · editables</summary><div>
         <div class="grid g4" style="gap:8px">
-          ${campo('split','Reparto (0–1)',0.05)}${campo('dias','Días operados/mes',1)}${campo('semanas','Semanas/mes',1)}${campo('maxDD','Drawdown por cuenta ($)',100)}
-          ${campo('diaValido','Día ganador mínimo ($)',25)}${campo('rr','R por trade ganador',0.25)}${campo('trades','Trades por día',1)}
+          ${campo('rr','Riesgo : beneficio (1 : x)',0.25)}${campo('dias','Días de mercado al mes',1)}${campo('diasEval','Días para pasar la eval',1)}${campo('diasBuffer','Días para hacer el buffer',1)}
         </div>
-        <div class="mini tenue">El stop (${A.slPuntos} pts = ${fmt(X.stopUSD)}), la pérdida máxima diaria (${fmt(A.perdidaMaxDia||500)}) y «parar tras ${A.pararTrasPerdidas} pérdidas» salen de Ajustes.</div>
+        <div class="mini tenue">El objetivo (${fmt(X.objetivo)}), el buffer (${fmt(X.buffer)}), el tope por retiro (${fmt(X.tope)}), el reparto (${pct(X.split,0)}) y los retiros máximos (${X.maxPagos}) salen de <b>Riesgo → Parámetros</b>. La meta y el tipo de cambio, de aquí arriba.</div>
       </div></details>
     </div>`;
   }
@@ -205,5 +187,5 @@
     </div>
     <div class="pasos-hechos">${P.map((p, i) => `<span class="ph ${hecho(p) ? 'ok' : (sig && sig.id === p.id) ? 'activo' : ''}" title="${h(p.t)}">${String(i+1).padStart(2,'0')}</span>`).join('')}</div>`;
   };
-  window.Progreso = { datos, pasos, cerca };
+  window.Progreso = { datos, pasos };
 })();

@@ -157,20 +157,6 @@
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
 
-    ${(() => {
-      /* qué tan cerca estás de los 100,000 MXN al mes: 0 es arrancar la evaluación */
-      if(!window.Progreso || !Progreso.cerca) return '';
-      const C = Progreso.cerca();
-      const tramo = (t, p, cls) => `<div class="c100-t ${cls} ${p >= 1 ? 'listo' : ''}"><i style="width:${p*100}%"></i><span>${t}</span></div>`;
-      return `<div class="c100">
-        <div class="c100-n">${C.total.toFixed(0)}<small>%</small></div>
-        <div class="c100-d">
-          <div class="eti">de tu meta de ${(Store.ajustes.metaMXN||100000).toLocaleString('es-MX')} MXN al mes</div>
-          <div class="c100-b">${tramo('evaluación', C.ev, 'ev')}${tramo('buffer', C.bu, 'bu')}${tramo('primer retiro', C.pa, 'pa')}${tramo('la meta', C.mes, 'me')}</div>
-          <div class="c100-s">sigue: ${h(C.sigue.t)}${C.sigue.f > 0 ? ' · faltan ' + fmt(C.sigue.f) : ''}</div>
-        </div>
-      </div>`;
-    })()}
     ${sec('Resumen', '', `<div class="grid g5">
       ${kpi('Balance', `<span class="${balanceTotal >= inicialTotal ? 'up' : 'down'}">${fmt(balanceTotal)}</span>`, `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
       ${kpi('Win rate', `<span class="${m.winRate >= .4 ? 'up' : 'down'}">${pct(m.winRate,1)}</span>`, `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
@@ -400,6 +386,29 @@
     return out;
   }
   Vistas._proyeccion = proyeccion;
+  /* ------------------------------------------------------------ PORTADA
+     La pantalla con la que abre la app: el entorno, el nombre, las dos sesiones
+     que se operan y el botón que lleva directo a registrar el trade. Nada más. */
+  Vistas.inicio = function(){
+    const S = (window.ESTRATEGIA || {}).ventanas || [];
+    const R = (window.ESTRATEGIA || {}).reglas || [];
+    return `<div class="portada">
+      <div class="pt-marca">NORTHPOINT</div>
+      <div class="pt-sub">del examen al payout</div>
+      <div class="pt-ses">${S.map(s => `<div class="pt-s">
+          <div class="pt-n">${h(s.sesion || s.corto)}</div>
+          <div class="pt-t">${h(s.que || s.corto)}</div>
+          <div class="pt-u">un trade</div></div>`).join('<div class="pt-y">y</div>')}</div>
+      <div class="pt-no">no más</div>
+      <div class="pt-lim">
+        <span><b>${pct(Store.ajustes.riesgoPctCuenta || 0.01, 0)}</b> máximo por trade</span><i>·</i>
+        <span>riesgo beneficio <b>1 : ${(Store.ajustes.plan5 || {}).rr || 1.5}</b></span>
+      </div>
+      <button class="btn acc pt-btn" data-acc="nuevoTrade">Registrar trade</button>
+      <div class="pt-reglas">${R.map(r => `<span>${h(r.corto || r.titulo)}</span>`).join('<i>·</i>')}</div>
+    </div>`;
+  };
+
   Vistas.calendario = function(){
     const cta = Store.cuentaCal();
     const t = Store.tradesCal();
