@@ -241,16 +241,33 @@
   /* En qué ventana del plan cayó un trade, por su hora de entrada.
      ORB: desde 5 min antes de la apertura de NY hasta una hora después. Overnight: antes de eso.
      Lo de más tarde queda fuera del plan y así se reporta. */
+  /* Las dos ventanas, en minutos del día LOCAL pero ancladas a Nueva York.
+     El sweep de Asia arranca a la MEDIANOCHE DE NY y corre hasta que abre NY;
+     el ORB va de 5 min antes de la apertura a una hora después.
+     La de overnight cruza la medianoche local, así que todo se compara en círculo. */
+  const mod = n => ((n % 1440) + 1440) % 1440;
+  function ventanas(fecha){
+    const abre = aperturaNY(fecha ? new Date(fecha + 'T12:00') : new Date());   // 9:30 de NY, en hora local
+    return [{id:'overnight', ini: mod(abre - 570), fin: mod(abre - 5)},         // 570 min = de las 00:00 a las 9:30
+            {id:'orb',       ini: mod(abre - 5),   fin: mod(abre + 60)}];
+  }
+  const dentro = (min, v) => v.ini <= v.fin ? (min >= v.ini && min < v.fin) : (min >= v.ini || min < v.fin);
+  const hasta  = (de, a) => mod(a - de);
   function ventanaDe(fecha, hora){
     if(!hora) return '';
     const [hh, mm] = String(hora).split(':').map(Number);
     if(isNaN(hh)) return '';
-    const min = hh*60 + (mm||0), abre = aperturaNY(new Date((fecha || hoyISOm()) + 'T12:00'));
-    if(min >= abre - 5 && min <= abre + 60) return 'orb';
-    if(min < abre - 5) return 'overnight';
-    return '';
+    const min = hh*60 + (mm||0);
+    const v = ventanas(fecha).find(x => dentro(min, x));
+    return v ? v.id : '';
   }
-  const hoyISOm = () => new Date().toLocaleDateString('en-CA');
+  /* Cómo va una ventana ahora: viva (con lo que lleva y lo que le queda) o cuánto falta para que abra. */
+  function estadoVentana(id){
+    const v = ventanas().find(x => x.id === id); if(!v) return null;
+    const ahora = minAhora();
+    if(dentro(ahora, v)) return {estado:'viva', lleva: hasta(v.ini, ahora), queda: hasta(ahora, v.fin), ini: v.ini, fin: v.fin};
+    return {estado:'espera', falta: hasta(ahora, v.ini), ini: v.ini, fin: v.fin};
+  }
 
-  window.Motor = { ventanaDe, estadoCuenta, planDelDia, faseReal, FASES, adherencia, porDia, neto, aperturaNY, hhmm, minAhora, fmt };
+  window.Motor = { ventanaDe, ventanas, estadoVentana, estadoCuenta, planDelDia, faseReal, FASES, adherencia, porDia, neto, aperturaNY, hhmm, minAhora, fmt };
 })();

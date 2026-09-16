@@ -82,12 +82,28 @@
     const d = new Date();
     const hhmmss = [d.getHours(), d.getMinutes(), d.getSeconds()].map(x => String(x).padStart(2,'0')).join(':');
     const falta = abre - ahora;
+    /* qué ventana manda ahora: la viva, y si no, la que sigue */
+    const V = (window.ESTRATEGIA && ESTRATEGIA.ventanas) || [];
+    const est = V.map(v => ({v, e: Motor.estadoVentana(v.id)})).filter(x => x.e);
+    const viva = est.find(x => x.e.estado === 'viva');
+    const sig = est.filter(x => x.e.estado !== 'viva').sort((a2, b2) => a2.e.falta - b2.e.falta)[0];
+    const dd = m => { m = Math.max(0, Math.round(m)); const hh = Math.floor(m/60); return (hh ? hh + 'h ' : '') + (m%60) + 'm'; };
     el.innerHTML = hhmmss + ' <span class="tenue">·</span> ' +
-      (falta > 0 ? 'NY abre en ' + Math.floor(falta/60) + 'h ' + (falta%60) + 'm'
-       : falta > -90 ? '<span class="acc">VENTANA VIVA · ' + Math.abs(Math.round(falta)) + ' min</span>'
+      (viva ? `<span class="acc">${h((viva.v.corto || '').toUpperCase())} VIVO · quedan ${dd(viva.e.queda)}</span>`
+       : sig ? `${h(sig.v.corto || '')} en ${dd(sig.e.falta)}`
        : 'ventana cerrada');
   }
-  setInterval(reloj, 1000);
+  /* los relojes de sesión se refrescan en su propio elemento, sin repintar la vista */
+  function relojesSesion(){
+    document.querySelectorAll('[data-reloj]').forEach(el => {
+      const id = el.dataset.reloj;
+      if(id === 'ahora'){ el.innerHTML = Vistas.relojAhora(); return; }
+      const e = Motor.estadoVentana(id);
+      el.innerHTML = Vistas.relojSesion(id);
+      const caja = el.closest('[data-ses]'); if(caja) caja.classList.toggle('viva', !!e && e.estado === 'viva');
+    });
+  }
+  setInterval(() => { reloj(); if(!document.hidden) relojesSesion(); }, 1000);
 
   aplicaMenu();
   document.addEventListener('mesa:cambio', pinta);
