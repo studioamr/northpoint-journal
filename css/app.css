@@ -747,6 +747,10 @@ aside{transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s}
 .pt-hora b{font-family:var(--disp);font-size:clamp(30px,4.4vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1;
   color:var(--txt);font-variant-numeric:tabular-nums}
 .pt-hora span{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.pt-ses1{margin-top:30px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pt-ses1 b{font-family:var(--disp);font-size:clamp(18px,2.4vw,26px);font-weight:600;letter-spacing:-.02em;color:var(--txt)}
+.pt-ses1 b.viva{color:var(--up)}
+.pt-ses1 span{font-size:12.5px;color:var(--dim)}
 .pt-ses{display:flex;align-items:center;gap:clamp(18px,5vw,54px);margin-top:34px}
 .pt-n{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--acc)}
 .pt-t{font-family:var(--disp);font-size:clamp(17px,2.2vw,23px);font-weight:600;letter-spacing:-.02em;color:var(--txt);margin-top:5px}

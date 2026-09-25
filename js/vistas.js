@@ -132,114 +132,33 @@
 
   /* ============================================================ PANEL ==== */
   Vistas.panel = function(){
-    const cta = Store.cuentaActiva();
-    if(!cta) return primeraVez();
-    const sel = Store.cuentasSel();
-    const varias = sel.length > 1;
-    const est = Motor.estadoCuenta(cta);
-    const t = varias ? Store.tradesSel() : est.trades;
+    const sel = Store.cuentasSel(), t = Store.tradesSel();
+    if(!Store.estado.cuentas.length) return primeraVez();
     const m = Stats.metricas(t);
-    const pt = Stats.puntaje(t);
-    const inicialTotal = sel.reduce((a,c) => a + (+c.inicial), 0);
-    const curva = Stats.curva(t, inicialTotal);
-    const ests = sel.map(c => Motor.estadoCuenta(c));
-    const balanceTotal = ests.reduce((a,e) => a + e.balance, 0);
-    const colchonTotal = ests.reduce((a,e) => a + e.colchon, 0);
-    const ddTotal = sel.reduce((a,c) => a + c.reglas.maxDD, 0);
-    const progreso = est.objetivo ? Math.max(0, Math.min(1, est.ganancia / (est.objetivo - cta.inicial))) : 0;
-
-    const sec = (t, s, cuerpo) => `<section class="sec"><div class="sec-h"><h2>${t}</h2>${s ? `<span class="dim">${s}</span>` : ''}</div>${cuerpo}</section>`;
+    const inicial = sel.reduce((a, c) => a + (+c.inicial || 0), 0);
+    const cur = Stats.curva(t, inicial);
+    const dd = Math.min(0, ...cur.map(p => p.dd));                     // la caída más honda desde un pico
+    const rr = x => (x >= 0 ? '+' : '') + (Math.round(x*100)/100).toFixed(2) + 'R';
+    const bal = inicial + m.pnl;
     return `
-    <div class="fila" style="margin-bottom:6px">
-      <div>
-        <h2 style="margin:3px 0 0"><span class="${signo(m.pnl)}">${masMenos(m.pnl)}</span> <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trades · ${m.dias} días</span></h2></div>
+    <div class="fila" style="margin-bottom:14px">
+      <div><h2 style="margin:3px 0 0"><span class="${signo(m.pnl)}">${masMenos(m.pnl)}</span>
+        <span class="dim" style="font-size:14px;font-weight:500">en ${m.n} trade${m.n === 1 ? '' : 's'} · ${m.dias} día${m.dias === 1 ? '' : 's'}</span></h2></div>
       <div class="crece"></div>
       <button class="btn acc" data-acc="nuevoTrade">+ Registrar trade</button>
     </div>
-
-    ${sec('Resumen', '', `<div class="grid g5">
-      ${kpi('Balance', `<span class="${balanceTotal >= inicialTotal ? 'up' : 'down'}">${fmt(balanceTotal)}</span>`, `inicial ${fmt(inicialTotal)}${varias ? ' · ' + sel.length + ' cuentas' : ''}`)}
+    <div class="grid g5" style="margin-bottom:14px">
+      ${kpi('Balance', `<span class="${bal >= inicial ? 'up' : 'down'}">${fmt(bal)}</span>`, 'inicial ' + fmt(inicial))}
+      ${kpi('R del periodo', `<span class="${m.rTotal >= 0 ? 'up' : 'down'}">${rr(m.rTotal)}</span>`, m.rProm != null ? rr(m.rProm) + ' por trade' : 'sin R capturada')}
       ${kpi('Win rate', `<span class="${m.winRate >= .4 ? 'up' : 'down'}">${pct(m.winRate,1)}</span>`, `${m.ganadas}G · ${m.perdidas}P · ${m.be}BE`, '', null, m.winRate, m.winRate >= .4 ? 'var(--up)' : 'var(--down)')}
-      ${kpi('Profit factor', `<span class="azul">${m.pf === Infinity ? '∞' : m.pf.toFixed(2)}</span>`, `${fmt(m.bruto)} / ${fmt(m.perd)}`, '', null, Math.min(1, (m.pf === Infinity ? 3 : m.pf) / 3), 'var(--azul)')}
-      ${kpi('Días ganadores', `<span class="oro">${pct(m.diaWinRate,0)}</span>`, `${m.diasG} de ${m.dias} días`, '', null, m.diaWinRate, 'var(--oro)')}
-      ${kpi('Prom. gana / pierde', `<span class="up">${fmt(m.avgWin)}</span> <span class="tenue">/</span> <span class="down">${fmt(m.avgLoss)}</span>`, m.ratio ? m.ratio.toFixed(2)+' × ' : '—')}
-    </div>`)}
-
-    ${sec('Cuenta', varias ? sel.length + ' cuentas' : '', `<div class="grid" style="grid-template-columns:1fr 320px">
-      <div class="card">
-        <div class="fila"><h3>Curva de balance</h3><div class="crece"></div>
-          <span class="mini tenue mono">${varias ? 'suma de ' + sel.length + ' cuentas' : 'piso ' + fmt(est.piso) + ' · pico ' + fmt(est.pico)}</span></div>
-        <div style="margin-top:10px">${Stats.linea(curva, {base: inicialTotal, color:'var(--acc)'})}</div>
-        ${varias ? `<div class="fila" style="margin-top:12px;border-top:1px solid var(--linea);padding-top:11px;gap:8px">
-          ${sel.map((c,i) => `<span class="chip ${ests[i].quemada ? 'down' : ests[i].ganancia >= 0 ? 'up' : ''}"><b></b>${h(c.alias || c.firma)} ${fmt(ests[i].balance)} · colchón ${fmt(ests[i].colchon)}</span>`).join('')}
-          <div class="crece"></div><span class="mono mini tenue">colchón total ${fmt(colchonTotal)} de ${fmt(ddTotal)}</span></div>` : `
-        <div class="fila" style="margin-top:12px;border-top:1px solid var(--linea);padding-top:11px">
-          <div style="flex:1">
-            <div class="eti">${est.objetivo ? 'Camino al objetivo' : 'Ganancia acumulada'}</div>
-            <div class="barra ${est.ganancia >= 0 ? 'up' : 'down'}" style="margin-top:6px"><i style="width:${(progreso*100).toFixed(1)}%"></i></div>
-            <div class="mini tenue mono" style="margin-top:4px">${est.objetivo ? fmt(est.ganancia) + ' de ' + fmt(est.objetivo - cta.inicial) + ' · faltan ' + fmt(est.faltaTarget) : masMenos(est.ganancia)}</div>
-          </div>
-          <div style="flex:1">
-            <div class="eti">Drawdown</div>
-            <div class="barra down" style="margin-top:6px"><i style="width:${Math.max(0,Math.min(100, (cta.reglas.maxDD - est.colchon)/cta.reglas.maxDD*100)).toFixed(1)}%"></i></div>
-            <div class="mini tenue mono" style="margin-top:4px">${fmt(Math.max(0, cta.reglas.maxDD - est.colchon))} usados de ${fmt(cta.reglas.maxDD)} · quedan ${fmt(est.colchon)} · piso ${fmt(est.piso)}${est.pisoCongelado ? ' · congelado' : ''}</div>
-          </div>
-        </div>`}
-      </div>
-      <div class="card">
-        <div class="fila"><h3>Puntaje NP</h3><div class="crece"></div><span class="mono acc" style="font-size:19px">${pt.total}</span></div>
-        
-        ${Stats.radar(pt.ejes)}
-        <div class="mini tenue" style="text-align:center;margin-top:4px">Disciplina: ${m.adherencia.toFixed(0)}/100 de adherencia a las 4 reglas</div>
-      </div>
-    </div>`)}
-
-    ${sec('Rendimiento', '', `<div class="grid g2">
-      <div class="card"><h3>P&L por día</h3>
-        <div style="margin-top:10px">${Stats.barras(m.serieDias.map(d => ({k:d.fecha, v:d.pnl})))}</div></div>
-      <div class="card"><div class="fila"><h3>Estrategias</h3><div class="crece"></div><button class="btn chico fantasma" data-acc="nuevaEstrategia">+ estrategia</button></div>
-        
-        <div style="margin-top:10px">${rendimientoEstrategias(t)}</div></div>
-    </div>`)}
-
-    ${(Store.estado.alertas||[]).length ? sec('Alertas', '', `<div class="card"><div class="fila"><h3>Últimas alertas</h3>${Vistas._latidoAlertas()}<div class="crece"></div><button class="btn chico fantasma" data-ir="ajustes">Configurar</button></div>
-      <table style="margin-top:8px"><tbody>${(Store.estado.alertas||[]).slice(0,5).map(a => `<tr><td class="mono tenue" style="width:120px">${new Date(a.t).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td><td>${h(a.datos ? Alertas.resumen(a.datos) : (a.titulo + ' · ' + a.texto))}</td>
-        <td style="text-align:right">${a.datos && a.datos.entrada ? `<button class="btn chico" data-acc="alertaTrade" data-id="${a.id}">registrar</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`) : ''}
-
-    ${sec('Últimos trades', '', `<div class="card"><div class="fila"><h3>Trades</h3><div class="crece"></div>
-      <button class="btn chico fantasma" data-ir="diario">Ver todos</button></div>
-      <div class="tabla-scroll" style="margin-top:8px">${tablaTrades(t.slice(-8).reverse())}</div></div>`)}`;
+      ${kpi('Expectativa', `<span class="${m.expectativa >= 0 ? 'up' : 'down'}">${masMenos(m.expectativa)}</span>`, 'por trade')}
+      ${kpi('Caída máxima', `<span class="down">${fmt(dd)}</span>`, 'desde el pico más alto')}
+    </div>
+    <div class="card"><div class="fila"><h3>Curva</h3><div class="crece"></div>
+      <span class="mono mini dim">piso ${fmt(Math.min(...cur.map(p => p.bal)))} · pico ${fmt(Math.max(...cur.map(p => p.bal)))}</span></div>
+      <div style="margin-top:10px">${Stats.linea(cur, {base: inicial, color: 'var(--acc)'})}</div></div>`;
   };
 
-  Vistas._comparativa = trades => rendimientoEstrategias(trades);
-  function rendimientoEstrategias(trades){
-    if(!trades.length) return vacio('Registra trades con su estrategia y aquí ves cuál rinde.');
-    const grupos = Stats.desglose(trades, t => t.estrategia || 'Sin estrategia');
-    const max = Math.max(...grupos.map(g => Math.abs(g.pnl))) || 1;
-    return `<table><thead><tr><th>Estrategia</th><th class="num">n</th><th class="num">win</th><th class="num">PF</th><th class="num">expect.</th><th class="num">P&L</th><th style="width:110px"></th></tr></thead><tbody>
-      ${grupos.map(g => `<tr><td><b style="font-weight:600">${h(g.clave)}</b></td><td class="num tenue">${g.n}</td><td class="num">${pct(g.winRate,0)}</td>
-        <td class="num">${g.pf === Infinity ? '∞' : g.pf.toFixed(2)}</td><td class="num ${signo(g.expectativa)}">${fmt(g.expectativa)}</td>
-        <td class="num ${signo(g.pnl)}"><b>${masMenos(g.pnl)}</b></td>
-        <td><div class="barra ${g.pnl >= 0 ? 'up' : 'down'}"><i style="width:${(Math.abs(g.pnl)/max*100).toFixed(0)}%"></i></div></td></tr>`).join('')}
-      </tbody></table>`;
-  }
-  Vistas._rendimientoEstrategias = rendimientoEstrategias;
-  function comparativaDisciplina(trades){
-    const limpios = trades.filter(t => Motor.adherencia(t).limpio);
-    const sucios  = trades.filter(t => !Motor.adherencia(t).limpio);
-    if(!trades.length) return vacio('Registra trades y aquí verás la diferencia.');
-    const fila = (nom, ts, clase) => {
-      const m = Stats.metricas(ts);
-      return `<div style="margin-bottom:12px">
-        <div class="fila"><b style="font-size:12.5px">${h(nom)}</b><span class="pill ${clase}">${ts.length} trades</span>
-          <div class="crece"></div><span class="mono ${signo(m.pnl)}">${masMenos(m.pnl)}</span></div>
-        <div class="barra ${clase === 'ok' ? 'up' : 'down'}" style="margin-top:6px"><i style="width:${(m.winRate*100).toFixed(0)}%"></i></div>
-        <div class="mini tenue mono" style="margin-top:4px">win ${pct(m.winRate,0)} · PF ${m.pf === Infinity ? '∞' : m.pf.toFixed(2)} · expectativa ${fmt(m.expectativa)}</div></div>`;
-    };
-    return fila('Con las 4 reglas cumplidas', limpios, 'ok') + fila('Con al menos una regla rota', sucios, 'no');
-  }
-
-  /* ========================================================== DIARIO ==== */
   let filtro = {texto:'', regla:'', res:''};
   Vistas.diario = function(){
     const modo = 'real';
@@ -392,28 +311,27 @@
   /* el horario fijo de una ventana y cómo va ahora mismo */
   const hm = m => String(Math.floor(((m%1440)+1440)%1440/60)).padStart(2,'0') + ':' + String(Math.round(m%60)).padStart(2,'0');
   const dur = m => { m = Math.max(0, Math.round(m)); const hh = Math.floor(m/60), mm = m%60; return hh ? hh + ' h ' + mm + ' min' : mm + ' min'; };
+  /* qué sesión está viva ahora, y si no hay ninguna, cuál sigue */
+  Vistas.sesionAhora = () => {
+    const V = (window.ESTRATEGIA || {}).ventanas || [];
+    const est = V.map(s => ({s, e: Motor.estadoVentana(s.id)})).filter(x => x.e);
+    const viva = est.find(x => x.e.estado === 'viva');
+    if(viva) return `<b class="viva">${h(viva.s.sesion || viva.s.corto)}</b><span>en sesión · quedan ${dur(viva.e.queda)}</span>`;
+    const sig = est.sort((a2, b2) => a2.e.falta - b2.e.falta)[0];
+    return sig ? `<b>${h(sig.s.sesion || sig.s.corto)}</b><span>abre en ${dur(sig.e.falta)}</span>` : '';
+  };
   Vistas.relojAhora = () => {
     const d = new Date();
     const local = [d.getHours(), d.getMinutes(), d.getSeconds()].map(x => String(x).padStart(2,'0')).join(':');
     const ny = d.toLocaleTimeString('es-MX', {timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
     return `<b>${local}</b><span>Nueva York ${ny}</span>`;
   };
-    Vistas.relojSesion = id => {
-    const e = Motor.estadoVentana(id); if(!e) return '';
-    if(e.estado === 'viva') return `<b class="viva">en sesión</b> · llevas ${dur(e.lleva)} · quedan ${dur(e.queda)}`;
-    return `abre en ${dur(e.falta)}`;
-  };
-
+  
   Vistas.inicio = function(){
-    const S = (window.ESTRATEGIA || {}).ventanas || [];
     return `<div class="portada">
       <div class="pt-marca">NORTHPOINT</div>
       <div class="pt-hora" data-reloj="ahora">${Vistas.relojAhora()}</div>
-      <div class="pt-ses">${S.map(s => `<div class="pt-s" data-ses="${s.id}">
-          <div class="pt-n">${h(s.sesion || s.corto)}</div>
-          <div class="pt-t">${h(s.que || s.corto)}</div>
-          <div class="pt-u">un trade</div>
-          <div class="pt-r" data-reloj="${s.id}">${Vistas.relojSesion(s.id)}</div></div>`).join('<div class="pt-y">y</div>')}</div>
+      <div class="pt-ses1" data-reloj="sesion">${Vistas.sesionAhora()}</div>
       <button class="btn acc pt-btn" data-acc="nuevoTrade">Registrar trade</button>
     </div>`;
   };

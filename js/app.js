@@ -5,21 +5,14 @@
   const {h, fmt, pct, signo, masMenos, kpi, opciones, modal, cerrar, toast, vacio, aviso, fechaLarga} = UI;
 
   const MENU = [
-    {g:'Operar'},
     {id:'inicio',     t:'Inicio',       i:'◈'},
-    {id:'panel',      t:'Dashboard',    i:'▤'},
+    {id:'panel',      t:'General',      i:'▤'},
     {id:'diario',     t:'Trades',       i:'≡'},
-    {id:'calendario', t:'Calendario',   i:'▦'},
-    {g:'Analizar'},
-    {id:'reportes',   t:'Reportes',     i:'◔'},
-    {id:'backtest',   t:'Backtesting',  i:'⟲'},
-    {g:'Cuenta'},
-    {id:'cuentas',    t:'Cuentas',      i:'▣'},
-    {id:'payouts',    t:'Payouts',      i:'$'},
-    {id:'progreso',   t:'Progreso',     i:'▲'},
-    {id:'riesgo',     t:'Riesgo',       i:'◈'}
+    {id:'calendario', t:'Calendario',   i:'▦'}
   ];
-  const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading'};
+  /* siguen vivas por dirección, fuera del menú: la app es una sola cosa — registrar y ver la curva */
+  const OCULTAS = {sync:'Importar', ajustes:'Ajustes', plan:'Plan del día', playbook:'Playbook', lab:'Lab', historial:'Historial', trading:'Trading',
+                   reportes:'Reportes', backtest:'Backtesting', cuentas:'Cuentas', payouts:'Payouts', progreso:'Progreso', riesgo:'Riesgo'};
   let vista = location.hash.replace('#','') || 'inicio';
   if(!MENU.some(m => m.id === vista) && !OCULTAS[vista]) vista = 'inicio';
 
@@ -97,10 +90,8 @@
   function relojesSesion(){
     document.querySelectorAll('[data-reloj]').forEach(el => {
       const id = el.dataset.reloj;
-      if(id === 'ahora'){ el.innerHTML = Vistas.relojAhora(); return; }
-      const e = Motor.estadoVentana(id);
-      el.innerHTML = Vistas.relojSesion(id);
-      const caja = el.closest('[data-ses]'); if(caja) caja.classList.toggle('viva', !!e && e.estado === 'viva');
+      if(id === 'ahora')  return void (el.innerHTML = Vistas.relojAhora());
+      if(id === 'sesion') return void (el.innerHTML = Vistas.sesionAhora());
     });
   }
   setInterval(() => { reloj(); if(!document.hidden) relojesSesion(); }, 1000);
