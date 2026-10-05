@@ -6,7 +6,6 @@
 
   const MENU = [
     {id:'inicio',     t:'Inicio',       i:'◈'},
-    {id:'cafe',       t:'Coffee Morning', i:'☕'},
     {id:'panel',      t:'General',      i:'▤'},
     {id:'diario',     t:'Trades',       i:'≡'},
     {id:'calendario', t:'Calendario',   i:'▦'}
@@ -373,7 +372,8 @@
         </div>
 
         <div class="fila" style="gap:8px">
-          <label class="campo" style="flex:1"><span>Estrategia</span><select name="estrategia">${opciones([{v:'',t:'— sin estrategia —'}].concat(Store.STRATS.map(x => ({v:x.n,t:x.n}))), d.estrategia || '')}</select></label>
+          <label class="campo" style="flex:1"><span>Estrategia</span><select name="estrategia">${opciones([{v:'',t:'— sin estrategia —'}].concat((A.estrategias||[]).map(x => ({v:x,t:x}))), d.estrategia || (A.estrategias||[])[0] || '')}</select></label>
+          <button type="button" class="btn chico" id="btnEstr" style="margin-top:14px">+ nueva</button>
           <label class="campo" style="flex:1"><span>Ventana del plan</span><select name="ventana">${opciones(
             [{v:'', t:'— fuera del plan —'}].concat(ESTRATEGIA.ventanas.map(v => ({v:v.id, t:v.t}))),
             d.ventana || Motor.ventanaDe(d.fecha, d.hora))}</select></label>
@@ -449,6 +449,11 @@
         notas: g('notas'), porCalificar: false, estrategia: g('estrategia'), ventana: g('ventana')
       };
     }
+    q('#btnEstr').addEventListener('click', () => {
+      const n = prompt('Nombre de la estrategia nueva:'); if(!n || !n.trim()) return;
+      A.estrategias = (A.estrategias || []).concat([n.trim()]); Store.guardar();
+      const sel = form.querySelector('[name="estrategia"]'); sel.insertAdjacentHTML('beforeend', `<option value="${h(n.trim())}" selected>${h(n.trim())}</option>`);
+    });
     function auto(){
       const x = lee();
       const inst = INSTRUMENTOS[x.instrumento] || INSTRUMENTOS.MNQ;

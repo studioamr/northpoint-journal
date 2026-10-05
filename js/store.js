@@ -8,15 +8,6 @@
   const PERFIL = (() => { try{ return localStorage.getItem('np.perfilActivo') || ''; }catch(e){ return ''; } })();
   const LLAVE = PERFIL ? 'mesa.v1.' + PERFIL : 'mesa.v1';
 
-  /* sus strats, tal cual su nota (4-oct-2026). R = $200 · si ganas, paras · máximo 2 pérdidas por sesión */
-  const REGLAS = { r:200, siGanas:'If W: stop', maxL:2 };
-  const STRATS = [
-    {n:'Premium · Kiss and goodbye', que:'Esperamos rompimiento de línea de tendencia rápida, apuntamos a EQ.', rr:'1:6', micros:'1–40 micros', manejo:'En 1:1 trail stop'},
-    {n:'Descuento · FVG 5m + OTE',   que:'Buscamos FVG de 5m + OTE.',                                           rr:'1:1.5', micros:'1–20 micros', manejo:'Set & forget'},
-    {n:'ORB Breakout',               que:'Buscamos confirmaciones del break.',                                  rr:'1:1', micros:'1–10 micros', manejo:'En +$200: BE'},
-    {n:'ORB 50%',                    que:'Entramos en el 50% del opening range.',                               rr:'Target 2', micros:'3–20 micros', manejo:'Full port'},
-    {n:'100s',                       que:'Buscamos capturar 5–12 puntos antes del 100.',                        rr:'1:1', micros:'1–40 micros', manejo:'En +$200: BE'}
-  ];
   const VACIO = {
     v: 1,
     creado: null,
@@ -37,7 +28,7 @@
       riesgoFondPct: 0.25,    // fracción del colchón por día ya fondeado
       reduceTrasPerdida: 0.5, // tamaño del siguiente trade después de perder
       stopsMinimos: 3,        // colchón mínimo en stops para operar tamaño normal
-      estrategias: STRATS.map(x => x.n),   // sus 5 strats (nota del 4-oct-2026); el rendimiento de cada una sale en el Panel
+      estrategias: ['Condición + Equilibrio + FVG', 'iFVG en equilibrio', 'ORB'],   // nombres de tus estrategias; el rendimiento de cada una sale en el Panel
       cuentaActiva: null,
       seleccion: [],          // ids de cuentas a ver a la vez; vacío = la activa
       calCuenta: null,        // el calendario ve UNA cuenta a la vez
@@ -68,8 +59,6 @@
       S = clona(VACIO);
     }
     if(!S.creado){ S.creado = new Date().toISOString(); }
-    // 4-oct-2026: fuera todas las estrategias viejas; solo quedan sus 5 strats
-    if(!S.ajustes._strats5){ S.ajustes.estrategias = STRATS.map(x => x.n); S.ajustes.pararTrasGanada = true; S.ajustes.pararTrasPerdidas = REGLAS.maxL; S.ajustes._strats5 = true; }
     // migración única: risk management dictado (1–2 trades/día)
     if(!S.ajustes._rm1){ if(S.ajustes.maxTradesDia > 2) S.ajustes.maxTradesDia = 2; S.ajustes._rm1 = true; }
     if(!S.ajustes._tp1100){ if(S.ajustes.fases && S.ajustes.fases.eval && S.ajustes.fases.eval.target === 1000) S.ajustes.fases.eval.target = 1100; S.ajustes._tp1100 = true; }   // 6-sep-2026: eval = riesgo 2,000 para 1,100 de TP
@@ -243,6 +232,6 @@
     borraTodo(){ S = clona(VACIO); S.creado = new Date().toISOString(); guardar(); }
   };
 
-  window.Store = API; API.STRATS = STRATS; API.REGLAS = REGLAS; API.LLAVE = LLAVE; API.PERFIL = PERFIL;
+  window.Store = API; API.LLAVE = LLAVE; API.PERFIL = PERFIL;
   cargar();
 })();
